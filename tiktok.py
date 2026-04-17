@@ -14,8 +14,8 @@ load_dotenv("api.env")
 
 logger = logging.getLogger(__name__)
 
-CLIENT_KEY = os.environ["TT_CLIENT_KEY"]
-CLIENT_SECRET = os.environ["TT_CLIENT_SECRET"]
+CLIENT_KEY = os.environ.get("TT_CLIENT_KEY", "")
+CLIENT_SECRET = os.environ.get("TT_CLIENT_SECRET", "")
 REDIRECT_URI = os.getenv("TT_REDIRECT_URI", "https://faceless-security-enactment.ngrok-free.dev/tiktok/callback")
 
 SCOPES = [

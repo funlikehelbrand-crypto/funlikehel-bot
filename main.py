@@ -279,7 +279,7 @@ async def verify_webhook(request: Request):
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
 
-    if mode == "subscribe" and token == os.environ["VERIFY_TOKEN"]:
+    if mode == "subscribe" and token == os.environ.get("VERIFY_TOKEN", ""):
         logger.info("Webhook zweryfikowany przez Meta.")
         return PlainTextResponse(challenge)
 

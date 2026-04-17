@@ -6,7 +6,7 @@ GRAPH_API_URL = "https://graph.facebook.com/v21.0"
 
 async def send_dm(recipient_id: str, text: str) -> dict:
     """Wysyła wiadomość DM do użytkownika Instagrama."""
-    token = os.environ["PAGE_ACCESS_TOKEN"]
+    token = os.environ.get("PAGE_ACCESS_TOKEN", "")
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{GRAPH_API_URL}/me/messages",
@@ -22,7 +22,7 @@ async def send_dm(recipient_id: str, text: str) -> dict:
 
 async def reply_to_comment(comment_id: str, text: str) -> dict:
     """Odpowiada na komentarz pod postem."""
-    token = os.environ["PAGE_ACCESS_TOKEN"]
+    token = os.environ.get("PAGE_ACCESS_TOKEN", "")
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{GRAPH_API_URL}/{comment_id}/replies",
@@ -35,7 +35,7 @@ async def reply_to_comment(comment_id: str, text: str) -> dict:
 
 async def get_user_name(user_id: str) -> str:
     """Pobiera nazwę użytkownika (opcjonalnie, do logów)."""
-    token = os.environ["PAGE_ACCESS_TOKEN"]
+    token = os.environ.get("PAGE_ACCESS_TOKEN", "")
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
