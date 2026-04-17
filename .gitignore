@@ -1,0 +1,7 @@
+api.env
+credentials.json
+token.json
+memory.db
+ekipa.db
+__pycache__/
+*.pyc
