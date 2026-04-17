@@ -10,17 +10,26 @@ from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from claude_agent import get_reply
-from instagram import reply_to_comment, send_dm
-from google_mail import process_unread_emails
-from youtube import process_youtube_comments
-from tiktok import get_auth_url, exchange_code_for_token
-from cleanup_mail import daily_cleanup, trash_cleanup
-from google_business import process_reviews
-from auto_upload import process_upload_folder
-from sms_campaign import run_campaign, send_reminder, send_notification
-from google_contacts import get_contacts_with_phones
 from fastapi.middleware.cors import CORSMiddleware
+
+# Core - zawsze wymagane
+from claude_agent import get_reply
+
+# Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
+try:
+    from instagram import reply_to_comment, send_dm
+    from google_mail import process_unread_emails
+    from youtube import process_youtube_comments
+    from tiktok import get_auth_url, exchange_code_for_token
+    from cleanup_mail import daily_cleanup, trash_cleanup
+    from google_business import process_reviews
+    from auto_upload import process_upload_folder
+    from sms_campaign import run_campaign, send_reminder, send_notification
+    from google_contacts import get_contacts_with_phones
+    HAS_ALL_MODULES = True
+except Exception as e:
+    logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
+    HAS_ALL_MODULES = False
 
 load_dotenv("api.env")
 
@@ -174,12 +183,15 @@ async def google_business_loop():
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(gmail_polling_loop())
-    asyncio.create_task(youtube_polling_loop())
-    asyncio.create_task(daily_cleanup_loop())
-    asyncio.create_task(trash_cleanup_loop())
-    asyncio.create_task(google_business_loop())
-    asyncio.create_task(auto_upload_loop())
+    if HAS_ALL_MODULES:
+        asyncio.create_task(gmail_polling_loop())
+        asyncio.create_task(youtube_polling_loop())
+        asyncio.create_task(daily_cleanup_loop())
+        asyncio.create_task(trash_cleanup_loop())
+        asyncio.create_task(google_business_loop())
+        asyncio.create_task(auto_upload_loop())
+    else:
+        logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
 
 
 # ---------------------------------------------------------------------------
