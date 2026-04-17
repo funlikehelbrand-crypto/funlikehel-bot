@@ -52,6 +52,21 @@ app.add_middleware(
 # Chatbot na stronie — Alicja odpowiada klientom w czasie rzeczywistym
 # ---------------------------------------------------------------------------
 
+@app.get("/api/health")
+async def health():
+    """Diagnostyka — sprawdza czy klucze API są ustawione."""
+    has_claude = bool(os.environ.get("ANTHROPIC_API_KEY", ""))
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY", ""))
+    has_openai = bool(os.environ.get("OPENAI_API_KEY", ""))
+    return {
+        "status": "ok",
+        "has_all_modules": HAS_ALL_MODULES,
+        "claude_key": has_claude,
+        "claude_key_prefix": os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
+        "gemini_key": has_gemini,
+        "openai_key": has_openai,
+    }
+
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
