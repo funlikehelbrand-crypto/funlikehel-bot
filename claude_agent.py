@@ -1,4 +1,6 @@
 import anthropic
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
 import google.generativeai as genai
 import logging
 import os
