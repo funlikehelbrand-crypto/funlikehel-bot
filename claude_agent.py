@@ -1,10 +1,6 @@
 import anthropic
-import warnings
-warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
-import google.generativeai as genai
 import logging
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
 from conversation_memory import get_history, save_message
 
@@ -13,12 +9,31 @@ load_dotenv("api.env")
 logger = logging.getLogger(__name__)
 
 # --- Silniki AI ---
-claude_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+claude_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
-openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
+# Opcjonalne silniki — Gemini i OpenAI (fallback)
+gemini_model = None
+openai_client = None
+try:
+    import warnings
+    warnings.filterwarnings("ignore", category=FutureWarning, module="google.generativeai")
+    import google.generativeai as genai
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if gemini_key:
+        genai.configure(api_key=gemini_key)
+        gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+        logger.info("Gemini engine loaded")
+except Exception as e:
+    logger.warning("Gemini niedostepny: %s", e)
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+try:
+    from openai import OpenAI
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    if openai_key:
+        openai_client = OpenAI(api_key=openai_key)
+        logger.info("OpenAI engine loaded")
+except Exception as e:
+    logger.warning("OpenAI niedostepny: %s", e)
 
 SYSTEM_PROMPT = """Jesteś wirtualnym asystentem szkoły **FUN like HEL | Szkoła Kite Wind** z siedzibą na Półwyspie Helskim w Polsce.
 Pomagasz klientom w informacjach o ofercie, kursach, rezerwacjach i noclegach.
