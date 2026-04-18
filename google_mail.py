@@ -123,6 +123,26 @@ IGNORED_SENDERS = [
     "googleplay",
     "accounts.google.com",
     "businessprofile",
+    "facebookmail",
+    "security@",
+    "alert@",
+    "support@google",
+    # Platformy techniczne / hosting / SaaS — nie klienci szkoły
+    "render.com",
+    "serwersms.pl",
+    "ngrok.com",
+    "hubspot",
+    "mailchimp",
+    "sendgrid",
+    "github.com",
+    "gitlab.com",
+    "heroku.com",
+    "vercel.com",
+    "netlify.com",
+    "digitalocean.com",
+    "aws.amazon.com",
+    "cloud.google.com",
+    "calendar-notification",
 ]
 
 

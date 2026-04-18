@@ -26,6 +26,7 @@ try:
     from auto_upload import process_upload_folder
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
+    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     HAS_ALL_MODULES = True
 except Exception as e:
     logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
@@ -253,6 +254,110 @@ async def sms_contacts(label: str | None = None):
     """Podgląd kontaktów z Google Contacts które mają numery telefonów."""
     contacts = get_contacts_with_phones(label=label)
     return {"count": len(contacts), "contacts": contacts}
+
+
+@app.get("/sms/log")
+async def sms_log(limit: int = 50):
+    """Historia wysłanych SMS-ów — logi z bazy."""
+    import sqlite3 as _sqlite3
+    db = _sqlite3.connect("memory.db")
+    db.row_factory = _sqlite3.Row
+    rows = db.execute(
+        "SELECT id, phone, message, sender, status, error, ts FROM sms_log ORDER BY ts DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    db.close()
+    return {
+        "count": len(rows),
+        "log": [dict(r) for r in rows],
+    }
+
+
+# ---------------------------------------------------------------------------
+# WhatsApp — webhook + obsługa wiadomości
+# ---------------------------------------------------------------------------
+
+@app.get("/whatsapp")
+async def whatsapp_verify(request: Request):
+    """Weryfikacja webhooka WhatsApp (Meta wymaga odpowiedzi na GET)."""
+    params = request.query_params
+    mode = params.get("hub.mode")
+    token = params.get("hub.verify_token")
+    challenge = params.get("hub.challenge")
+
+    if mode == "subscribe" and token == os.environ.get("VERIFY_TOKEN", ""):
+        logger.info("WhatsApp webhook zweryfikowany.")
+        return PlainTextResponse(challenge)
+
+    raise HTTPException(status_code=403, detail="Weryfikacja nieudana.")
+
+
+@app.post("/whatsapp")
+async def whatsapp_receive(request: Request):
+    """Odbiera wiadomości WhatsApp i odpowiada przez Alicję."""
+    payload = await request.json()
+    logger.info("WhatsApp event: %s", payload)
+
+    for entry in payload.get("entry", []):
+        for change in entry.get("changes", []):
+            value = change.get("value", {})
+
+            # Statusy dostarczenia — logujemy, nie odpowiadamy
+            if value.get("statuses"):
+                for status in value["statuses"]:
+                    logger.info(
+                        "WhatsApp status: %s -> %s",
+                        status.get("recipient_id"),
+                        status.get("status"),
+                    )
+                continue
+
+            # Wiadomości od klientów
+            for message in value.get("messages", []):
+                await _handle_whatsapp_message(message, value)
+
+    return Response(status_code=200)
+
+
+async def _handle_whatsapp_message(message: dict, value: dict):
+    """Obsługuje pojedynczą wiadomość WhatsApp."""
+    msg_type = message.get("type")
+    sender_phone = message.get("from", "")
+    message_id = message.get("id", "")
+
+    # Na razie obsługujemy tylko tekst
+    if msg_type != "text":
+        logger.info("WhatsApp: pomijam wiadomość typu '%s' od %s", msg_type, sender_phone)
+        return
+
+    text = message.get("text", {}).get("body", "")
+    if not text:
+        return
+
+    # Imię nadawcy z profilu WhatsApp
+    contacts = value.get("contacts", [])
+    sender_name = contacts[0].get("profile", {}).get("name", "") if contacts else ""
+
+    logger.info("WhatsApp od %s (%s): %s", sender_name, sender_phone, text)
+
+    # Oznacz jako przeczytane
+    try:
+        await wa_mark_as_read(message_id)
+    except Exception as e:
+        logger.warning("Nie udało się oznaczyć jako przeczytane: %s", e)
+
+    # Alicja odpowiada
+    try:
+        reply = get_reply(
+            user_message=text,
+            sender_id=sender_phone,
+            channel="whatsapp",
+            max_tokens=512,
+        )
+        await wa_send_message(sender_phone, reply)
+        logger.info("WhatsApp odpowiedź wysłana do %s", sender_phone)
+    except Exception as e:
+        logger.error("Błąd WhatsApp odpowiedzi do %s: %s", sender_phone, e)
 
 
 # ---------------------------------------------------------------------------
