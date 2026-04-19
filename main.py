@@ -27,6 +27,7 @@ try:
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
     from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
+    from facebook_groups import process_facebook_groups
     HAS_ALL_MODULES = True
 except Exception as e:
     logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
@@ -197,6 +198,18 @@ async def google_business_loop():
         await asyncio.sleep(10800)  # 3 godziny
 
 
+async def facebook_groups_loop():
+    """Przeglądanie grup Facebook — co 30 minut."""
+    await asyncio.sleep(240)  # opóźnienie startu
+    while True:
+        try:
+            logger.info("Sprawdzam grupy Facebook...")
+            process_facebook_groups()
+        except Exception as e:
+            logger.error("Błąd Facebook Groups polling: %s", e)
+        await asyncio.sleep(1800)  # 30 minut
+
+
 @app.on_event("startup")
 async def startup_event():
     if HAS_ALL_MODULES:
@@ -206,6 +219,7 @@ async def startup_event():
         asyncio.create_task(trash_cleanup_loop())
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
+        asyncio.create_task(facebook_groups_loop())
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
 

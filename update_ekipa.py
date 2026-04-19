@@ -7,7 +7,7 @@ new_content = """
 <div style="background:linear-gradient(135deg,#0077b6,#00b4d8,#90e0ef);min-height:100vh;padding:20px;font-family:'Segoe UI',Arial,sans-serif;">
 <div style="max-width:650px;margin:0 auto;text-align:center;">
 
-<h1 style="color:white;font-size:2.5em;text-shadow:2px 2px 8px rgba(0,0,0,0.3);margin-bottom:5px;">\U0001f3c4 Do��ącz do ekipy FUN like HEL!</h1>
+<h1 style="color:white;font-size:2.5em;text-shadow:2px 2px 8px rgba(0,0,0,0.3);margin-bottom:5px;">\U0001f3c4 Dołącz do ekipy FUN like HEL!</h1>
 <p style="color:white;font-size:1.3em;text-shadow:1px 1px 4px rgba(0,0,0,0.2);">Otwieramy sezon! Zgarnij <strong style="color:#ffe66d;">-10% na zajęcia i sprzęt sportowy</strong></p>
 
 <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:15px;margin:25px 0;">
@@ -88,9 +88,9 @@ document.getElementById('ekipa-form').addEventListener('submit', function(e) {
     sport: form.querySelector('[name=sport]').value,
     locations: Array.from(form.querySelectorAll('[name=location]:checked')).map(function(cb){return cb.value;})
   };
-  fetch('https://faceless-security-enactment.ngrok-free.dev/api/ekipa', {
+  fetch('https://funlikehel-bot.onrender.com/api/ekipa', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true'},
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(data)
   }).then(function(r){return r.json();}).then(function(d){
     form.style.display='none';
@@ -104,7 +104,7 @@ document.getElementById('ekipa-form').addEventListener('submit', function(e) {
 </script>
 
 <div style="text-align:center;margin-top:30px;padding:20px;color:rgba(255,255,255,0.85);font-size:0.9em;">
-<p style="margin:5px 0;"><strong>FUN like HEL | Szko��a Kite Wind</strong></p>
+<p style="margin:5px 0;"><strong>FUN like HEL | Szkoła Kite Wind</strong></p>
 <p style="margin:5px 0;">Jastarnia \U0001f1f5\U0001f1f1 &amp; Hurghada \U0001f1ea\U0001f1ec</p>
 <p style="margin:5px 0;">Tel: <a href="tel:+48690270032" style="color:white;">690 270 032</a> | <a href="mailto:funlikehelbrand@gmail.com" style="color:white;">funlikehelbrand@gmail.com</a></p>
 <p style="margin:5px 0;"><a href="https://www.funlikehel.pl" style="color:white;">www.funlikehel.pl</a></p>
