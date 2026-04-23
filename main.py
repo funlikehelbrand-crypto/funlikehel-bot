@@ -15,6 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 # Core - zawsze wymagane
 from claude_agent import get_reply
 
+# Booking system
+from booking_db import init_db
+from booking import booking_router
+
 # Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
 try:
     from instagram import reply_to_comment, send_dm
@@ -42,10 +46,16 @@ app = FastAPI(title="FUN like HEL — Instagram Bot + Gmail + Chatbot")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Booking API
+app.include_router(booking_router)
+
+# Init booking DB on startup
+init_db()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://faceless-security-enactment.ngrok-free.dev"],
-    allow_methods=["POST"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -108,24 +118,53 @@ class EkipaRequest(BaseModel):
 @app.post("/api/ekipa")
 async def ekipa_signup(req: EkipaRequest):
     """Zapis klienta z landing page /ekipa — email, telefon, sport, lokalizacja."""
-    import sqlite3
     import datetime
 
-    db = sqlite3.connect("ekipa.db")
-    db.execute("""CREATE TABLE IF NOT EXISTS ekipa (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT, email TEXT, phone TEXT, sport TEXT, locations TEXT,
-        created_at TEXT
-    )""")
-    db.execute(
-        "INSERT INTO ekipa (name, email, phone, sport, locations, created_at) VALUES (?,?,?,?,?,?)",
-        (req.name, req.email, req.phone or "", req.sport or "", ",".join(req.locations), datetime.datetime.now().isoformat())
-    )
-    db.commit()
-    db.close()
+    record = {
+        "name": req.name,
+        "email": req.email,
+        "phone": req.phone or "",
+        "sport": req.sport or "",
+        "locations": ",".join(req.locations),
+        "created_at": datetime.datetime.now().isoformat(),
+    }
+
+    if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("USE_FIRESTORE"):
+        from google.cloud import firestore as _fs
+        _fs.Client().collection("ekipa").add(record)
+    else:
+        import sqlite3
+        db = sqlite3.connect("ekipa.db")
+        db.execute("""CREATE TABLE IF NOT EXISTS ekipa (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT, email TEXT, phone TEXT, sport TEXT, locations TEXT,
+            created_at TEXT
+        )""")
+        db.execute(
+            "INSERT INTO ekipa (name, email, phone, sport, locations, created_at) VALUES (?,?,?,?,?,?)",
+            tuple(record.values()),
+        )
+        db.commit()
+        db.close()
 
     logger.info("Nowy zapis do ekipy: %s | %s | %s | %s", req.name, req.email, req.sport, req.locations)
     return {"status": "ok", "message": f"Cześć {req.name}! Jesteś w ekipie! 🤙"}
+
+
+@app.get("/api/ekipa/list")
+async def ekipa_list(token: str = ""):
+    """Lista zapisanych klientow (chroniona tokenem)."""
+    import sqlite3
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Brak dostepu")
+
+    db = sqlite3.connect("ekipa.db")
+    db.row_factory = sqlite3.Row
+    rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
+    db.close()
+    return {"count": len(rows), "items": [dict(r) for r in rows]}
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +178,7 @@ async def gmail_polling_loop():
             process_unread_emails()
         except Exception as e:
             logger.error("Błąd Gmail polling: %s", e)
-        await asyncio.sleep(300)  # 5 minut
+        await asyncio.sleep(1800)  # 30 minut
 
 
 async def youtube_polling_loop():
@@ -207,7 +246,7 @@ async def facebook_groups_loop():
             process_facebook_groups()
         except Exception as e:
             logger.error("Błąd Facebook Groups polling: %s", e)
-        await asyncio.sleep(1800)  # 30 minut
+        await asyncio.sleep(7200)  # 2 godziny
 
 
 @app.on_event("startup")
@@ -273,18 +312,23 @@ async def sms_contacts(label: str | None = None):
 @app.get("/sms/log")
 async def sms_log(limit: int = 50):
     """Historia wysłanych SMS-ów — logi z bazy."""
-    import sqlite3 as _sqlite3
-    db = _sqlite3.connect("memory.db")
-    db.row_factory = _sqlite3.Row
-    rows = db.execute(
-        "SELECT id, phone, message, sender, status, error, ts FROM sms_log ORDER BY ts DESC LIMIT ?",
-        (limit,),
-    ).fetchall()
-    db.close()
-    return {
-        "count": len(rows),
-        "log": [dict(r) for r in rows],
-    }
+    if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("USE_FIRESTORE"):
+        from google.cloud import firestore as _fs
+        docs = _fs.Client().collection("sms_log").order_by(
+            "ts", direction=_fs.Query.DESCENDING
+        ).limit(limit).stream()
+        rows = [{"id": d.id, **d.to_dict()} for d in docs]
+    else:
+        import sqlite3 as _sqlite3
+        db = _sqlite3.connect("memory.db")
+        db.row_factory = _sqlite3.Row
+        rows = db.execute(
+            "SELECT id, phone, message, sender, status, error, ts FROM sms_log ORDER BY ts DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        db.close()
+        rows = [dict(r) for r in rows]
+    return {"count": len(rows), "log": rows}
 
 
 # ---------------------------------------------------------------------------
@@ -378,14 +422,23 @@ async def _handle_whatsapp_message(message: dict, value: dict):
 # Strony prawne (regulamin, polityka prywatności)
 # ---------------------------------------------------------------------------
 
+def _find_html(name: str) -> str:
+    """Szuka pliku HTML w katalogu serwera lub nadrzędnym (dev)."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    for path in [os.path.join(base, name), os.path.join(base, "..", name)]:
+        if os.path.exists(path):
+            return path
+    return name  # fallback — pozwoli na czytelny błąd FileNotFoundError
+
+
 @app.get("/regulamin", response_class=HTMLResponse)
 async def regulamin():
-    with open("../regulamin.html", encoding="utf-8") as f:
+    with open(_find_html("regulamin.html"), encoding="utf-8") as f:
         return f.read()
 
 @app.get("/polityka-prywatnosci", response_class=HTMLResponse)
 async def polityka():
-    with open("../polityka-prywatnosci.html", encoding="utf-8") as f:
+    with open(_find_html("polityka-prywatnosci.html"), encoding="utf-8") as f:
         return f.read()
 
 
