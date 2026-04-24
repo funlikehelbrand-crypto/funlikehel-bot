@@ -1,0 +1,14 @@
+**/__pycache__/
+**/*.pyc
+server/api.env
+server/token.json
+server/credentials.json
+server/memory.db
+server/ekipa.db
+server/*.log
+.git
+*.jpg
+*.png
+*.json
+!server/requirements.txt
+google_ads_scripts/

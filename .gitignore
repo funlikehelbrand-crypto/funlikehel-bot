@@ -1,0 +1,27 @@
+# Sekrety — NIGDY nie commituj
+server/api.env
+server/credentials.json
+server/token.json
+server/memory.db
+server/ekipa.db
+server/bookings.db
+server/server.log
+server/__pycache__/
+server/tmp_*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+venv/
+.venv/
+
+# System
+.DS_Store
+Thumbs.db
+desktop.ini
+*.bat
+KOPIUJ_NA_DRUGI_KOMPUTER.bat
