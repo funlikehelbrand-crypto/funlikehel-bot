@@ -148,6 +148,18 @@ async def ekipa_signup(req: EkipaRequest):
         db.close()
 
     logger.info("Nowy zapis do ekipy: %s | %s | %s | %s", req.name, req.email, req.sport, req.locations)
+
+    # SMS powiadomienie do właściciela — żeby nie stracić zapisu przy restarcie Rendera
+    try:
+        from sms import send_sms
+        locs = ",".join(req.locations) if req.locations else "?"
+        send_sms(
+            phone="690270032",
+            message=f"EKIPA: {req.name} | {req.email} | {req.phone or '-'} | {req.sport or '?'} | {locs}",
+        )
+    except Exception as _sms_err:
+        logger.warning("SMS powiadomienie ekipa nie wysłane: %s", _sms_err)
+
     return {"status": "ok", "message": f"Cześć {req.name}! Jesteś w ekipie! 🤙"}
 
 
