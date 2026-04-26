@@ -101,6 +101,52 @@ def _filter_by_label(service, contacts: list[dict], label: str) -> list[dict]:
     return filtered
 
 
+def create_contact(name: str, email: str, phone: str = "", note: str = "", label: str = "Ekipa FUN like HEL") -> dict:
+    """
+    Tworzy nowy kontakt w Google Contacts.
+    Dodaje go do grupy 'Ekipa FUN like HEL' (tworzy ją jeśli nie istnieje).
+    Zwraca resourceName nowego kontaktu.
+    """
+    creds = get_credentials()
+    service = build("people", "v1", credentials=creds)
+
+    # Znajdź lub utwórz grupę kontaktów
+    group_resource = _get_or_create_group(service, label)
+
+    person_body = {
+        "names": [{"givenName": name}],
+    }
+    if email:
+        person_body["emailAddresses"] = [{"value": email}]
+    if phone:
+        person_body["phoneNumbers"] = [{"value": phone}]
+    if note:
+        person_body["biographies"] = [{"value": note, "contentType": "TEXT_PLAIN"}]
+    if group_resource:
+        person_body["memberships"] = [
+            {"contactGroupMembership": {"contactGroupResourceName": group_resource}}
+        ]
+
+    result = service.people().createContact(body=person_body).execute()
+    resource_name = result.get("resourceName", "")
+    logger.info("Utworzono kontakt: %s → %s", name, resource_name)
+    return result
+
+
+def _get_or_create_group(service, name: str) -> str:
+    """Zwraca resourceName grupy o podanej nazwie — tworzy ją jeśli nie istnieje."""
+    groups_result = service.contactGroups().list().execute()
+    for group in groups_result.get("contactGroups", []):
+        if group.get("name", "").lower() == name.lower() or \
+           group.get("formattedName", "").lower() == name.lower():
+            return group.get("resourceName", "")
+
+    # Nie istnieje — utwórz
+    new_group = service.contactGroups().create(body={"contactGroup": {"name": name}}).execute()
+    logger.info("Utworzono grupę kontaktów: %s", name)
+    return new_group.get("resourceName", "")
+
+
 def _normalize_phone(phone: str) -> str:
     """Normalizuje numer do formatu 48XXXXXXXXX."""
     phone = phone.strip().replace(" ", "").replace("-", "").replace("+", "")

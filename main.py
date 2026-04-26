@@ -160,6 +160,20 @@ async def ekipa_signup(req: EkipaRequest):
     except Exception as _sms_err:
         logger.warning("SMS powiadomienie ekipa nie wysłane: %s", _sms_err)
 
+    # Zapis do Google Contacts — trwałe przechowywanie danych klientów
+    try:
+        from google_contacts import create_contact
+        locs = ",".join(req.locations) if req.locations else ""
+        note = f"Ekipa FUN like HEL | sport: {req.sport or '?'} | lokalizacja: {locs} | zapisany: {record['created_at'][:10]}"
+        create_contact(
+            name=req.name,
+            email=req.email,
+            phone=req.phone or "",
+            note=note,
+        )
+    except Exception as _gc_err:
+        logger.warning("Google Contacts zapis ekipa nie powiodł się: %s", _gc_err)
+
     return {"status": "ok", "message": f"Cześć {req.name}! Jesteś w ekipie! 🤙"}
 
 
