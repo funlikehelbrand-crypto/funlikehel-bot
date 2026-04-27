@@ -606,6 +606,103 @@ def _verify_signature(body: bytes, signature: str):
 
 
 # ---------------------------------------------------------------------------
+# Tymczasowy endpoint — instalacja pluginu WP z IP serwera (omija LLA lockout)
+# USUŃ po zakończeniu operacji
+# ---------------------------------------------------------------------------
+
+@app.post("/admin/wp-install-plugin")
+async def wp_install_plugin(request: Request):
+    """Instaluje plugin WP z ZIP URL — uruchamiany z IP Render (omija LLA lockout)."""
+    import httpx, re, base64
+
+    body = await request.json()
+    token = body.get("token", "")
+    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
+    if token != admin_token:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    wp_url = body.get("wp_url", "https://funlikehel.pl")
+    wp_user = body.get("wp_user", "Admin")
+    wp_pass = body.get("wp_pass", "")
+    zip_url = body.get("zip_url", "")
+
+    if not wp_pass or not zip_url:
+        raise HTTPException(status_code=400, detail="Wymagane: wp_pass, zip_url")
+
+    log = []
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
+        # Krok 1: Login
+        r = await client.post(f"{wp_url}/wp-login.php", data={
+            "log": wp_user,
+            "pwd": wp_pass,
+            "wp-submit": "Log In",
+            "testcookie": "1",
+            "redirect_to": "/wp-admin/",
+        }, headers={"Cookie": "wordpress_test_cookie=WP+Cookie+check"})
+
+        cookies = {k: v for k, v in client.cookies.items()}
+        logged_in = any("logged_in" in k for k in cookies)
+        log.append(f"Login: {logged_in}, status={r.status_code}, url={r.url}")
+
+        if not logged_in:
+            error = re.search(r'<div id="login_error"[^>]*>(.*?)</div>', r.text, re.DOTALL)
+            error_text = re.sub('<[^>]+>', '', error.group(1)).strip() if error else 'Unknown error'
+            return {"ok": False, "log": log, "error": error_text}
+
+        # Krok 2: Pobierz nonce
+        r2 = await client.get(f"{wp_url}/wp-admin/plugin-install.php?tab=upload")
+        nonce_match = re.search(r'name="_wpnonce" value="([a-f0-9]+)"', r2.text)
+        if not nonce_match:
+            log.append(f"Nonce not found, status={r2.status_code}")
+            return {"ok": False, "log": log, "error": "No nonce found"}
+        nonce = nonce_match.group(1)
+        log.append(f"Nonce: {nonce}")
+
+        # Krok 3: Pobierz ZIP i wgraj
+        zip_resp = await client.get(zip_url)
+        if zip_resp.status_code != 200:
+            return {"ok": False, "log": log, "error": f"ZIP download failed: {zip_resp.status_code}"}
+        log.append(f"ZIP downloaded: {len(zip_resp.content)} bytes")
+
+        zip_filename = zip_url.split("/")[-1]
+        r3 = await client.post(
+            f"{wp_url}/wp-admin/update.php?action=upload-plugin",
+            files={"pluginzip": (zip_filename, zip_resp.content, "application/zip")},
+            data={"_wpnonce": nonce, "install-plugin-submit": "Zainstaluj"},
+        )
+
+        body_lower = r3.text.lower()
+        if any(x in body_lower for x in ["successfully", "zainstalowana", "installed", "pomyslnie"]):
+            log.append("Plugin INSTALLED!")
+            install_ok = True
+        elif any(x in body_lower for x in ["already", "istnieje", "jest juz"]):
+            log.append("Plugin already exists (updated)")
+            install_ok = True
+        else:
+            msgs = re.findall(r'<p[^>]*>([^<]{5,})</p>', r3.text)
+            log.extend(msgs[:5])
+            install_ok = False
+
+        if not install_ok:
+            return {"ok": False, "log": log, "error": "Install failed", "body_fragment": r3.text[1000:2000]}
+
+        # Krok 4: Aktywuj przez REST API
+        wp_app_password = os.environ.get("WP_APP_PASSWORD", "")
+        if not wp_app_password:
+            return {"ok": False, "log": log, "error": "WP_APP_PASSWORD nie skonfigurowane w .env"}
+        auth = base64.b64encode(f"{wp_user}:{wp_app_password}".encode()).decode()
+        r4 = await client.put(
+            f"{wp_url}/?rest_route=/wp/v2/plugins/funlikehel-booking-v2%2Ffunlikehel-booking-v2",
+            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
+            content=b'{"status":"active"}',
+        )
+        log.append(f"Activate: {r4.status_code} {r4.text[:100]}")
+
+    return {"ok": True, "log": log}
+
+
+# ---------------------------------------------------------------------------
 # Start
 # ---------------------------------------------------------------------------
 
