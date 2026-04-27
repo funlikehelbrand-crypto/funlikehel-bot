@@ -181,6 +181,141 @@ add_action('rest_api_init', function () {
         },
         'permission_callback' => function () { return current_user_can('manage_options'); },
     ]);
+
+    // ── Optimization endpoint — configures W3TC, clears caches, defers scripts
+    register_rest_route('flh/v1', '/optimize', [
+        'methods'             => 'POST',
+        'callback'            => function (WP_REST_Request $req) {
+            if (!current_user_can('manage_options')) {
+                return new WP_Error('forbidden', 'Forbidden', ['status' => 403]);
+            }
+            $results = [];
+
+            // 1. Configure W3 Total Cache
+            $w3tc = get_option('w3tc_general', null);
+            if (is_array($w3tc)) {
+                $w3tc['pgcache.enabled']       = true;
+                $w3tc['minify.enabled']        = true;
+                $w3tc['browsercache.enabled']  = true;
+                $w3tc['minify.js.enable']      = true;
+                $w3tc['minify.css.enable']     = true;
+                $w3tc['minify.html.enable']    = true;
+                $w3tc['pgcache.engine']        = 'file';
+                update_option('w3tc_general', $w3tc);
+                $results['w3tc'] = 'configured';
+            } else {
+                $results['w3tc'] = 'not_found_or_empty';
+            }
+
+            // 2. Flush W3TC cache if available
+            if (function_exists('w3tc_flush_all')) {
+                w3tc_flush_all();
+                $results['cache_flushed'] = true;
+            }
+
+            // 3. Configure W3TC page cache separately
+            $pgcache = get_option('w3tc_pgcache', []);
+            if (!empty($pgcache)) {
+                $pgcache['engine'] = 'file';
+                $pgcache['debug'] = false;
+                update_option('w3tc_pgcache', $pgcache);
+                $results['pgcache'] = 'configured';
+            }
+
+            // 4. Configure browser cache
+            $bcache = get_option('w3tc_browsercache', []);
+            if (!empty($bcache)) {
+                $bcache['cssjs_max_age']     = 604800; // 1 week
+                $bcache['html_max_age']      = 3600;   // 1 hour
+                $bcache['other_max_age']     = 2592000; // 30 days
+                $bcache['cssjs_set_last_modified'] = true;
+                $bcache['cssjs_expires']     = true;
+                $bcache['html_expires']      = true;
+                update_option('w3tc_browsercache', $bcache);
+                $results['browser_cache'] = 'configured';
+            }
+
+            // 5. Deactivate unused plugins programmatically
+            $deactivate = $req->get_param('deactivate') ?? [];
+            if (!empty($deactivate) && is_array($deactivate)) {
+                deactivate_plugins($deactivate);
+                $results['deactivated'] = $deactivate;
+            }
+
+            // 6. Self-patch: write corrected plugin file using WP_Filesystem
+            if ($req->get_param('patch_plugin') === true) {
+                $plugin_file = WP_PLUGIN_DIR . '/funlikehel-booking-v2/funlikehel-booking-v2.php';
+                $patch_url = get_option('flh_stats_patch_url', '');
+                if ($patch_url) {
+                    $response = wp_remote_get($patch_url, ['timeout' => 20, 'sslverify' => false]);
+                    if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                        $new_code = wp_remote_retrieve_body($response);
+                        if (strlen($new_code) > 1000 && strpos($new_code, 'funlikehel-booking-v2') !== false) {
+                            $written = file_put_contents($plugin_file, $new_code);
+                            $results['patch_plugin'] = $written !== false ? 'patched: ' . $written . ' bytes' : 'write failed';
+                        } else {
+                            $results['patch_plugin'] = 'invalid content from URL';
+                        }
+                    } else {
+                        $results['patch_plugin'] = is_wp_error($response) ? $response->get_error_message() : 'HTTP ' . wp_remote_retrieve_response_code($response);
+                    }
+                } else {
+                    // Write directly if content provided inline
+                    $new_code = $req->get_param('plugin_code');
+                    if ($new_code && strlen($new_code) > 1000) {
+                        $written = file_put_contents($plugin_file, $new_code);
+                        $results['patch_plugin'] = $written !== false ? 'patched: ' . $written . ' bytes' : 'write failed';
+                    } else {
+                        $results['patch_plugin'] = 'no content or URL provided';
+                    }
+                }
+            }
+
+            return $results;
+        },
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+
+    // ── Render-blocker fixer — adds defer/async to specific scripts via filter ──
+    // (activated immediately when this plugin loads)
+
+    // ── Stats endpoint — WP Statistics 14.x data for today/yesterday ──
+    // Tables: summary_totals (date, visitors, views), pages (date, uri, count)
+    register_rest_route('flh/v1', '/stats', [
+        'methods'             => 'GET',
+        'callback'            => function (WP_REST_Request $req) {
+            global $wpdb;
+            $date = sanitize_text_field($req->get_param('date') ?: current_time('Y-m-d'));
+
+            // WP Statistics 14.x uses summary_totals table (replaces old statistics_visit)
+            $summary = $wpdb->get_row($wpdb->prepare(
+                "SELECT `visitors`, `views` FROM {$wpdb->prefix}statistics_summary_totals WHERE `date` = %s LIMIT 1",
+                $date
+            ));
+            $pageviews = $summary ? (int) $summary->views    : 0;
+            $visitors  = $summary ? (int) $summary->visitors : 0;
+
+            // online: count visitors active today (no separate online table in 14.x)
+            $online = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}statistics_visitor WHERE `last_counter` = %s",
+                current_time('Y-m-d')
+            ));
+
+            $top_pages = $wpdb->get_results($wpdb->prepare(
+                "SELECT `uri`, `count` FROM {$wpdb->prefix}statistics_pages WHERE `date` = %s ORDER BY `count` DESC LIMIT 5",
+                $date
+            ));
+
+            return [
+                'date'      => $date,
+                'pageviews' => $pageviews,
+                'visitors'  => $visitors,
+                'online'    => $online,
+                'top_pages' => $top_pages,
+            ];
+        },
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
 });
 
 
@@ -413,3 +548,68 @@ add_shortcode('flh_booking_form', function ($atts) {
     <?php
     return ob_get_clean();
 });
+
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION — added automatically
+// ============================================================================
+
+// ── DEFER non-critical scripts ───────────────────────────────────────────────
+add_filter('script_loader_tag', 'flhv2_defer_scripts', 10, 3);
+function flhv2_defer_scripts($tag, $handle, $src) {
+    if (is_admin()) return $tag;
+    $defer = [
+        'wpbs-script',
+        'contact-form-7', 'swv',
+        'chaty-front-end', 'chaty-picmo-js', 'chaty-picmo-latest-js',
+        'woocommerce', 'wc-add-to-cart', 'wc-order-attribution', 'sourcebuster-js', 'wc-jquery-blockui', 'wc-js-cookie',
+        'wp-statistics-tracker',
+        'Total_Soft_Cal',
+        'onepress-gallery-carousel', 'onepress-plus-slider',
+        'feeds-for-youtube-js',
+        'popup-maker-site',
+        'gmap',
+    ];
+    foreach ($defer as $d) {
+        if (strpos($handle, $d) !== false && strpos($tag, 'defer') === false && strpos($tag, 'async') === false) {
+            return str_replace('<script ', '<script defer ', $tag);
+        }
+    }
+    return $tag;
+}
+
+// ── REMOVE scripts on pages that don't need them ─────────────────────────────
+add_action('wp_enqueue_scripts', 'flhv2_dequeue_selective', 999);
+function flhv2_dequeue_selective() {
+    global $post;
+    $slug = $post ? $post->post_name : '';
+    $content = $post ? $post->post_content : '';
+
+    // WP Booking System — only if shortcode present
+    if (!has_shortcode($content, 'booking_system') && !has_shortcode($content, 'booking_month')) {
+        wp_dequeue_script('wpbs-script');
+        wp_dequeue_style('wpbs-style');
+    }
+
+    // Contact Form 7 — only on contact/rezerwacje
+    if (!in_array($slug, ['kontakt', 'rezerwacje', 'contact']) && !has_shortcode($content, 'contact-form')) {
+        wp_dequeue_script('contact-form-7');
+        wp_dequeue_script('swv');
+        wp_dequeue_style('contact-form-7');
+    }
+
+    // Calendar — only if shortcode present
+    if (!has_shortcode($content, 'TSCA') && !has_shortcode($content, 'total_soft')) {
+        wp_dequeue_script('total-soft-calendar-widget');
+    }
+}
+
+// ── ADD browser-cache headers ─────────────────────────────────────────────────
+add_action('send_headers', 'flhv2_cache_headers');
+function flhv2_cache_headers() {
+    if (is_user_logged_in() || is_admin() || is_404()) return;
+    if (is_front_page() || is_singular() || is_archive()) {
+        header('Cache-Control: public, max-age=3600, stale-while-revalidate=60');
+        header('Vary: Accept-Encoding, Accept');
+    }
+}
