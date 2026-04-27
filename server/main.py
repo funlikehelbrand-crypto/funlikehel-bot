@@ -613,90 +613,114 @@ def _verify_signature(body: bytes, signature: str):
 @app.post("/admin/wp-install-plugin")
 async def wp_install_plugin(request: Request):
     """Instaluje plugin WP z ZIP URL — uruchamiany z IP Render (omija LLA lockout)."""
-    import httpx, re, base64
+    import httpx, re, base64, traceback
 
-    body = await request.json()
-    token = body.get("token", "")
+    try:
+        req_body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    token = req_body.get("token", "")
     admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
     if token != admin_token:
         raise HTTPException(status_code=403, detail="Brak dostępu")
 
-    wp_url = body.get("wp_url", "https://funlikehel.pl")
-    wp_user = body.get("wp_user", "Admin")
-    wp_pass = body.get("wp_pass", "")
-    zip_url = body.get("zip_url", "")
+    wp_url = req_body.get("wp_url", "https://funlikehel.pl")
+    wp_user = req_body.get("wp_user", "Admin")
+    wp_pass = req_body.get("wp_pass", "")
+    zip_url = req_body.get("zip_url", "")
+    # wp_app_password may be passed directly or read from env
+    wp_app_password = req_body.get("wp_app_password", "") or os.environ.get("WP_APP_PASSWORD", "")
 
     if not wp_pass or not zip_url:
         raise HTTPException(status_code=400, detail="Wymagane: wp_pass, zip_url")
 
     log = []
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
-        # Krok 1: Login
-        r = await client.post(f"{wp_url}/wp-login.php", data={
-            "log": wp_user,
-            "pwd": wp_pass,
-            "wp-submit": "Log In",
-            "testcookie": "1",
-            "redirect_to": "/wp-admin/",
-        }, headers={"Cookie": "wordpress_test_cookie=WP+Cookie+check"})
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
+            # Krok 1: Login
+            r = await client.post(f"{wp_url}/wp-login.php", data={
+                "log": wp_user,
+                "pwd": wp_pass,
+                "wp-submit": "Log In",
+                "testcookie": "1",
+                "redirect_to": "/wp-admin/",
+            }, headers={"Cookie": "wordpress_test_cookie=WP+Cookie+check"})
 
-        cookies = {k: v for k, v in client.cookies.items()}
-        logged_in = any("logged_in" in k for k in cookies)
-        log.append(f"Login: {logged_in}, status={r.status_code}, url={r.url}")
+            cookies = dict(client.cookies)
+            logged_in = any("logged_in" in k for k in cookies)
+            log.append(f"Login: {logged_in}, status={r.status_code}, url={str(r.url)}")
 
-        if not logged_in:
-            error = re.search(r'<div id="login_error"[^>]*>(.*?)</div>', r.text, re.DOTALL)
-            error_text = re.sub('<[^>]+>', '', error.group(1)).strip() if error else 'Unknown error'
-            return {"ok": False, "log": log, "error": error_text}
+            if not logged_in:
+                error_match = re.search(r'<div id="login_error"[^>]*>(.*?)</div>', r.text, re.DOTALL)
+                error_text = re.sub('<[^>]+>', '', error_match.group(1)).strip() if error_match else 'Unknown error'
+                return {"ok": False, "log": log, "error": error_text}
 
-        # Krok 2: Pobierz nonce
-        r2 = await client.get(f"{wp_url}/wp-admin/plugin-install.php?tab=upload")
-        nonce_match = re.search(r'name="_wpnonce" value="([a-f0-9]+)"', r2.text)
-        if not nonce_match:
-            log.append(f"Nonce not found, status={r2.status_code}")
-            return {"ok": False, "log": log, "error": "No nonce found"}
-        nonce = nonce_match.group(1)
-        log.append(f"Nonce: {nonce}")
+            # Krok 2: Pobierz nonce
+            r2 = await client.get(f"{wp_url}/wp-admin/plugin-install.php?tab=upload")
+            nonce_match = re.search(r'name="_wpnonce" value="([a-f0-9]+)"', r2.text)
+            if not nonce_match:
+                log.append(f"Nonce not found, status={r2.status_code}")
+                return {"ok": False, "log": log, "error": "No nonce found"}
+            nonce = nonce_match.group(1)
+            log.append(f"Nonce: {nonce}")
 
-        # Krok 3: Pobierz ZIP i wgraj
-        zip_resp = await client.get(zip_url)
-        if zip_resp.status_code != 200:
-            return {"ok": False, "log": log, "error": f"ZIP download failed: {zip_resp.status_code}"}
-        log.append(f"ZIP downloaded: {len(zip_resp.content)} bytes")
+            # Krok 3: Pobierz ZIP i wgraj
+            zip_resp = await client.get(zip_url)
+            if zip_resp.status_code != 200:
+                return {"ok": False, "log": log, "error": f"ZIP download failed: {zip_resp.status_code}"}
+            log.append(f"ZIP downloaded: {len(zip_resp.content)} bytes")
 
-        zip_filename = zip_url.split("/")[-1]
-        r3 = await client.post(
-            f"{wp_url}/wp-admin/update.php?action=upload-plugin",
-            files={"pluginzip": (zip_filename, zip_resp.content, "application/zip")},
-            data={"_wpnonce": nonce, "install-plugin-submit": "Zainstaluj"},
-        )
+            zip_filename = zip_url.split("/")[-1]
+            r3 = await client.post(
+                f"{wp_url}/wp-admin/update.php?action=upload-plugin",
+                files={"pluginzip": (zip_filename, zip_resp.content, "application/zip")},
+                data={"_wpnonce": nonce, "install-plugin-submit": "Zainstaluj"},
+            )
 
-        body_lower = r3.text.lower()
-        if any(x in body_lower for x in ["successfully", "zainstalowana", "installed", "pomyslnie"]):
-            log.append("Plugin INSTALLED!")
-            install_ok = True
-        elif any(x in body_lower for x in ["already", "istnieje", "jest juz"]):
-            log.append("Plugin already exists (updated)")
-            install_ok = True
-        else:
-            msgs = re.findall(r'<p[^>]*>([^<]{5,})</p>', r3.text)
-            log.extend(msgs[:5])
-            install_ok = False
+            r3_lower = r3.text.lower()
+            if any(x in r3_lower for x in ["successfully", "zainstalowana", "installed", "pomyslnie"]):
+                log.append("Plugin INSTALLED!")
+                install_ok = True
+            elif any(x in r3_lower for x in ["already", "istnieje", "jest juz", "replace current"]):
+                log.append("Plugin already exists — needs Replace confirmation")
+                # Try to confirm replace
+                replace_match = re.search(r'name="_wpnonce" value="([a-f0-9]+)"', r3.text)
+                if replace_match:
+                    replace_nonce = replace_match.group(1)
+                    r3b = await client.post(
+                        f"{wp_url}/wp-admin/update.php?action=upload-plugin&overwrite=update-plugin",
+                        files={"pluginzip": (zip_filename, zip_resp.content, "application/zip")},
+                        data={"_wpnonce": replace_nonce, "install-plugin-submit": "Zainstaluj"},
+                    )
+                    log.append(f"Replace attempt: {r3b.status_code}")
+                install_ok = True
+            else:
+                msgs = re.findall(r'<p[^>]*>([^<]{5,})</p>', r3.text)
+                log.extend(msgs[:5])
+                log.append(f"Response fragment: {r3.text[800:1800]}")
+                install_ok = False
 
-        if not install_ok:
-            return {"ok": False, "log": log, "error": "Install failed", "body_fragment": r3.text[1000:2000]}
+            if not install_ok:
+                return {"ok": False, "log": log, "error": "Install failed"}
 
-        # Krok 4: Aktywuj przez REST API
-        auth = base64.b64encode(b"Admin:PDlm Q9wV AKvP tvlK uUEa 64zw").decode()
-        r4 = await client.put(
-            f"{wp_url}/?rest_route=/wp/v2/plugins/funlikehel-booking-v2%2Ffunlikehel-booking-v2",
-            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
-            content=b'{"status":"active"}',
-        )
-        log.append(f"Activate: {r4.status_code} {r4.text[:100]}")
+            # Krok 4: Aktywuj przez REST API
+            if not wp_app_password:
+                return {"ok": "partial", "log": log, "note": "Installed but not activated — pass wp_app_password"}
+            auth = base64.b64encode(f"{wp_user}:{wp_app_password}".encode()).decode()
+            r4 = await client.put(
+                f"{wp_url}/?rest_route=/wp/v2/plugins/funlikehel-booking-v2%2Ffunlikehel-booking-v2",
+                headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
+                content=b'{"status":"active"}',
+            )
+            log.append(f"Activate: {r4.status_code} {r4.text[:200]}")
 
-    return {"ok": True, "log": log}
+        return {"ok": True, "log": log}
+
+    except Exception as exc:
+        tb = traceback.format_exc()
+        return {"ok": False, "log": log, "exception": str(exc), "traceback": tb}
 
 
 # ---------------------------------------------------------------------------
