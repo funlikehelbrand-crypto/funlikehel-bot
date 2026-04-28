@@ -1,7 +1,7 @@
 import httpx
 import os
 
-GRAPH_API_URL = "https://graph.facebook.com/v21.0"
+GRAPH_API_URL = "https://graph.instagram.com/v21.0"
 
 
 async def send_dm(recipient_id: str, text: str) -> dict:
