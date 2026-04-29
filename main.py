@@ -530,10 +530,10 @@ async def receive_event(request: Request):
         for messaging in entry.get("messaging", []):
             await _handle_dm(messaging)
 
-        # --- Komentarze pod postami --- WYŁĄCZONE
-        # for change in entry.get("changes", []):
-        #     if change.get("field") == "comments":
-        #         await _handle_comment(change["value"])
+        # --- Komentarze pod postami (z filtrem) ---
+        for change in entry.get("changes", []):
+            if change.get("field") == "comments":
+                await _handle_comment(change["value"])
 
     return Response(status_code=200)
 
@@ -577,26 +577,66 @@ async def _handle_dm(messaging: dict):
 # Obsługa komentarzy
 # ---------------------------------------------------------------------------
 
+_seen_comments: set = set()  # deduplikacja komentarzy
+
 async def _handle_comment(value: dict):
     comment_id = value.get("id")
-    text = value.get("text")
+    text = value.get("text", "").strip()
     from_user = value.get("from", {})
-    sender_name = from_user.get("name", "użytkownik")
+    sender_id = from_user.get("id", "")
+    sender_name = from_user.get("username", from_user.get("name", "użytkownik"))
 
-    # Pomijamy komentarze od siebie (żeby nie odpowiadać na własne odpowiedzi)
-    if value.get("from", {}).get("id") == value.get("media", {}).get("owner_id"):
+    # Pomijamy komentarze od siebie
+    page_id = os.environ.get("INSTAGRAM_PAGE_ID", "17841402381473231")
+    if sender_id == page_id:
         return
 
     if not comment_id or not text:
         return
 
-    logger.info("Komentarz od %s: %s", sender_name, text)
+    # Deduplikacja
+    if comment_id in _seen_comments:
+        return
+    _seen_comments.add(comment_id)
+    if len(_seen_comments) > 500:
+        _seen_comments.clear()
+
+    # --- FILTR: kiedy odpowiadać ---
+    should_reply = False
+    reply_style = "standard"
+
+    # 1. Pytanie od klienta → odpowiedz merytorycznie
+    if "?" in text:
+        should_reply = True
+        reply_style = "answer"
+
+    # 2. @wzmianka o funlikehel → odpowiedz
+    elif "funlikehel" in text.lower():
+        should_reply = True
+        reply_style = "mention"
+
+    # 3. Komplement / pochwała → krótkie podziękowanie
+    elif any(w in text.lower() for w in ["super", "polecam", "rewelacja", "brawo", "wow",
+                                          "great", "amazing", "awesome", "love", "best"]):
+        should_reply = True
+        reply_style = "thanks"
+
+    # 4. Same emotki (🥰❤️🔥) → NIE odpowiadaj
+    # 5. Krótkie komentarze bez pytania → NIE odpowiadaj
+
+    if not should_reply:
+        logger.info("Komentarz od @%s: '%s' — pomijam (emotki/krótki)", sender_name, text[:50])
+        return
+
+    logger.info("Komentarz od @%s [%s]: %s", sender_name, reply_style, text[:80])
 
     try:
-        sender_ig = from_user.get("id", sender_name)
-        reply = get_reply(text, sender_id=sender_ig, channel="instagram_comment")
+        if reply_style == "thanks":
+            reply = "Dziękujemy! 🤙"
+        else:
+            reply = get_reply(text, sender_id=sender_id, channel="instagram_comment")
         await reply_to_comment(comment_id, reply)
-        logger.info("Odpowiedź na komentarz wysłana.")
+        logger.info("Odpowiedź na komentarz wysłana do @%s", sender_name)
     except Exception as e:
         logger.error("Błąd przy obsłudze komentarza: %s", e)
 
