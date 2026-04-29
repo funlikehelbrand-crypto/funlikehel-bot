@@ -596,12 +596,14 @@ async def _handle_comment(value: dict):
 def _verify_signature(body: bytes, signature: str):
     secret = os.environ.get("META_APP_SECRET", "")
     if not secret:
+        logger.info("META_APP_SECRET nie ustawiony — pomijam weryfikację podpisu.")
         return  # pomijamy w trybie dev jeśli secret nie ustawiony
 
     digest = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
     expected = f"sha256={digest}"
 
     if not hmac.compare_digest(expected, signature):
+        logger.warning("Podpis nie pasuje! Otrzymany: %s, Oczekiwany: %s", signature[:30], expected[:30])
         raise HTTPException(status_code=403, detail="Nieprawidłowy podpis.")
 
 
