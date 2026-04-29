@@ -22,6 +22,7 @@ LABEL_PROCESSED = "FUNLIKEHEL_BOT"  # etykieta oznaczająca przetworzone maile
 # ---------------------------------------------------------------------------
 MANAGER_EMAILS = [
     "magdalenabramczyk@gmail.com",
+    "madalenkiabramczyk@gmail.com",
 ]
 
 TASK_PREFIX = "[TASK]"

@@ -64,6 +64,24 @@ def _discover_ig_user_id(token: str) -> tuple[str, str]:
     return "", ""
 
 
+def _discover_ig_user_id_instagram(token: str) -> tuple[str, str]:
+    """Pobiera IG User ID z tokena IGAA (Instagram API, nie Facebook Graph)."""
+    if not token:
+        return "", ""
+    try:
+        r = httpx.get(
+            "https://graph.instagram.com/v21.0/me",
+            params={"access_token": token, "fields": "id,username"},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("id", ""), data.get("username", "")
+    except Exception as e:
+        logger.warning("Instagram API discovery failed: %s", e)
+    return "", ""
+
+
 def _load_accounts() -> dict[str, IGAccount]:
     """Ładuje konta IG z env vars."""
     accounts = {}
@@ -71,21 +89,27 @@ def _load_accounts() -> dict[str, IGAccount]:
     # Konto główne: funlikehel
     main_token = os.environ.get("PAGE_ACCESS_TOKEN", "")
     if main_token:
+        ig_id, username = _discover_ig_user_id(main_token)
+        # Fallback: spróbuj Instagram API jeśli Facebook Graph nie zadziałał
+        if not ig_id:
+            ig_id, username = _discover_ig_user_id_instagram(main_token)
         accounts["funlikehel"] = IGAccount(
             name="funlikehel",
             token=main_token,
-            ig_user_id="17841402381473231",
-            username="funlikehel",
+            ig_user_id=ig_id or "27441134238823713",
+            username=username or "funlikehel",
         )
 
     # Konto surf4hel
     surf_token = os.environ.get("Insta_surf4hel", "")
     if surf_token:
         ig_id, username = _discover_ig_user_id(surf_token)
+        if not ig_id:
+            ig_id, username = _discover_ig_user_id_instagram(surf_token)
         accounts["surf4hel"] = IGAccount(
             name="surf4hel",
             token=surf_token,
-            ig_user_id=ig_id,
+            ig_user_id=ig_id or "35116715114638747",
             username=username or "surf4hel",
         )
         if ig_id:
@@ -99,6 +123,8 @@ def _load_accounts() -> dict[str, IGAccount]:
             acct_name = key.replace("Insta_", "").lower()
             if acct_name not in accounts:
                 ig_id, username = _discover_ig_user_id(val)
+                if not ig_id:
+                    ig_id, username = _discover_ig_user_id_instagram(val)
                 accounts[acct_name] = IGAccount(
                     name=acct_name, token=val,
                     ig_user_id=ig_id, username=username or acct_name,

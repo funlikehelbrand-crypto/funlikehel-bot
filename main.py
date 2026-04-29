@@ -766,6 +766,13 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
     if message.get("is_echo") or not text or not sender_id:
         return
 
+    # Pomijamy wiadomości od naszych własnych kont IG (anti-loop)
+    from instagram import get_all_accounts
+    own_ids = {a.ig_user_id for a in get_all_accounts() if a.ig_user_id}
+    if sender_id in own_ids:
+        logger.info("Pomijam DM od własnego konta IG (sender=%s) na @%s", sender_id, account)
+        return
+
     # Deduplikacja — pomijamy jeśli już widzieliśmy tę wiadomość
     if mid in _seen_messages:
         logger.info("Pomijam duplikat DM: %s", mid[:30])
@@ -798,11 +805,11 @@ async def _handle_comment(value: dict, account: str = "funlikehel"):
     sender_id = from_user.get("id", "")
     sender_name = from_user.get("username", from_user.get("name", "użytkownik"))
 
-    # Pomijamy komentarze od siebie
-    from instagram import get_account as ig_get_account
-    acct = ig_get_account(account)
-    page_id = acct.ig_user_id if acct else os.environ.get("INSTAGRAM_PAGE_ID", "17841402381473231")
-    if sender_id == page_id:
+    # Pomijamy komentarze od naszych własnych kont IG (anti-loop)
+    from instagram import get_all_accounts
+    own_ids = {a.ig_user_id for a in get_all_accounts() if a.ig_user_id}
+    if sender_id in own_ids:
+        logger.info("Pomijam komentarz od własnego konta IG (sender=%s) na @%s", sender_id, account)
         return
 
     if not comment_id or not text:
