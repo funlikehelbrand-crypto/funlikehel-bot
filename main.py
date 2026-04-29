@@ -260,6 +260,17 @@ async def dm_campaign_stats(token: str = ""):
     return stats
 
 
+@app.get("/api/dm-sent-history")
+async def dm_sent_history(token: str = ""):
+    """Pełna historia wysyłek DM — kto, kiedy, z jakiego konta, status."""
+    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
+    if token != admin_token:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    from dm_campaign import _drive_sent_cache
+    return {"count": len(_drive_sent_cache), "history": _drive_sent_cache}
+
+
 @app.get("/api/dm-contacts")
 async def dm_contacts_list(token: str = ""):
     """Lista kontaktów DM z wszystkich kont IG."""

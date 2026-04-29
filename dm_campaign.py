@@ -12,6 +12,7 @@ Konfiguracja (api.env):
 """
 
 import asyncio
+import json
 import logging
 import os
 import sqlite3
@@ -23,6 +24,81 @@ logger = logging.getLogger(__name__)
 
 GRAPH_API_URL = "https://graph.instagram.com/v21.0"
 DB_PATH = os.path.join(os.path.dirname(__file__), "dm_campaign.db")
+
+# ---------------------------------------------------------------------------
+# Google Drive persistent tracking — historia wysyłek przetrwa restart serwera
+# ---------------------------------------------------------------------------
+DRIVE_SENT_FILE = "dm_campaign_sent.json"
+DRIVE_FOLDER_ID = None  # root Drive
+_drive_sent_cache: dict = {}  # {recipient_id: {username, sent_at, account, status}}
+
+
+def _load_sent_from_drive():
+    """Pobiera historię wysyłek z Google Drive (trwała pamięć)."""
+    global _drive_sent_cache
+    try:
+        from google_auth import get_credentials
+        from googleapiclient.discovery import build
+        creds = get_credentials()
+        drive = build("drive", "v3", credentials=creds)
+
+        # Find the file
+        results = drive.files().list(
+            q=f"name='{DRIVE_SENT_FILE}' and trashed=false",
+            spaces="drive", fields="files(id)"
+        ).execute()
+        files = results.get("files", [])
+
+        if files:
+            file_id = files[0]["id"]
+            content = drive.files().get_media(fileId=file_id).execute()
+            _drive_sent_cache = json.loads(content)
+            logger.info("Drive: załadowano %d rekordów wysyłek DM", len(_drive_sent_cache))
+        else:
+            _drive_sent_cache = {}
+            logger.info("Drive: brak pliku historii — nowy start")
+    except Exception as e:
+        logger.warning("Drive load failed (kontynuuję z SQLite): %s", e)
+        _drive_sent_cache = {}
+
+
+def _save_sent_to_drive():
+    """Zapisuje historię wysyłek na Google Drive."""
+    try:
+        from google_auth import get_credentials
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaInMemoryUpload
+        creds = get_credentials()
+        drive = build("drive", "v3", credentials=creds)
+
+        content = json.dumps(_drive_sent_cache, ensure_ascii=False, indent=2)
+        media = MediaInMemoryUpload(content.encode("utf-8"), mimetype="application/json")
+
+        # Find existing file
+        results = drive.files().list(
+            q=f"name='{DRIVE_SENT_FILE}' and trashed=false",
+            spaces="drive", fields="files(id)"
+        ).execute()
+        files = results.get("files", [])
+
+        if files:
+            drive.files().update(fileId=files[0]["id"], media_body=media).execute()
+        else:
+            drive.files().create(
+                body={"name": DRIVE_SENT_FILE, "mimeType": "application/json"},
+                media_body=media
+            ).execute()
+
+        logger.info("Drive: zapisano %d rekordów wysyłek DM", len(_drive_sent_cache))
+    except Exception as e:
+        logger.warning("Drive save failed: %s", e)
+
+
+# Załaduj na starcie
+try:
+    _load_sent_from_drive()
+except Exception:
+    pass
 
 DEFAULT_MESSAGE = """Hej! 👋
 
@@ -65,6 +141,11 @@ _init_db()
 
 
 def _is_already_sent(recipient_id: str) -> bool:
+    """Sprawdza czy już wysłano — Drive (trwały) + SQLite (szybki)."""
+    # Check 1: Drive cache (trwały, przetrwa restart)
+    if recipient_id in _drive_sent_cache:
+        return True
+    # Check 2: SQLite (szybki, ale ginie po restarcie)
     conn = sqlite3.connect(DB_PATH)
     row = conn.execute(
         "SELECT 1 FROM dm_sent WHERE recipient_id = ?", (recipient_id,)
@@ -73,14 +154,27 @@ def _is_already_sent(recipient_id: str) -> bool:
     return row is not None
 
 
-def _mark_sent(recipient_id: str, username: str, status: str = "sent"):
+def _mark_sent(recipient_id: str, username: str, status: str = "sent", account: str = ""):
+    """Zapisuje wysyłkę — w SQLite + Drive (podwójna trwałość)."""
+    now = datetime.utcnow().isoformat()
+
+    # SQLite (szybki lokalny cache)
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
         "INSERT OR REPLACE INTO dm_sent (recipient_id, username, status, sent_at) VALUES (?, ?, ?, ?)",
-        (recipient_id, username, status, datetime.utcnow().isoformat()),
+        (recipient_id, username, status, now),
     )
     conn.commit()
     conn.close()
+
+    # Drive (trwały — przetrwa restart)
+    _drive_sent_cache[recipient_id] = {
+        "username": username,
+        "status": status,
+        "sent_at": now,
+        "account": account,
+    }
+    _save_sent_to_drive()
 
 
 def _log_run(total: int, sent: int, skipped: int, failed: int):
@@ -281,12 +375,12 @@ async def run_dm_campaign(dry_run: bool = False, account: str = "") -> dict:
 
         try:
             await send_campaign_dm(uid, message, account_name=acct_name)
-            _mark_sent(uid, username, "sent")
+            _mark_sent(uid, username, "sent", account=acct_name)
             sent += 1
             per_account[acct_name]["sent"] += 1
             logger.info("[DM Campaign] %d/%d OK @%s via @%s", i + 1, total, username, acct_name)
         except Exception as e:
-            _mark_sent(uid, username, "failed")
+            _mark_sent(uid, username, "failed", account=acct_name)
             failed += 1
             per_account[acct_name]["failed"] += 1
             logger.error("[DM Campaign] %d/%d FAIL @%s via @%s: %s", i + 1, total, username, acct_name, str(e)[:100])
