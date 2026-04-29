@@ -530,10 +530,10 @@ async def receive_event(request: Request):
         for messaging in entry.get("messaging", []):
             await _handle_dm(messaging)
 
-        # --- Komentarze pod postami ---
-        for change in entry.get("changes", []):
-            if change.get("field") == "comments":
-                await _handle_comment(change["value"])
+        # --- Komentarze pod postami --- WYŁĄCZONE
+        # for change in entry.get("changes", []):
+        #     if change.get("field") == "comments":
+        #         await _handle_comment(change["value"])
 
     return Response(status_code=200)
 
