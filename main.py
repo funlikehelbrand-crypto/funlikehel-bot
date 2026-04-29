@@ -204,10 +204,11 @@ async def ekipa_list(token: str = ""):
 
 class DMCampaignRequest(BaseModel):
     dry_run: bool = False
+    account: str = ""
 
 @app.post("/api/dm-campaign/run")
 async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
-    """Ręczne uruchomienie kampanii DM. Wymaga tokenu."""
+    """Ręczne uruchomienie kampanii DM. Wymaga tokenu. account=surf4hel filtruje konto."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         raise HTTPException(status_code=403, detail="Brak dostępu")
@@ -215,7 +216,7 @@ async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
     if not HAS_ALL_MODULES:
         raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
 
-    result = await run_dm_campaign(dry_run=req.dry_run)
+    result = await run_dm_campaign(dry_run=req.dry_run, account=req.account)
     return {"status": "ok", **result}
 
 
@@ -230,6 +231,21 @@ async def dm_campaign_stats(token: str = ""):
         raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
 
     return get_campaign_stats()
+
+
+@app.get("/api/dm-contacts")
+async def dm_contacts_list(token: str = ""):
+    """Lista kontaktów DM z wszystkich kont IG."""
+    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
+    if token != admin_token:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły niedostępne")
+
+    from dm_campaign import get_all_dm_contacts
+    contacts = get_all_dm_contacts()
+    return {"count": len(contacts), "contacts": contacts}
 
 
 # ---------------------------------------------------------------------------

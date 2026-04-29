@@ -237,12 +237,13 @@ async def send_campaign_dm(recipient_id: str, text: str, account_name: str = "fu
 # Główna logika kampanii
 # ---------------------------------------------------------------------------
 
-async def run_dm_campaign(dry_run: bool = False) -> dict:
+async def run_dm_campaign(dry_run: bool = False, account: str = "") -> dict:
     """
-    Wysyła zaproszenie /ekipa do osób z DM ze wszystkich kont IG.
+    Wysyła zaproszenie /ekipa do osób z DM.
 
     Args:
         dry_run: True = tylko policz, nie wysyłaj (do testów)
+        account: filtr konta ("surf4hel", "funlikehel") — pusty = wszystkie
 
     Returns:
         dict ze statystykami: total, sent, skipped, failed, per_account
@@ -251,6 +252,8 @@ async def run_dm_campaign(dry_run: bool = False) -> dict:
     delay = int(os.environ.get("DM_CAMPAIGN_DELAY", "120"))
 
     contacts = get_all_dm_contacts()
+    if account:
+        contacts = [c for c in contacts if c.get("account") == account]
     total = len(contacts)
     sent = 0
     skipped = 0
