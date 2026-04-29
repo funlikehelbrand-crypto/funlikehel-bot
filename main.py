@@ -32,6 +32,7 @@ try:
     from google_contacts import get_contacts_with_phones
     from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     from facebook_groups import process_facebook_groups
+    from dm_campaign import run_dm_campaign, get_campaign_stats
     HAS_ALL_MODULES = True
 except Exception as e:
     logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
@@ -194,6 +195,75 @@ async def ekipa_list(token: str = ""):
 
 
 # ---------------------------------------------------------------------------
+# DM Campaign — kampania zaproszeniowa przez Instagram DM
+# ---------------------------------------------------------------------------
+
+class DMCampaignRequest(BaseModel):
+    dry_run: bool = False
+
+@app.post("/api/dm-campaign/run")
+async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
+    """Ręczne uruchomienie kampanii DM. Wymaga tokenu."""
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
+
+    result = await run_dm_campaign(dry_run=req.dry_run)
+    return {"status": "ok", **result}
+
+
+@app.get("/api/dm-campaign/stats")
+async def dm_campaign_stats(token: str = ""):
+    """Statystyki kampanii DM — ile wysłano, ostatni run, ostatnie 10."""
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
+
+    return get_campaign_stats()
+
+
+# ---------------------------------------------------------------------------
+# Push Notifications — wysylka przez Expo Push API
+# ---------------------------------------------------------------------------
+
+class PushSendRequest(BaseModel):
+    token: str
+    title: str
+    body: str
+    data: dict | None = None
+    api_key: str
+
+@app.post("/push/send")
+async def push_send(req: PushSendRequest):
+    """
+    Wysyla push notification do urzadzenia klienta przez Expo Push API.
+    Wymaga api_key (FLH_API_KEY z api.env).
+    """
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import send_push
+    success = await send_push(
+        token=req.token,
+        title=req.title,
+        body=req.body,
+        data=req.data,
+    )
+
+    if not success:
+        raise HTTPException(status_code=502, detail="Nie udalo sie wyslac powiadomienia")
+
+    return {"status": "sent"}
+
+
+# ---------------------------------------------------------------------------
 # Cykliczne sprawdzanie Gmaila (co 5 minut)
 # ---------------------------------------------------------------------------
 
@@ -264,7 +334,7 @@ async def google_business_loop():
 
 
 async def facebook_groups_loop():
-    """Przeglądanie grup Facebook — co 30 minut."""
+    """Przeglądanie grup Facebook — co 2 godziny."""
     await asyncio.sleep(240)  # opóźnienie startu
     while True:
         try:
@@ -273,6 +343,23 @@ async def facebook_groups_loop():
         except Exception as e:
             logger.error("Błąd Facebook Groups polling: %s", e)
         await asyncio.sleep(7200)  # 2 godziny
+
+
+async def dm_campaign_loop():
+    """Kampania DM /ekipa — raz dziennie o 10:00 (jeśli włączona)."""
+    await asyncio.sleep(600)  # opóźnienie startu 10 min
+    while True:
+        enabled = os.environ.get("DM_CAMPAIGN_ENABLED", "0") == "1"
+        if enabled:
+            try:
+                logger.info("Uruchamiam kampanię DM /ekipa...")
+                result = await run_dm_campaign()
+                logger.info("Kampania DM zakończona: %s", result)
+            except Exception as e:
+                logger.error("Błąd kampanii DM: %s", e)
+        else:
+            logger.info("Kampania DM wyłączona (DM_CAMPAIGN_ENABLED != 1).")
+        await asyncio.sleep(86400)  # 24 godziny
 
 
 @app.on_event("startup")
@@ -285,6 +372,7 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
+        asyncio.create_task(dm_campaign_loop())
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
 
@@ -681,96 +769,120 @@ def _verify_signature(body: bytes, signature: str):
 # USUŃ po zakończeniu operacji
 # ---------------------------------------------------------------------------
 
+_wp_install_log: list = []  # simple in-memory log for background task result
+
+
+async def _do_wp_install(wp_url: str, wp_user: str, wp_pass: str, zip_url: str, wp_app_password: str) -> None:
+    """Background task: install + activate WP plugin from ZIP via admin form."""
+    import httpx, re, base64, traceback
+    global _wp_install_log
+    log: list = []
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30) as client:
+            # Step 1: login
+            r = await client.post(f"{wp_url}/wp-login.php", data={
+                "log": wp_user, "pwd": wp_pass,
+                "wp-submit": "Log In", "testcookie": "1", "redirect_to": "/wp-admin/",
+            }, headers={"Cookie": "wordpress_test_cookie=WP+Cookie+check"})
+            cookies = dict(client.cookies)
+            logged_in = any("logged_in" in k for k in cookies)
+            log.append(f"Login: {logged_in}, status={r.status_code}")
+            if not logged_in:
+                m = re.search(r'<div id="login_error"[^>]*>(.*?)</div>', r.text, re.DOTALL)
+                log.append("Login error: " + (re.sub('<[^>]+>', '', m.group(1)).strip() if m else 'unknown'))
+                _wp_install_log = log
+                return
+
+        # Step 2: nonce (new client to reuse cookies)
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30, cookies=cookies) as client2:
+            r2 = await client2.get(f"{wp_url}/wp-admin/plugin-install.php?tab=upload")
+            nm = re.search(r'name="_wpnonce" value="([a-f0-9]+)"', r2.text)
+            if not nm:
+                log.append(f"Nonce not found, status={r2.status_code}, body={r2.text[:300]}")
+                _wp_install_log = log
+                return
+            nonce = nm.group(1)
+            log.append(f"Nonce: {nonce}")
+
+            # Step 3: download ZIP
+            zip_resp = await client2.get(zip_url)
+            if zip_resp.status_code != 200:
+                log.append(f"ZIP download failed: {zip_resp.status_code}")
+                _wp_install_log = log
+                return
+            log.append(f"ZIP: {len(zip_resp.content)} bytes")
+
+            # Step 4: upload
+            fname = zip_url.split("/")[-1]
+            r3 = await client2.post(
+                f"{wp_url}/wp-admin/update.php?action=upload-plugin",
+                files={"pluginzip": (fname, zip_resp.content, "application/zip")},
+                data={"_wpnonce": nonce, "install-plugin-submit": "Zainstaluj"},
+            )
+            t = r3.text.lower()
+            log.append(f"Upload status={r3.status_code}")
+            if any(x in t for x in ["successfully", "zainstalowana", "installed", "pomyslnie", "already", "istnieje", "replace"]):
+                log.append("Install OK (or already exists)")
+            else:
+                log.append(f"Upload response fragment: {r3.text[500:1500]}")
+                _wp_install_log = log
+                return
+
+            # Step 5: activate via REST
+            if wp_app_password:
+                auth = base64.b64encode(f"{wp_user}:{wp_app_password}".encode()).decode()
+                r4 = await client2.put(
+                    f"{wp_url}/?rest_route=/wp/v2/plugins/funlikehel-booking-v2%2Ffunlikehel-booking-v2",
+                    headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
+                    content=b'{"status":"active"}',
+                )
+                log.append(f"Activate: {r4.status_code} {r4.text[:200]}")
+            else:
+                log.append("Skipping activation: no wp_app_password")
+
+        log.append("DONE")
+    except Exception as exc:
+        log.append(f"EXCEPTION: {exc}")
+        log.append(traceback.format_exc())
+    _wp_install_log = log
+
+
 @app.post("/admin/wp-install-plugin")
 async def wp_install_plugin(request: Request):
     """Instaluje plugin WP z ZIP URL — uruchamiany z IP Render (omija LLA lockout)."""
-    import httpx, re, base64
+    import asyncio
 
-    body = await request.json()
-    token = body.get("token", "")
+    try:
+        req_body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    token = req_body.get("token", "")
     admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
     if token != admin_token:
         raise HTTPException(status_code=403, detail="Brak dostępu")
 
-    wp_url = body.get("wp_url", "https://funlikehel.pl")
-    wp_user = body.get("wp_user", "Admin")
-    wp_pass = body.get("wp_pass", "")
-    zip_url = body.get("zip_url", "")
+    wp_url = req_body.get("wp_url", "https://funlikehel.pl")
+    wp_user = req_body.get("wp_user", "Admin")
+    wp_pass = req_body.get("wp_pass", "")
+    zip_url = req_body.get("zip_url", "")
+    wp_app_password = req_body.get("wp_app_password", "") or os.environ.get("WP_APP_PASSWORD", "")
 
     if not wp_pass or not zip_url:
         raise HTTPException(status_code=400, detail="Wymagane: wp_pass, zip_url")
 
-    log = []
+    # Run as background task — returns immediately, check /admin/wp-install-log
+    asyncio.create_task(_do_wp_install(wp_url, wp_user, wp_pass, zip_url, wp_app_password))
+    return {"ok": True, "message": "Install started in background. Check /admin/wp-install-log in 30-60s."}
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
-        # Krok 1: Login
-        r = await client.post(f"{wp_url}/wp-login.php", data={
-            "log": wp_user,
-            "pwd": wp_pass,
-            "wp-submit": "Log In",
-            "testcookie": "1",
-            "redirect_to": "/wp-admin/",
-        }, headers={"Cookie": "wordpress_test_cookie=WP+Cookie+check"})
 
-        cookies = {k: v for k, v in client.cookies.items()}
-        logged_in = any("logged_in" in k for k in cookies)
-        log.append(f"Login: {logged_in}, status={r.status_code}, url={r.url}")
-
-        if not logged_in:
-            error = re.search(r'<div id="login_error"[^>]*>(.*?)</div>', r.text, re.DOTALL)
-            error_text = re.sub('<[^>]+>', '', error.group(1)).strip() if error else 'Unknown error'
-            return {"ok": False, "log": log, "error": error_text}
-
-        # Krok 2: Pobierz nonce
-        r2 = await client.get(f"{wp_url}/wp-admin/plugin-install.php?tab=upload")
-        nonce_match = re.search(r'name="_wpnonce" value="([a-f0-9]+)"', r2.text)
-        if not nonce_match:
-            log.append(f"Nonce not found, status={r2.status_code}")
-            return {"ok": False, "log": log, "error": "No nonce found"}
-        nonce = nonce_match.group(1)
-        log.append(f"Nonce: {nonce}")
-
-        # Krok 3: Pobierz ZIP i wgraj
-        zip_resp = await client.get(zip_url)
-        if zip_resp.status_code != 200:
-            return {"ok": False, "log": log, "error": f"ZIP download failed: {zip_resp.status_code}"}
-        log.append(f"ZIP downloaded: {len(zip_resp.content)} bytes")
-
-        zip_filename = zip_url.split("/")[-1]
-        r3 = await client.post(
-            f"{wp_url}/wp-admin/update.php?action=upload-plugin",
-            files={"pluginzip": (zip_filename, zip_resp.content, "application/zip")},
-            data={"_wpnonce": nonce, "install-plugin-submit": "Zainstaluj"},
-        )
-
-        body_lower = r3.text.lower()
-        if any(x in body_lower for x in ["successfully", "zainstalowana", "installed", "pomyslnie"]):
-            log.append("Plugin INSTALLED!")
-            install_ok = True
-        elif any(x in body_lower for x in ["already", "istnieje", "jest juz"]):
-            log.append("Plugin already exists (updated)")
-            install_ok = True
-        else:
-            msgs = re.findall(r'<p[^>]*>([^<]{5,})</p>', r3.text)
-            log.extend(msgs[:5])
-            install_ok = False
-
-        if not install_ok:
-            return {"ok": False, "log": log, "error": "Install failed", "body_fragment": r3.text[1000:2000]}
-
-        # Krok 4: Aktywuj przez REST API
-        wp_app_password = os.environ.get("WP_APP_PASSWORD", "")
-        if not wp_app_password:
-            return {"ok": False, "log": log, "error": "WP_APP_PASSWORD nie skonfigurowane w .env"}
-        auth = base64.b64encode(f"{wp_user}:{wp_app_password}".encode()).decode()
-        r4 = await client.put(
-            f"{wp_url}/?rest_route=/wp/v2/plugins/funlikehel-booking-v2%2Ffunlikehel-booking-v2",
-            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
-            content=b'{"status":"active"}',
-        )
-        log.append(f"Activate: {r4.status_code} {r4.text[:100]}")
-
-    return {"ok": True, "log": log}
+@app.get("/admin/wp-install-log")
+async def wp_install_log(token: str = ""):
+    """Wynik ostatniej instalacji pluginu WP."""
+    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
+    if token != admin_token:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+    return {"log": _wp_install_log}
 
 
 # ---------------------------------------------------------------------------
