@@ -5,6 +5,8 @@ import logging
 import os
 from datetime import datetime
 
+import httpx
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import PlainTextResponse, HTMLResponse
@@ -719,7 +721,7 @@ async def verify_webhook(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Odbiór zdarzeń z Instagrama
+# Odbiór zdarzeń z Instagrama i Facebook Messenger
 # ---------------------------------------------------------------------------
 
 @app.post("/webhook")
@@ -730,24 +732,77 @@ async def receive_event(request: Request):
     _verify_signature(body, signature)
 
     payload = await request.json()
-    logger.info("Zdarzenie: %s", payload)
+    obj = payload.get("object", "")
+    logger.info("Zdarzenie [%s]: %s", obj, payload)
 
     for entry in payload.get("entry", []):
-        # Ustal które konto IG odebrało zdarzenie
-        entry_ig_id = entry.get("id", "")
-        acct = find_account_by_ig_id(entry_ig_id) if HAS_ALL_MODULES else None
-        acct_name = acct.name if acct else "funlikehel"
+        if obj == "page":
+            # --- Facebook Messenger ---
+            for messaging in entry.get("messaging", []):
+                await _handle_messenger(messaging)
+        else:
+            # --- Instagram DM + komentarze ---
+            entry_ig_id = entry.get("id", "")
+            acct = find_account_by_ig_id(entry_ig_id) if HAS_ALL_MODULES else None
+            acct_name = acct.name if acct else "funlikehel"
 
-        # --- Wiadomości DM ---
-        for messaging in entry.get("messaging", []):
-            await _handle_dm(messaging, account=acct_name)
+            for messaging in entry.get("messaging", []):
+                await _handle_dm(messaging, account=acct_name)
 
-        # --- Komentarze pod postami (z filtrem) ---
-        for change in entry.get("changes", []):
-            if change.get("field") == "comments":
-                await _handle_comment(change["value"], account=acct_name)
+            for change in entry.get("changes", []):
+                if change.get("field") == "comments":
+                    await _handle_comment(change["value"], account=acct_name)
 
     return Response(status_code=200)
+
+
+# ---------------------------------------------------------------------------
+# Facebook Messenger — obsługa wiadomości
+# ---------------------------------------------------------------------------
+
+async def _handle_messenger(messaging: dict):
+    """Obsługa wiadomości z Facebook Messenger."""
+    sender_id = messaging.get("sender", {}).get("id")
+    message = messaging.get("message", {})
+    text = message.get("text")
+    mid = message.get("mid", "")
+
+    if message.get("is_echo") or not text or not sender_id:
+        return
+
+    # Deduplikacja
+    if mid in _seen_messages:
+        return
+    _seen_messages.add(mid)
+    if len(_seen_messages) > 500:
+        _seen_messages.clear()
+
+    # Pomijamy wiadomości od naszych stron FB (anti-loop)
+    page_id = os.environ.get("FB_PAGE_ID", "")
+    if sender_id == page_id:
+        return
+
+    logger.info("Messenger od %s: %s", sender_id, text)
+
+    try:
+        reply_text = get_reply(text, sender_id=sender_id, channel="messenger")
+
+        # Wyślij odpowiedź przez Messenger API
+        token = os.environ.get("Fb_token", "") or os.environ.get("PAGE_ACCESS_TOKEN", "")
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                "https://graph.facebook.com/v21.0/me/messages",
+                params={"access_token": token},
+                json={
+                    "recipient": {"id": sender_id},
+                    "message": {"text": reply_text},
+                },
+            )
+            r.raise_for_status()
+
+        logger.info("Messenger odpowiedź wysłana do %s", sender_id)
+    except Exception as e:
+        logger.error("Błąd Messenger: %s", e)
 
 
 # ---------------------------------------------------------------------------
