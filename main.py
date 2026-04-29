@@ -539,17 +539,29 @@ async def receive_event(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Obsługa wiadomości DM
+# Obsługa wiadomości DM (z deduplikacją)
 # ---------------------------------------------------------------------------
+
+_seen_messages: set = set()  # przechowuje ostatnie message IDs żeby nie odpowiadać podwójnie
 
 async def _handle_dm(messaging: dict):
     sender_id = messaging.get("sender", {}).get("id")
     message = messaging.get("message", {})
     text = message.get("text")
+    mid = message.get("mid", "")
 
     # Pomijamy echa (wiadomości wysłane przez bota)
     if message.get("is_echo") or not text or not sender_id:
         return
+
+    # Deduplikacja — pomijamy jeśli już widzieliśmy tę wiadomość
+    if mid in _seen_messages:
+        logger.info("Pomijam duplikat DM: %s", mid[:30])
+        return
+    _seen_messages.add(mid)
+    # Czyścimy stare wpisy żeby nie rosło w nieskończoność
+    if len(_seen_messages) > 500:
+        _seen_messages.clear()
 
     logger.info("DM od %s: %s", sender_id, text)
 
