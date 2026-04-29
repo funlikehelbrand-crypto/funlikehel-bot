@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import logging
 import os
+from datetime import datetime
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -206,9 +207,25 @@ class DMCampaignRequest(BaseModel):
     dry_run: bool = False
     account: str = ""
 
+_dm_campaign_status: dict = {"running": False, "last_result": None}
+
+async def _run_dm_campaign_bg(dry_run: bool, account: str):
+    """Background task — wysyła kampanię DM i zapisuje wynik."""
+    _dm_campaign_status["running"] = True
+    _dm_campaign_status["started_at"] = datetime.utcnow().isoformat()
+    try:
+        result = await run_dm_campaign(dry_run=dry_run, account=account)
+        _dm_campaign_status["last_result"] = result
+    except Exception as e:
+        _dm_campaign_status["last_result"] = {"error": str(e)}
+        logger.error("DM Campaign background error: %s", e)
+    finally:
+        _dm_campaign_status["running"] = False
+        _dm_campaign_status["finished_at"] = datetime.utcnow().isoformat()
+
 @app.post("/api/dm-campaign/run")
 async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
-    """Ręczne uruchomienie kampanii DM. Wymaga tokenu. account=surf4hel filtruje konto."""
+    """Odpala kampanię DM w tle. Zwraca od razu. Sprawdź /stats po statusie."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         raise HTTPException(status_code=403, detail="Brak dostępu")
@@ -216,13 +233,16 @@ async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
     if not HAS_ALL_MODULES:
         raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
 
-    result = await run_dm_campaign(dry_run=req.dry_run, account=req.account)
-    return {"status": "ok", **result}
+    if _dm_campaign_status["running"]:
+        return {"status": "already_running", "started_at": _dm_campaign_status.get("started_at")}
+
+    asyncio.create_task(_run_dm_campaign_bg(req.dry_run, req.account))
+    return {"status": "started", "dry_run": req.dry_run, "account": req.account or "all"}
 
 
 @app.get("/api/dm-campaign/stats")
 async def dm_campaign_stats(token: str = ""):
-    """Statystyki kampanii DM — ile wysłano, ostatni run, ostatnie 10."""
+    """Statystyki kampanii DM — ile wysłano, ostatni run, status bieżący."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         raise HTTPException(status_code=403, detail="Brak dostępu")
@@ -230,7 +250,12 @@ async def dm_campaign_stats(token: str = ""):
     if not HAS_ALL_MODULES:
         raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
 
-    return get_campaign_stats()
+    stats = get_campaign_stats()
+    stats["currently_running"] = _dm_campaign_status["running"]
+    stats["last_bg_result"] = _dm_campaign_status.get("last_result")
+    stats["started_at"] = _dm_campaign_status.get("started_at")
+    stats["finished_at"] = _dm_campaign_status.get("finished_at")
+    return stats
 
 
 @app.get("/api/dm-contacts")
