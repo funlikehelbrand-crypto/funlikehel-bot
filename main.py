@@ -273,6 +273,76 @@ async def dm_contacts_list(token: str = ""):
     return {"count": len(contacts), "contacts": contacts}
 
 
+@app.get("/api/dm-history")
+async def dm_history(token: str = "", limit: int = 50):
+    """Pobiera historię wiadomości DM z obu kont IG (ostatnie rozmowy)."""
+    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
+    if token != admin_token:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły niedostępne")
+
+    from instagram import get_all_accounts
+    import httpx
+
+    GRAPH = "https://graph.facebook.com/v21.0"
+    all_conversations = []
+
+    for acct in get_all_accounts():
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                # Pobierz konwersacje
+                r = await client.get(
+                    f"{GRAPH}/me/conversations",
+                    params={
+                        "access_token": acct.token,
+                        "platform": "instagram",
+                        "fields": "participants,updated_time",
+                        "limit": limit,
+                    },
+                )
+                if r.status_code != 200:
+                    continue
+
+                convs = r.json().get("data", [])
+
+                for conv in convs[:limit]:
+                    conv_id = conv["id"]
+                    participants = [p.get("username", p.get("name", p.get("id")))
+                                    for p in conv.get("participants", {}).get("data", [])]
+
+                    # Pobierz wiadomości z konwersacji
+                    r2 = await client.get(
+                        f"{GRAPH}/{conv_id}/messages",
+                        params={
+                            "access_token": acct.token,
+                            "fields": "message,from,created_time",
+                            "limit": 20,
+                        },
+                    )
+                    messages = []
+                    if r2.status_code == 200:
+                        for msg in r2.json().get("data", []):
+                            messages.append({
+                                "from": msg.get("from", {}).get("username", msg.get("from", {}).get("name", "?")),
+                                "text": msg.get("message", ""),
+                                "time": msg.get("created_time", ""),
+                            })
+
+                    all_conversations.append({
+                        "account": acct.name,
+                        "participants": participants,
+                        "updated": conv.get("updated_time", ""),
+                        "messages": messages,
+                    })
+
+        except Exception as e:
+            all_conversations.append({"account": acct.name, "error": str(e)})
+
+    return {"total_conversations": len(all_conversations), "conversations": all_conversations}
+
+
 # ---------------------------------------------------------------------------
 # Push Notifications — wysylka przez Expo Push API
 # ---------------------------------------------------------------------------
