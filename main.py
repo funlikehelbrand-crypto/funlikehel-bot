@@ -483,8 +483,21 @@ async def dm_campaign_loop():
         await asyncio.sleep(86400)  # 24 godziny
 
 
+async def keep_alive_loop():
+    """Self-ping co 10 min żeby Render free tier nie usypiał serwera."""
+    while True:
+        await asyncio.sleep(600)  # 10 min
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.get("https://funlikehel-bot.onrender.com/api/health", timeout=10)
+            logger.debug("Keep-alive ping OK")
+        except Exception:
+            pass
+
+
 @app.on_event("startup")
 async def startup_event():
+    asyncio.create_task(keep_alive_loop())
     if HAS_ALL_MODULES:
         asyncio.create_task(gmail_polling_loop())
         asyncio.create_task(youtube_polling_loop())
@@ -770,12 +783,10 @@ async def _handle_messenger(messaging: dict):
     if message.get("is_echo") or not text or not sender_id:
         return
 
-    # Deduplikacja
-    if mid in _seen_messages:
+    # Deduplikacja (SQLite)
+    if _is_seen(mid):
         return
-    _seen_messages.add(mid)
-    if len(_seen_messages) > 500:
-        _seen_messages.clear()
+    _mark_seen(mid, "messenger")
 
     # Pomijamy wiadomości od naszych stron FB (anti-loop)
     page_id = os.environ.get("FB_PAGE_ID", "")
@@ -806,10 +817,58 @@ async def _handle_messenger(messaging: dict):
 
 
 # ---------------------------------------------------------------------------
-# Obsługa wiadomości DM (z deduplikacją)
+# Deduplikacja — SQLite (przetrwa restarty serwera)
 # ---------------------------------------------------------------------------
 
-_seen_messages: set = set()  # przechowuje ostatnie message IDs żeby nie odpowiadać podwójnie
+import sqlite3
+
+_DEDUP_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "memory.db")
+
+
+def _init_dedup_table():
+    conn = sqlite3.connect(_DEDUP_DB)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS seen_messages (
+            mid TEXT PRIMARY KEY,
+            channel TEXT,
+            ts DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    # Czyść wpisy starsze niż 7 dni
+    conn.execute("DELETE FROM seen_messages WHERE ts < datetime('now', '-7 days')")
+    conn.commit()
+    conn.close()
+
+
+def _is_seen(mid: str) -> bool:
+    """Sprawdza czy wiadomość już była przetworzona."""
+    if not mid:
+        return False
+    conn = sqlite3.connect(_DEDUP_DB)
+    row = conn.execute("SELECT 1 FROM seen_messages WHERE mid = ?", (mid,)).fetchone()
+    conn.close()
+    return row is not None
+
+
+def _mark_seen(mid: str, channel: str = ""):
+    """Oznacza wiadomość jako przetworzoną."""
+    if not mid:
+        return
+    conn = sqlite3.connect(_DEDUP_DB)
+    conn.execute(
+        "INSERT OR IGNORE INTO seen_messages (mid, channel) VALUES (?, ?)",
+        (mid, channel),
+    )
+    conn.commit()
+    conn.close()
+
+
+_init_dedup_table()
+
+
+# ---------------------------------------------------------------------------
+# Obsługa wiadomości DM
+# ---------------------------------------------------------------------------
 
 async def _handle_dm(messaging: dict, account: str = "funlikehel"):
     sender_id = messaging.get("sender", {}).get("id")
@@ -828,14 +887,11 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
         logger.info("Pomijam DM od własnego konta IG (sender=%s) na @%s", sender_id, account)
         return
 
-    # Deduplikacja — pomijamy jeśli już widzieliśmy tę wiadomość
-    if mid in _seen_messages:
+    # Deduplikacja (SQLite — przetrwa restart)
+    if _is_seen(mid):
         logger.info("Pomijam duplikat DM: %s", mid[:30])
         return
-    _seen_messages.add(mid)
-    # Czyścimy stare wpisy żeby nie rosło w nieskończoność
-    if len(_seen_messages) > 500:
-        _seen_messages.clear()
+    _mark_seen(mid, f"ig_dm_{account}")
 
     logger.info("DM od %s na @%s: %s", sender_id, account, text)
 
@@ -851,7 +907,6 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
 # Obsługa komentarzy
 # ---------------------------------------------------------------------------
 
-_seen_comments: set = set()  # deduplikacja komentarzy
 
 async def _handle_comment(value: dict, account: str = "funlikehel"):
     comment_id = value.get("id")
@@ -871,11 +926,9 @@ async def _handle_comment(value: dict, account: str = "funlikehel"):
         return
 
     # Deduplikacja
-    if comment_id in _seen_comments:
+    if _is_seen(comment_id):
         return
-    _seen_comments.add(comment_id)
-    if len(_seen_comments) > 500:
-        _seen_comments.clear()
+    _mark_seen(comment_id, f"ig_comment_{account}")
 
     # --- FILTR: kiedy odpowiadać ---
     should_reply = False

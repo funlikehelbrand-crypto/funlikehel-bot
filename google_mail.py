@@ -27,6 +27,15 @@ MANAGER_EMAILS = [
 
 TASK_PREFIX = "[TASK]"
 
+# ---------------------------------------------------------------------------
+# Właściciel — maile z [CLAUDE] w temacie traktowane jako polecenia
+# ---------------------------------------------------------------------------
+OWNER_EMAILS = [
+    "lukaszmichalina@gmail.com",
+]
+
+OWNER_PREFIX = "[CLAUDE]"
+
 
 def get_gmail_service():
     return build("gmail", "v1", credentials=get_credentials())
@@ -259,12 +268,53 @@ def _handle_manager_task(details: dict):
     logger.info("TASK wykonany dla menadżerki: %s | %s", sender_email, task_title)
 
 
+def _is_owner_command(sender: str, subject: str) -> bool:
+    """Sprawdza czy mail jest poleceniem od właściciela ([CLAUDE] w temacie)."""
+    sender_email = _extract_email(sender).lower()
+    return (
+        sender_email in OWNER_EMAILS
+        and OWNER_PREFIX in subject.upper()
+    )
+
+
+def _handle_owner_command(details: dict):
+    """
+    Obsługuje polecenie od właściciela — pełny dostęp, priorytet najwyższy.
+    """
+    subject = details["subject"]
+    body = details["body"]
+    sender_email = _extract_email(details["sender"])
+
+    task_title = re.sub(r'(?i)\[CLAUDE\]\s*', '', subject).strip()
+
+    prompt = (
+        f"POLECENIE OD WŁAŚCICIELA szkoły FUN like HEL (Łukasz Michalina).\n"
+        f"To NIE jest zapytanie klienta — to bezpośrednie polecenie do wykonania.\n"
+        f"Masz najwyższy priorytet. Wykonaj dokładnie co jest napisane.\n\n"
+        f"Polecenie: {task_title}\n"
+        f"Szczegóły:\n{body}\n\n"
+        f"Wykonaj i opisz wynik. Po polsku, konkretnie."
+    )
+
+    reply_text = get_reply(prompt, sender_id=sender_email, channel="owner_command")
+
+    send_reply(
+        thread_id=details["thread_id"],
+        to=details["sender"],
+        subject=details["subject"],
+        body=reply_text,
+        in_reply_to=details["message_id"],
+        references=details["references"],
+    )
+    logger.info("CLAUDE polecenie od właściciela: %s | %s", sender_email, task_title)
+
+
 def process_unread_emails():
     """
     Główna funkcja — pobiera nieprzeczytane maile,
     generuje odpowiedzi przez Claude i odsyła je.
     Ignoruje bounce'y, newslettery i spam.
-    Maile od menadżerek z [TASK] traktuje jako polecenia wewnętrzne.
+    Maile od właściciela z [CLAUDE] i menadżerek z [TASK] — jako polecenia.
     """
     messages = get_unread_messages()
     if not messages:
@@ -274,6 +324,13 @@ def process_unread_emails():
     for msg_ref in messages:
         try:
             details = get_message_details(msg_ref["id"])
+
+            # Właściciel z [CLAUDE] — najwyższy priorytet
+            if _is_owner_command(details["sender"], details["subject"]):
+                logger.info("CLAUDE od właściciela: %s | %s", details["sender"], details["subject"])
+                _handle_owner_command(details)
+                mark_as_read(details["id"])
+                continue
 
             # Menadżerka z [TASK] — obsłuż jako polecenie wewnętrzne
             if _is_manager_task(details["sender"], details["subject"]):
