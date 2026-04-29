@@ -286,13 +286,13 @@ async def dm_history(token: str = "", limit: int = 50):
     from instagram import get_all_accounts
     import httpx
 
-    GRAPH = "https://graph.facebook.com/v21.0"
+    GRAPH = "https://graph.instagram.com/v21.0"
     all_conversations = []
 
     for acct in get_all_accounts():
         try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                # Pobierz konwersacje
+            async with httpx.AsyncClient(timeout=60) as client:
+                # Pobierz konwersacje (Instagram Graph API)
                 r = await client.get(
                     f"{GRAPH}/me/conversations",
                     params={
@@ -303,6 +303,10 @@ async def dm_history(token: str = "", limit: int = 50):
                     },
                 )
                 if r.status_code != 200:
+                    all_conversations.append({
+                        "account": acct.name,
+                        "error": f"conversations: {r.status_code} {r.text[:200]}",
+                    })
                     continue
 
                 convs = r.json().get("data", [])
