@@ -17,6 +17,15 @@ logger = logging.getLogger(__name__)
 
 LABEL_PROCESSED = "FUNLIKEHEL_BOT"  # etykieta oznaczająca przetworzone maile
 
+# ---------------------------------------------------------------------------
+# Menadżerki — maile z [TASK] w temacie traktowane jako polecenia wewnętrzne
+# ---------------------------------------------------------------------------
+MANAGER_EMAILS = [
+    "magdalenabramczyk@gmail.com",
+]
+
+TASK_PREFIX = "[TASK]"
+
 
 def get_gmail_service():
     return build("gmail", "v1", credentials=get_credentials())
@@ -107,6 +116,9 @@ def mark_as_read(message_id: str):
 
 
 IGNORED_SENDERS = [
+    # Anti-loop — nie odpowiadaj sam sobie
+    "funlikehelbrand@gmail.com",
+    # Systemowe
     "mailer-daemon",
     "noreply",
     "no-reply",
@@ -127,7 +139,8 @@ IGNORED_SENDERS = [
     "security@",
     "alert@",
     "support@google",
-    # Platformy techniczne / hosting / SaaS — nie klienci szkoły
+    "calendar-notification",
+    # Platformy techniczne / hosting / SaaS
     "render.com",
     "serwersms.pl",
     "ngrok.com",
@@ -142,7 +155,15 @@ IGNORED_SENDERS = [
     "digitalocean.com",
     "aws.amazon.com",
     "cloud.google.com",
-    "calendar-notification",
+    # Newslettery / spam wykryte w analizie 2026-04-29
+    "shopify.com",
+    "n8n.io",
+    "expo.dev",
+    "uptimerobot.com",
+    "tripadvisor.com",
+    "googlecloud@google.com",
+    "ads-api-compliance@google.com",
+    "account@t1.viator.com",
 ]
 
 
@@ -194,11 +215,55 @@ Odpowiedź:"""
         return False
 
 
+def _is_manager_task(sender: str, subject: str) -> bool:
+    """Sprawdza czy mail jest poleceniem od menadżerki ([TASK] w temacie)."""
+    sender_email = _extract_email(sender).lower()
+    return (
+        sender_email in MANAGER_EMAILS
+        and TASK_PREFIX in subject.upper()
+    )
+
+
+def _handle_manager_task(details: dict):
+    """
+    Obsługuje polecenie od menadżerki — przekazuje do Claude jako zadanie
+    wewnętrzne (nie jako zapytanie klienta) i odsyła potwierdzenie.
+    """
+    subject = details["subject"]
+    body = details["body"]
+    sender_email = _extract_email(details["sender"])
+
+    # Wyciąg zadanie z tematu (po [TASK])
+    task_title = re.sub(r'(?i)\[TASK\]\s*', '', subject).strip()
+
+    prompt = (
+        f"POLECENIE WEWNĘTRZNE od menadżerki szkoły FUN like HEL.\n"
+        f"To NIE jest zapytanie klienta — to zadanie do wykonania.\n\n"
+        f"Zadanie: {task_title}\n"
+        f"Szczegóły:\n{body}\n\n"
+        f"Wykonaj zadanie i opisz co zrobiłeś/zrobiłaś. "
+        f"Odpowiedz po polsku, krótko i konkretnie."
+    )
+
+    reply_text = get_reply(prompt, sender_id=sender_email, channel="manager_task")
+
+    send_reply(
+        thread_id=details["thread_id"],
+        to=details["sender"],
+        subject=details["subject"],
+        body=reply_text,
+        in_reply_to=details["message_id"],
+        references=details["references"],
+    )
+    logger.info("TASK wykonany dla menadżerki: %s | %s", sender_email, task_title)
+
+
 def process_unread_emails():
     """
     Główna funkcja — pobiera nieprzeczytane maile,
     generuje odpowiedzi przez Claude i odsyła je.
     Ignoruje bounce'y, newslettery i spam.
+    Maile od menadżerek z [TASK] traktuje jako polecenia wewnętrzne.
     """
     messages = get_unread_messages()
     if not messages:
@@ -208,6 +273,13 @@ def process_unread_emails():
     for msg_ref in messages:
         try:
             details = get_message_details(msg_ref["id"])
+
+            # Menadżerka z [TASK] — obsłuż jako polecenie wewnętrzne
+            if _is_manager_task(details["sender"], details["subject"]):
+                logger.info("TASK od menadżerki: %s | %s", details["sender"], details["subject"])
+                _handle_manager_task(details)
+                mark_as_read(details["id"])
+                continue
 
             if not _is_real_customer(details["sender"]):
                 logger.info("Pomijam (filtr nadawcy): %s", details["sender"])
