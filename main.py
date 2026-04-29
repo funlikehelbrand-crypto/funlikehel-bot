@@ -621,17 +621,23 @@ async def _handle_comment(value: dict):
         should_reply = True
         reply_style = "thanks"
 
-    # 4. Same emotki (🥰❤️🔥) → NIE odpowiadaj
+    # 4. Emotki → odpowiedz tą samą emotką + pozdrawiamy
+    elif _is_emoji_only(text):
+        should_reply = True
+        reply_style = "emoji"
+
     # 5. Krótkie komentarze bez pytania → NIE odpowiadaj
 
     if not should_reply:
-        logger.info("Komentarz od @%s: '%s' — pomijam (emotki/krótki)", sender_name, text[:50])
+        logger.info("Komentarz od @%s: '%s' — pomijam (krótki/nieistotny)", sender_name, text[:50])
         return
 
     logger.info("Komentarz od @%s [%s]: %s", sender_name, reply_style, text[:80])
 
     try:
-        if reply_style == "thanks":
+        if reply_style == "emoji":
+            reply = f"{text} Pozdrawiamy, zapraszamy! 🤙"
+        elif reply_style == "thanks":
             reply = "Dziękujemy! 🤙"
         else:
             reply = get_reply(text, sender_id=sender_id, channel="instagram_comment")
@@ -639,6 +645,17 @@ async def _handle_comment(value: dict):
         logger.info("Odpowiedź na komentarz wysłana do @%s", sender_name)
     except Exception as e:
         logger.error("Błąd przy obsłudze komentarza: %s", e)
+
+
+def _is_emoji_only(text: str) -> bool:
+    """Sprawdza czy tekst zawiera tylko emotki, spacje i znaki interpunkcyjne."""
+    for ch in text:
+        if ch in " \t\n.,!":
+            continue
+        # Zwykłe znaki ASCII = nie emotka
+        if ord(ch) < 127:
+            return False
+    return len(text.strip()) > 0
 
 
 # ---------------------------------------------------------------------------
