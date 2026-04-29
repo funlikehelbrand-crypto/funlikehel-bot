@@ -21,7 +21,7 @@ from booking import booking_router
 
 # Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
 try:
-    from instagram import reply_to_comment, send_dm
+    from instagram import reply_to_comment, send_dm, init_accounts as init_ig_accounts, find_account_by_ig_id
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
     from tiktok import get_auth_url, exchange_code_for_token
@@ -52,6 +52,10 @@ app.include_router(booking_router)
 
 # Init booking DB on startup
 init_db()
+
+# Init Instagram multi-account
+if HAS_ALL_MODULES:
+    init_ig_accounts()
 
 app.add_middleware(
     CORSMiddleware,
@@ -614,14 +618,19 @@ async def receive_event(request: Request):
     logger.info("Zdarzenie: %s", payload)
 
     for entry in payload.get("entry", []):
+        # Ustal które konto IG odebrało zdarzenie
+        entry_ig_id = entry.get("id", "")
+        acct = find_account_by_ig_id(entry_ig_id) if HAS_ALL_MODULES else None
+        acct_name = acct.name if acct else "funlikehel"
+
         # --- Wiadomości DM ---
         for messaging in entry.get("messaging", []):
-            await _handle_dm(messaging)
+            await _handle_dm(messaging, account=acct_name)
 
         # --- Komentarze pod postami (z filtrem) ---
         for change in entry.get("changes", []):
             if change.get("field") == "comments":
-                await _handle_comment(change["value"])
+                await _handle_comment(change["value"], account=acct_name)
 
     return Response(status_code=200)
 
@@ -632,7 +641,7 @@ async def receive_event(request: Request):
 
 _seen_messages: set = set()  # przechowuje ostatnie message IDs żeby nie odpowiadać podwójnie
 
-async def _handle_dm(messaging: dict):
+async def _handle_dm(messaging: dict, account: str = "funlikehel"):
     sender_id = messaging.get("sender", {}).get("id")
     message = messaging.get("message", {})
     text = message.get("text")
@@ -651,14 +660,14 @@ async def _handle_dm(messaging: dict):
     if len(_seen_messages) > 500:
         _seen_messages.clear()
 
-    logger.info("DM od %s: %s", sender_id, text)
+    logger.info("DM od %s na @%s: %s", sender_id, account, text)
 
     try:
-        reply = get_reply(text, sender_id=sender_id, channel="instagram_dm")
-        await send_dm(sender_id, reply)
-        logger.info("Odpowiedź DM wysłana do %s", sender_id)
+        reply = get_reply(text, sender_id=sender_id, channel=f"instagram_dm_{account}")
+        await send_dm(sender_id, reply, account=account)
+        logger.info("Odpowiedź DM wysłana do %s na @%s", sender_id, account)
     except Exception as e:
-        logger.error("Błąd przy obsłudze DM: %s", e)
+        logger.error("Błąd przy obsłudze DM na @%s: %s", account, e)
 
 
 # ---------------------------------------------------------------------------
@@ -667,7 +676,7 @@ async def _handle_dm(messaging: dict):
 
 _seen_comments: set = set()  # deduplikacja komentarzy
 
-async def _handle_comment(value: dict):
+async def _handle_comment(value: dict, account: str = "funlikehel"):
     comment_id = value.get("id")
     text = value.get("text", "").strip()
     from_user = value.get("from", {})
@@ -675,7 +684,9 @@ async def _handle_comment(value: dict):
     sender_name = from_user.get("username", from_user.get("name", "użytkownik"))
 
     # Pomijamy komentarze od siebie
-    page_id = os.environ.get("INSTAGRAM_PAGE_ID", "17841402381473231")
+    from instagram import get_account as ig_get_account
+    acct = ig_get_account(account)
+    page_id = acct.ig_user_id if acct else os.environ.get("INSTAGRAM_PAGE_ID", "17841402381473231")
     if sender_id == page_id:
         return
 
@@ -728,11 +739,11 @@ async def _handle_comment(value: dict):
         elif reply_style == "thanks":
             reply = "Dziękujemy! 🤙"
         else:
-            reply = get_reply(text, sender_id=sender_id, channel="instagram_comment")
-        await reply_to_comment(comment_id, reply)
-        logger.info("Odpowiedź na komentarz wysłana do @%s", sender_name)
+            reply = get_reply(text, sender_id=sender_id, channel=f"instagram_comment_{account}")
+        await reply_to_comment(comment_id, reply, account=account)
+        logger.info("Odpowiedź na komentarz @%s wysłana do @%s", account, sender_name)
     except Exception as e:
-        logger.error("Błąd przy obsłudze komentarza: %s", e)
+        logger.error("Błąd przy obsłudze komentarza na @%s: %s", account, e)
 
 
 def _is_emoji_only(text: str) -> bool:

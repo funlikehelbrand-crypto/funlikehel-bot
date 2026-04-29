@@ -119,16 +119,28 @@ def get_campaign_stats() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Instagram Graph API — pobieranie kontaktów i wysyłanie DM
+# Instagram Graph API — pobieranie kontaktów i wysyłanie DM (multi-account)
 # ---------------------------------------------------------------------------
 
-def _get_token() -> str:
-    return os.environ.get("PAGE_ACCESS_TOKEN", "")
+def _get_account_tokens() -> list[dict]:
+    """Zwraca listę kont IG z tokenami do kampanii DM."""
+    accounts = []
+
+    # Konto główne: funlikehel
+    main_token = os.environ.get("PAGE_ACCESS_TOKEN", "")
+    if main_token:
+        accounts.append({"name": "funlikehel", "token": main_token})
+
+    # Konto surf4hel
+    surf_token = os.environ.get("Insta_surf4hel", "")
+    if surf_token:
+        accounts.append({"name": "surf4hel", "token": surf_token})
+
+    return accounts
 
 
-def _get_page_id() -> str:
-    """ID konta IG bota — pomijamy w listach kontaktów."""
-    token = _get_token()
+def _get_page_id(token: str) -> str:
+    """ID konta IG — pomijamy w listach kontaktów."""
     if not token:
         return ""
     try:
@@ -144,14 +156,12 @@ def _get_page_id() -> str:
         return ""
 
 
-def get_dm_contacts() -> list[dict]:
-    """Pobiera wszystkich uczestników konwersacji DM z paginacją."""
-    token = _get_token()
+def get_dm_contacts_for_account(account_name: str, token: str) -> list[dict]:
+    """Pobiera uczestników konwersacji DM dla jednego konta z paginacją."""
     if not token:
-        logger.warning("Brak PAGE_ACCESS_TOKEN — nie mogę pobrać kontaktów DM.")
         return []
 
-    page_id = _get_page_id()
+    page_id = _get_page_id(token)
     contacts = []
     seen_ids = set()
     url = f"{GRAPH_API_URL}/me/conversations?fields=participants,updated_time&platform=instagram&limit=50&access_token={token}"
@@ -163,7 +173,7 @@ def get_dm_contacts() -> list[dict]:
                 resp.raise_for_status()
                 data = resp.json()
             except Exception as e:
-                logger.error("Błąd pobierania konwersacji DM: %s", e)
+                logger.error("[%s] Błąd pobierania konwersacji DM: %s", account_name, e)
                 break
 
             for conv in data.get("data", []):
@@ -174,19 +184,39 @@ def get_dm_contacts() -> list[dict]:
                         contacts.append({
                             "id": pid,
                             "username": p.get("username", "?"),
+                            "account": account_name,
                         })
 
             url = data.get("paging", {}).get("next", "")
             if not url:
                 break
 
-    logger.info("Pobrano %d kontaktów DM.", len(contacts))
+    logger.info("[%s] Pobrano %d kontaktów DM.", account_name, len(contacts))
     return contacts
 
 
-async def send_campaign_dm(recipient_id: str, text: str) -> bool:
-    """Wysyła DM kampanijny. Zwraca True jeśli sukces."""
-    token = _get_token()
+def get_all_dm_contacts() -> list[dict]:
+    """Pobiera kontakty DM ze wszystkich kont IG."""
+    all_contacts = []
+    seen_ids = set()
+
+    for acct in _get_account_tokens():
+        contacts = get_dm_contacts_for_account(acct["name"], acct["token"])
+        for c in contacts:
+            if c["id"] not in seen_ids:
+                seen_ids.add(c["id"])
+                all_contacts.append(c)
+
+    logger.info("Łącznie %d unikalnych kontaktów DM z %d kont.", len(all_contacts), len(_get_account_tokens()))
+    return all_contacts
+
+
+async def send_campaign_dm(recipient_id: str, text: str, account_name: str = "funlikehel") -> bool:
+    """Wysyła DM kampanijny z odpowiedniego konta. Zwraca True jeśli sukces."""
+    accounts = {a["name"]: a["token"] for a in _get_account_tokens()}
+    token = accounts.get(account_name, "")
+    if not token:
+        token = os.environ.get("PAGE_ACCESS_TOKEN", "")
     if not token:
         return False
 
@@ -209,51 +239,60 @@ async def send_campaign_dm(recipient_id: str, text: str) -> bool:
 
 async def run_dm_campaign(dry_run: bool = False) -> dict:
     """
-    Wysyła zaproszenie /ekipa do osób z DM, które jeszcze go nie dostały.
+    Wysyła zaproszenie /ekipa do osób z DM ze wszystkich kont IG.
 
     Args:
         dry_run: True = tylko policz, nie wysyłaj (do testów)
 
     Returns:
-        dict ze statystykami: total, sent, skipped, failed
+        dict ze statystykami: total, sent, skipped, failed, per_account
     """
     message = os.environ.get("DM_CAMPAIGN_MESSAGE", DEFAULT_MESSAGE)
     delay = int(os.environ.get("DM_CAMPAIGN_DELAY", "120"))
 
-    contacts = get_dm_contacts()
+    contacts = get_all_dm_contacts()
     total = len(contacts)
     sent = 0
     skipped = 0
     failed = 0
+    per_account = {}
 
     for i, contact in enumerate(contacts):
         uid = contact["id"]
         username = contact["username"]
+        acct_name = contact.get("account", "funlikehel")
+
+        if acct_name not in per_account:
+            per_account[acct_name] = {"sent": 0, "skipped": 0, "failed": 0}
 
         if _is_already_sent(uid):
             skipped += 1
+            per_account[acct_name]["skipped"] += 1
             continue
 
         if dry_run:
-            logger.info("[DRY RUN] %d/%d @%s — pominięto (dry run)", i + 1, total, username)
+            logger.info("[DRY RUN] %d/%d @%s via @%s", i + 1, total, username, acct_name)
             skipped += 1
+            per_account[acct_name]["skipped"] += 1
             continue
 
         try:
-            await send_campaign_dm(uid, message)
+            await send_campaign_dm(uid, message, account_name=acct_name)
             _mark_sent(uid, username, "sent")
             sent += 1
-            logger.info("[DM Campaign] %d/%d OK @%s", i + 1, total, username)
+            per_account[acct_name]["sent"] += 1
+            logger.info("[DM Campaign] %d/%d OK @%s via @%s", i + 1, total, username, acct_name)
         except Exception as e:
             _mark_sent(uid, username, "failed")
             failed += 1
-            logger.error("[DM Campaign] %d/%d FAIL @%s: %s", i + 1, total, username, str(e)[:100])
+            per_account[acct_name]["failed"] += 1
+            logger.error("[DM Campaign] %d/%d FAIL @%s via @%s: %s", i + 1, total, username, acct_name, str(e)[:100])
 
         # Rate limit — czekamy między wiadomościami
         if not dry_run and i < total - 1:
             await asyncio.sleep(delay)
 
-    result = {"total": total, "sent": sent, "skipped": skipped, "failed": failed}
+    result = {"total": total, "sent": sent, "skipped": skipped, "failed": failed, "per_account": per_account}
     _log_run(total, sent, skipped, failed)
     logger.info("DM Campaign zakończona: %s", result)
     return result
