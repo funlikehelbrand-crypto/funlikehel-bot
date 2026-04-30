@@ -204,6 +204,69 @@ async def ekipa_list(token: str = ""):
 # Wszystkie endpointy /api/dm-campaign/* zostały usunięte z kodu.
 
 
+@app.get("/api/dm-report")
+async def dm_report(token: str = ""):
+    """Raport: pełna historia wysłanych DM + info o kontach IG (followersi)."""
+    import sqlite3, httpx as _httpx
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    # 1. Historia wysłanych (SQLite)
+    sent = []
+    try:
+        DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dm_campaign.db")
+        conn = sqlite3.connect(DB)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT recipient_id, username, status, sent_at FROM dm_sent ORDER BY sent_at ASC").fetchall()
+        sent = [dict(r) for r in rows]
+        conn.close()
+    except Exception as e:
+        sent = [{"error": str(e)}]
+
+    # 2. Info o kontach IG
+    GRAPH = "https://graph.instagram.com/v21.0"
+    accounts_info = {}
+    tokens = {
+        "funlikehel": os.environ.get("PAGE_ACCESS_TOKEN", ""),
+        "surf4hel": os.environ.get("Insta_surf4hel", ""),
+    }
+    for name, tok in tokens.items():
+        if not tok:
+            accounts_info[name] = {"error": "brak tokena"}
+            continue
+        try:
+            async with _httpx.AsyncClient(timeout=15) as client:
+                r = await client.get(f"{GRAPH}/me", params={
+                    "access_token": tok,
+                    "fields": "id,username,followers_count,follows_count,media_count,biography"
+                })
+                accounts_info[name] = r.json() if r.status_code == 200 else {"error": r.text[:200]}
+        except Exception as e:
+            accounts_info[name] = {"error": str(e)}
+
+    # 3. Kontakty (wszystkich którym można wysłać)
+    contacts_count = 0
+    not_sent_contacts = []
+    try:
+        from dm_campaign import get_all_dm_contacts
+        sent_ids = {s["recipient_id"] for s in sent if "recipient_id" in s}
+        all_contacts = get_all_dm_contacts()
+        contacts_count = len(all_contacts)
+        not_sent_contacts = [c for c in all_contacts if c["id"] not in sent_ids]
+    except Exception as e:
+        not_sent_contacts = [{"error": str(e)}]
+
+    return {
+        "sent_total": len(sent),
+        "sent": sent,
+        "accounts": accounts_info,
+        "contacts_total": contacts_count,
+        "not_sent_count": len(not_sent_contacts),
+        "not_sent": not_sent_contacts,
+    }
+
+
 @app.get("/api/dm-history")
 async def dm_history(token: str = "", limit: int = 50):
     """Pobiera historię wiadomości DM z obu kont IG (ostatnie rozmowy)."""
