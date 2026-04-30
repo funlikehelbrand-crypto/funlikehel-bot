@@ -332,6 +332,10 @@ async def send_campaign_dm(recipient_id: str, text: str, account_name: str = "fu
 # ---------------------------------------------------------------------------
 
 async def run_dm_campaign(dry_run: bool = False, account: str = "") -> dict:
+    # EMERGENCY STOP — kampania zablokowana po incydencie spamu 2026-04-30
+    logger.warning("EMERGENCY STOP: run_dm_campaign zablokowana — nie wysyłam nic")
+    return {"total": 0, "sent": 0, "skipped": 0, "failed": 0, "blocked": True}
+    # poniższy kod jest martwy
     """
     Wysyła zaproszenie /ekipa do osób z DM.
 
