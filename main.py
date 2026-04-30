@@ -478,20 +478,11 @@ async def facebook_groups_loop():
 
 
 async def dm_campaign_loop():
-    """Kampania DM /ekipa — raz dziennie o 10:00 (jeśli włączona)."""
-    await asyncio.sleep(600)  # opóźnienie startu 10 min
-    while True:
-        enabled = os.environ.get("DM_CAMPAIGN_ENABLED", "0") == "1"
-        if enabled:
-            try:
-                logger.info("Uruchamiam kampanię DM /ekipa...")
-                result = await run_dm_campaign()
-                logger.info("Kampania DM zakończona: %s", result)
-            except Exception as e:
-                logger.error("Błąd kampanii DM: %s", e)
-        else:
-            logger.info("Kampania DM wyłączona (DM_CAMPAIGN_ENABLED != 1).")
-        await asyncio.sleep(86400)  # 24 godziny
+    """Kampania DM /ekipa — WYŁĄCZONA. Tylko ręcznie przez /api/dm-campaign/run."""
+    # SAFETY: auto-kampania permanentnie wyłączona po incydencie 256 spamów (2026-04-30)
+    # Kampanię można uruchomić TYLKO ręcznie przez endpoint /api/dm-campaign/run
+    logger.info("Auto-kampania DM wyłączona (safety lock). Użyj /api/dm-campaign/run do ręcznego uruchomienia.")
+    return
 
 
 async def keep_alive_loop():
