@@ -227,19 +227,8 @@ async def _run_dm_campaign_bg(dry_run: bool, account: str):
 
 @app.post("/api/dm-campaign/run")
 async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
-    """Odpala kampanię DM w tle. Zwraca od razu. Sprawdź /stats po statusie."""
-    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
-    if token != secret:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
-
-    if _dm_campaign_status["running"]:
-        return {"status": "already_running", "started_at": _dm_campaign_status.get("started_at")}
-
-    asyncio.create_task(_run_dm_campaign_bg(req.dry_run, req.account))
-    return {"status": "started", "dry_run": req.dry_run, "account": req.account or "all"}
+    """ZABLOKOWANE — kampania DM wyłączona po incydencie spamu 2026-04-30."""
+    raise HTTPException(status_code=503, detail="Kampania DM zablokowana. Skontaktuj się z administratorem.")
 
 
 @app.get("/api/dm-campaign/stats")
