@@ -35,7 +35,6 @@ try:
     from google_contacts import get_contacts_with_phones
     from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     from facebook_groups import process_facebook_groups
-    from dm_campaign import run_dm_campaign, get_campaign_stats
     HAS_ALL_MODULES = True
 except Exception as e:
     logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
@@ -201,78 +200,8 @@ async def ekipa_list(token: str = ""):
     return {"count": len(rows), "items": [dict(r) for r in rows]}
 
 
-# ---------------------------------------------------------------------------
-# DM Campaign — kampania zaproszeniowa przez Instagram DM
-# ---------------------------------------------------------------------------
-
-class DMCampaignRequest(BaseModel):
-    dry_run: bool = False
-    account: str = ""
-
-_dm_campaign_status: dict = {"running": False, "last_result": None}
-
-async def _run_dm_campaign_bg(dry_run: bool, account: str):
-    """Background task — wysyła kampanię DM i zapisuje wynik."""
-    _dm_campaign_status["running"] = True
-    _dm_campaign_status["started_at"] = datetime.utcnow().isoformat()
-    try:
-        result = await run_dm_campaign(dry_run=dry_run, account=account)
-        _dm_campaign_status["last_result"] = result
-    except Exception as e:
-        _dm_campaign_status["last_result"] = {"error": str(e)}
-        logger.error("DM Campaign background error: %s", e)
-    finally:
-        _dm_campaign_status["running"] = False
-        _dm_campaign_status["finished_at"] = datetime.utcnow().isoformat()
-
-@app.post("/api/dm-campaign/run")
-async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
-    """ZABLOKOWANE — kampania DM wyłączona po incydencie spamu 2026-04-30."""
-    raise HTTPException(status_code=503, detail="Kampania DM zablokowana. Skontaktuj się z administratorem.")
-
-
-@app.get("/api/dm-campaign/stats")
-async def dm_campaign_stats(token: str = ""):
-    """Statystyki kampanii DM — ile wysłano, ostatni run, status bieżący."""
-    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
-    if token != secret:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
-
-    stats = get_campaign_stats()
-    stats["currently_running"] = _dm_campaign_status["running"]
-    stats["last_bg_result"] = _dm_campaign_status.get("last_result")
-    stats["started_at"] = _dm_campaign_status.get("started_at")
-    stats["finished_at"] = _dm_campaign_status.get("finished_at")
-    return stats
-
-
-@app.get("/api/dm-sent-history")
-async def dm_sent_history(token: str = ""):
-    """Pełna historia wysyłek DM — kto, kiedy, z jakiego konta, status."""
-    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
-    if token != admin_token:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    from dm_campaign import _drive_sent_cache
-    return {"count": len(_drive_sent_cache), "history": _drive_sent_cache}
-
-
-@app.get("/api/dm-contacts")
-async def dm_contacts_list(token: str = ""):
-    """Lista kontaktów DM z wszystkich kont IG."""
-    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
-    if token != admin_token:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduły niedostępne")
-
-    from dm_campaign import get_all_dm_contacts
-    contacts = get_all_dm_contacts()
-    return {"count": len(contacts), "contacts": contacts}
+# DM Campaign — USUNIĘTE po incydencie spamu 2026-04-30
+# Wszystkie endpointy /api/dm-campaign/* zostały usunięte z kodu.
 
 
 @app.get("/api/dm-history")
@@ -466,13 +395,6 @@ async def facebook_groups_loop():
         await asyncio.sleep(7200)  # 2 godziny
 
 
-async def dm_campaign_loop():
-    """Kampania DM /ekipa — WYŁĄCZONA. Tylko ręcznie przez /api/dm-campaign/run."""
-    # SAFETY: auto-kampania permanentnie wyłączona po incydencie 256 spamów (2026-04-30)
-    # Kampanię można uruchomić TYLKO ręcznie przez endpoint /api/dm-campaign/run
-    logger.info("Auto-kampania DM wyłączona (safety lock). Użyj /api/dm-campaign/run do ręcznego uruchomienia.")
-    return
-
 
 async def keep_alive_loop():
     """Self-ping co 10 min żeby Render free tier nie usypiał serwera."""
@@ -497,7 +419,6 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
-        asyncio.create_task(dm_campaign_loop())
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
 
