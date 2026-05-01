@@ -38,9 +38,17 @@ except ImportError:
     HAS_BOOKING = False
     booking_router = None
 
-# Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
+# Instagram + WhatsApp — krytyczne dla odpowiadania na wiadomości
 try:
-    from instagram import reply_to_comment, send_dm, init_accounts as init_ig_accounts, find_account_by_ig_id
+    from instagram import reply_to_comment, send_dm, init_accounts as init_ig_accounts, find_account_by_ig_id, get_all_accounts as _ig_get_all
+    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
+    HAS_ALL_MODULES = True
+except Exception as e:
+    logging.warning("Instagram/WhatsApp niedostępny: %s", e)
+    HAS_ALL_MODULES = False
+
+# Google + inne moduły — opcjonalne (background polling)
+try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
     from tiktok import get_auth_url, exchange_code_for_token
@@ -49,12 +57,11 @@ try:
     from auto_upload import process_upload_folder
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
-    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     from facebook_groups import process_facebook_groups
-    HAS_ALL_MODULES = True
+    HAS_GOOGLE_MODULES = True
 except Exception as e:
-    logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
-    HAS_ALL_MODULES = False
+    logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
+    HAS_GOOGLE_MODULES = False
 
 load_dotenv("api.env")
 
@@ -101,6 +108,8 @@ async def health():
     return {
         "status": "ok",
         "has_all_modules": HAS_ALL_MODULES,
+        "has_instagram": HAS_ALL_MODULES,
+        "has_google": HAS_GOOGLE_MODULES,
         "claude_key": has_claude,
         "claude_key_prefix": os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
         "gemini_key": has_gemini,
@@ -505,7 +514,7 @@ async def keep_alive_loop():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_alive_loop())
-    if HAS_ALL_MODULES:
+    if HAS_GOOGLE_MODULES:
         asyncio.create_task(gmail_polling_loop())
         asyncio.create_task(youtube_polling_loop())
         asyncio.create_task(daily_cleanup_loop())
@@ -513,9 +522,8 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
-        asyncio.create_task(dm_campaign_loop())
-    else:
-        logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
+    # DM campaign loop — permanentnie wyłączona
+    asyncio.create_task(dm_campaign_loop())
 
 
 # ---------------------------------------------------------------------------
