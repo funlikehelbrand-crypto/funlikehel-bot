@@ -42,7 +42,6 @@ try:
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
     from facebook_groups import process_facebook_groups
-    from fb_lead_scout import scan_groups as fb_lead_scan, get_leads_report as fb_leads_report
     HAS_GOOGLE_MODULES = True
 except Exception as e:
     logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
@@ -468,20 +467,6 @@ async def facebook_groups_loop():
         await asyncio.sleep(7200)  # 2 godziny
 
 
-async def fb_lead_scout_loop():
-    """FB Lead Scout — skanowanie grup pod kątem leadów, co 6 godzin."""
-    await asyncio.sleep(300)  # start po 5 min
-    while True:
-        try:
-            logger.info("FB Lead Scout: startuję skanowanie grup...")
-            stats = await asyncio.get_event_loop().run_in_executor(None, fb_lead_scan)
-            logger.info("FB Lead Scout: %s", stats)
-        except Exception as e:
-            logger.error("Błąd FB Lead Scout polling: %s", e)
-        await asyncio.sleep(21600)  # 6 godzin
-
-
-
 async def keep_alive_loop():
     """Self-ping co 10 min żeby Render free tier nie usypiał serwera."""
     while True:
@@ -505,7 +490,6 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
-        asyncio.create_task(fb_lead_scout_loop())
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
 
@@ -516,20 +500,13 @@ async def startup_event():
 
 @app.post("/api/fb-leads/scan")
 async def fb_leads_scan():
-    """Uruchamia skanowanie grup Facebook natychmiast (ręczny trigger)."""
-    if not HAS_GOOGLE_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny.")
-    stats = await asyncio.get_event_loop().run_in_executor(None, fb_lead_scan)
-    return {"status": "done", "stats": stats}
+    raise HTTPException(status_code=503, detail="Modul fb_lead_scout niedostepny.")
+
 
 
 @app.get("/api/fb-leads/report")
 async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
-    """Zwraca listę znalezionych leadów z bazy (domyślnie score >= 30)."""
-    if not HAS_GOOGLE_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny.")
-    leads = fb_leads_report(min_score=min_score, limit=limit)
-    return {"count": len(leads), "leads": leads}
+    raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny.")
 
 
 # ---------------------------------------------------------------------------
