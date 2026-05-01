@@ -249,6 +249,24 @@ async def dm_campaign_stats(token: str = ""):
     return stats
 
 
+@app.get("/api/dm-all-sent")
+async def dm_all_sent(token: str = ""):
+    """Pełna lista wszystkich wysłanych DM (bez limitu)."""
+    import sqlite3 as _sq
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+    db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dm_campaign.db")
+    try:
+        conn = _sq.connect(db)
+        conn.row_factory = _sq.Row
+        rows = conn.execute("SELECT recipient_id, username, status, sent_at FROM dm_sent ORDER BY sent_at ASC").fetchall()
+        conn.close()
+        return {"total": len(rows), "sent": [dict(r) for r in rows]}
+    except Exception as e:
+        return {"error": str(e), "total": 0, "sent": []}
+
+
 @app.get("/api/dm-sent-history")
 async def dm_sent_history(token: str = ""):
     """Pełna historia wysyłek DM — kto, kiedy, z jakiego konta, status."""
