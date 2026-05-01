@@ -22,9 +22,17 @@ from claude_agent import get_reply
 from booking_db import init_db
 from booking import booking_router
 
-# Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
+# Instagram + WhatsApp — krytyczne dla odpowiadania na wiadomości
 try:
     from instagram import reply_to_comment, send_dm, init_accounts as init_ig_accounts, find_account_by_ig_id
+    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
+    HAS_ALL_MODULES = True
+except Exception as e:
+    logging.warning("Instagram/WhatsApp niedostępny: %s", e)
+    HAS_ALL_MODULES = False
+
+# Google + inne moduły — opcjonalne (background polling)
+try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
     from tiktok import get_auth_url, exchange_code_for_token
@@ -33,12 +41,12 @@ try:
     from auto_upload import process_upload_folder
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
-    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     from facebook_groups import process_facebook_groups
-    HAS_ALL_MODULES = True
+    from fb_lead_scout import scan_groups as fb_lead_scan, get_leads_report as fb_leads_report
+    HAS_GOOGLE_MODULES = True
 except Exception as e:
-    logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
-    HAS_ALL_MODULES = False
+    logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
+    HAS_GOOGLE_MODULES = False
 
 load_dotenv("api.env")
 
@@ -80,6 +88,8 @@ async def health():
     return {
         "status": "ok",
         "has_all_modules": HAS_ALL_MODULES,
+        "has_instagram": HAS_ALL_MODULES,
+        "has_google": HAS_GOOGLE_MODULES,
         "claude_key": has_claude,
         "claude_key_prefix": os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
         "gemini_key": has_gemini,
@@ -458,6 +468,19 @@ async def facebook_groups_loop():
         await asyncio.sleep(7200)  # 2 godziny
 
 
+async def fb_lead_scout_loop():
+    """FB Lead Scout — skanowanie grup pod kątem leadów, co 6 godzin."""
+    await asyncio.sleep(300)  # start po 5 min
+    while True:
+        try:
+            logger.info("FB Lead Scout: startuję skanowanie grup...")
+            stats = await asyncio.get_event_loop().run_in_executor(None, fb_lead_scan)
+            logger.info("FB Lead Scout: %s", stats)
+        except Exception as e:
+            logger.error("Błąd FB Lead Scout polling: %s", e)
+        await asyncio.sleep(21600)  # 6 godzin
+
+
 
 async def keep_alive_loop():
     """Self-ping co 10 min żeby Render free tier nie usypiał serwera."""
@@ -474,7 +497,7 @@ async def keep_alive_loop():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_alive_loop())
-    if HAS_ALL_MODULES:
+    if HAS_GOOGLE_MODULES:
         asyncio.create_task(gmail_polling_loop())
         asyncio.create_task(youtube_polling_loop())
         asyncio.create_task(daily_cleanup_loop())
@@ -482,8 +505,31 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
+        asyncio.create_task(fb_lead_scout_loop())
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
+
+
+# ---------------------------------------------------------------------------
+# FB Lead Scout — endpointy
+# ---------------------------------------------------------------------------
+
+@app.post("/api/fb-leads/scan")
+async def fb_leads_scan():
+    """Uruchamia skanowanie grup Facebook natychmiast (ręczny trigger)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny.")
+    stats = await asyncio.get_event_loop().run_in_executor(None, fb_lead_scan)
+    return {"status": "done", "stats": stats}
+
+
+@app.get("/api/fb-leads/report")
+async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
+    """Zwraca listę znalezionych leadów z bazy (domyślnie score >= 30)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny.")
+    leads = fb_leads_report(min_score=min_score, limit=limit)
+    return {"count": len(leads), "leads": leads}
 
 
 # ---------------------------------------------------------------------------
