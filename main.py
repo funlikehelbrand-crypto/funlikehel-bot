@@ -889,6 +889,12 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
     if message.get("is_echo") or not text or not sender_id:
         return
 
+    # Auto-odpowiedzi DM tylko z konta funlikehel — surf4hel jest tylko do publikacji
+    dm_accounts = set(os.environ.get("DM_RESPONSE_ACCOUNTS", "funlikehel").split(","))
+    if account not in dm_accounts:
+        logger.info("Pomijam DM na @%s — konto nie ma wlaczonych auto-odpowiedzi DM", account)
+        return
+
     # Pomijamy wiadomości od naszych własnych kont IG (anti-loop)
     from instagram import get_all_accounts
     own_ids = {a.ig_user_id for a in get_all_accounts() if a.ig_user_id}
