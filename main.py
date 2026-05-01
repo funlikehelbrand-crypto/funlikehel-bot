@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import logging
 import os
+import sys
 from datetime import datetime
 
 import httpx
@@ -15,12 +16,27 @@ from pydantic import BaseModel
 
 from fastapi.middleware.cors import CORSMiddleware
 
-# Core - zawsze wymagane
-from claude_agent import get_reply
+# Dodaj server/ do path — moduły mogą być tam lub w katalogu głównym
+_server_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "server")
+if os.path.isdir(_server_dir) and _server_dir not in sys.path:
+    sys.path.insert(0, _server_dir)
 
-# Booking system
-from booking_db import init_db
-from booking import booking_router
+# Wszystkie moduły — opcjonalne (graceful fallback)
+try:
+    from claude_agent import get_reply
+    HAS_CLAUDE = True
+except ImportError:
+    HAS_CLAUDE = False
+    def get_reply(text, **kwargs):
+        return "Bot tymczasowo niedostępny. Zadzwoń: 690 270 032"
+
+try:
+    from booking_db import init_db
+    from booking import booking_router
+    HAS_BOOKING = True
+except ImportError:
+    HAS_BOOKING = False
+    booking_router = None
 
 # Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
 try:
@@ -35,7 +51,6 @@ try:
     from google_contacts import get_contacts_with_phones
     from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     from facebook_groups import process_facebook_groups
-    from dm_campaign import run_dm_campaign, get_campaign_stats
     HAS_ALL_MODULES = True
 except Exception as e:
     logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
@@ -48,13 +63,18 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="FUN like HEL — Instagram Bot + Gmail + Chatbot")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+try:
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+except Exception:
+    pass
 
 # Booking API
-app.include_router(booking_router)
+if booking_router:
+    app.include_router(booking_router)
 
 # Init booking DB on startup
-init_db()
+if HAS_BOOKING:
+    init_db()
 
 # Init Instagram multi-account
 if HAS_ALL_MODULES:
@@ -211,20 +231,6 @@ class DMCampaignRequest(BaseModel):
 
 _dm_campaign_status: dict = {"running": False, "last_result": None}
 
-async def _run_dm_campaign_bg(dry_run: bool, account: str):
-    """Background task — wysyła kampanię DM i zapisuje wynik."""
-    _dm_campaign_status["running"] = True
-    _dm_campaign_status["started_at"] = datetime.utcnow().isoformat()
-    try:
-        result = await run_dm_campaign(dry_run=dry_run, account=account)
-        _dm_campaign_status["last_result"] = result
-    except Exception as e:
-        _dm_campaign_status["last_result"] = {"error": str(e)}
-        logger.error("DM Campaign background error: %s", e)
-    finally:
-        _dm_campaign_status["running"] = False
-        _dm_campaign_status["finished_at"] = datetime.utcnow().isoformat()
-
 @app.post("/api/dm-campaign/run")
 async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
     """ZABLOKOWANE — kampania DM wyłączona po incydencie spamu 2026-04-30."""
@@ -238,15 +244,7 @@ async def dm_campaign_stats(token: str = ""):
     if token != secret:
         raise HTTPException(status_code=403, detail="Brak dostępu")
 
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
-
-    stats = get_campaign_stats()
-    stats["currently_running"] = _dm_campaign_status["running"]
-    stats["last_bg_result"] = _dm_campaign_status.get("last_result")
-    stats["started_at"] = _dm_campaign_status.get("started_at")
-    stats["finished_at"] = _dm_campaign_status.get("finished_at")
-    return stats
+    raise HTTPException(status_code=503, detail="Kampania DM wyłączona.")
 
 
 @app.get("/api/dm-all-sent")
