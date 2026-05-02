@@ -350,6 +350,81 @@ async def dm_history(token: str = "", limit: int = 50):
     return {"total_conversations": len(all_conversations), "conversations": all_conversations}
 
 
+@app.get("/api/dm-export")
+async def dm_export(token: str = ""):
+    """
+    Pełny eksport kontaktów DM — paginuje przez WSZYSTKIE rozmowy.
+    Zwraca listę uczestników (username, id, konto, data) bez treści wiadomości.
+    Chroni: EKIPA_SECRET.
+    """
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Instagram niedostępny")
+
+    from instagram import get_all_accounts
+    GRAPH = "https://graph.instagram.com/v21.0"
+    contacts = []
+    seen_ids = set()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        for acct in get_all_accounts():
+            if not acct.token:
+                continue
+
+            # Pobierz własne ID konta (żeby pominąć siebie)
+            try:
+                me_r = await client.get(f"{GRAPH}/me", params={"fields": "id", "access_token": acct.token})
+                own_id = me_r.json().get("id", "") if me_r.status_code == 200 else ""
+            except Exception:
+                own_id = ""
+
+            page_url = (
+                f"{GRAPH}/me/conversations"
+                f"?fields=participants,updated_time"
+                f"&platform=instagram&limit=50"
+                f"&access_token={acct.token}"
+            )
+            page_num = 0
+
+            while page_url:
+                try:
+                    r = await client.get(page_url, timeout=20)
+                    if r.status_code != 200:
+                        break
+                    data = r.json()
+                    page_num += 1
+
+                    for conv in data.get("data", []):
+                        updated = conv.get("updated_time", "")
+                        for p in conv.get("participants", {}).get("data", []):
+                            pid = p.get("id", "")
+                            if pid and pid != own_id and pid not in seen_ids:
+                                seen_ids.add(pid)
+                                contacts.append({
+                                    "id": pid,
+                                    "username": p.get("username", "?"),
+                                    "konto": acct.name,
+                                    "ostatnia_wiadomosc": updated,
+                                    "strona": page_num,
+                                })
+
+                    page_url = data.get("paging", {}).get("next", "")
+                    await asyncio.sleep(0.5)  # 0.5s między stronami — bezpieczny rate limit
+
+                except Exception as e:
+                    logger.error("dm-export paginacja błąd: %s", e)
+                    break
+
+    contacts.sort(key=lambda x: x["ostatnia_wiadomosc"], reverse=True)
+    return {
+        "total": len(contacts),
+        "contacts": contacts,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Push Notifications — wysylka przez Expo Push API
 # ---------------------------------------------------------------------------
@@ -479,6 +554,20 @@ async def keep_alive_loop():
             pass
 
 
+async def fb_lead_scout_loop():
+    """Skanowanie grup Facebook w poszukiwaniu leadów — co 6 godzin."""
+    await asyncio.sleep(300)  # opóźnienie startu 5 min (po reszcie modułów)
+    while True:
+        try:
+            logger.info("FB Lead Scout: startuję skanowanie grup...")
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, _fb_lead_scan)
+            logger.info("FB Lead Scout: zakończono — %s", result)
+        except Exception as e:
+            logger.error("Błąd FB Lead Scout: %s", e)
+        await asyncio.sleep(21600)  # 6 godzin
+
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_alive_loop())
@@ -490,6 +579,9 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
+    if _HAS_FB_LEAD_SCOUT:
+        asyncio.create_task(fb_lead_scout_loop())
+        logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
 
@@ -498,15 +590,32 @@ async def startup_event():
 # FB Lead Scout — endpointy
 # ---------------------------------------------------------------------------
 
+try:
+    from fb_lead_scout import scan_groups as _fb_lead_scan, get_leads_report as _fb_leads_report
+    _HAS_FB_LEAD_SCOUT = True
+except Exception as _fb_err:
+    logging.warning("fb_lead_scout niedostępny: %s", _fb_err)
+    _HAS_FB_LEAD_SCOUT = False
+
+
 @app.post("/api/fb-leads/scan")
 async def fb_leads_scan():
-    raise HTTPException(status_code=503, detail="Modul fb_lead_scout niedostepny.")
-
+    """Uruchamia skanowanie grup Facebook — szuka leadów dla kitesurfingu."""
+    if not _HAS_FB_LEAD_SCOUT:
+        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny (zainstaluj playwright).")
+    import asyncio
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _fb_lead_scan)
+    return result
 
 
 @app.get("/api/fb-leads/report")
 async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
-    raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny.")
+    """Zwraca listę leadów z bazy SQLite (score >= min_score)."""
+    if not _HAS_FB_LEAD_SCOUT:
+        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny (zainstaluj playwright).")
+    leads = _fb_leads_report(min_score=min_score, limit=limit)
+    return {"count": len(leads), "leads": leads}
 
 
 # ---------------------------------------------------------------------------
