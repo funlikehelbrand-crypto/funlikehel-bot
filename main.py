@@ -248,12 +248,71 @@ async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
 
 @app.get("/api/dm-campaign/stats")
 async def dm_campaign_stats(token: str = ""):
-    """Statystyki kampanii DM — ile wysłano, ostatni run, status bieżący."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         raise HTTPException(status_code=403, detail="Brak dostępu")
-
     raise HTTPException(status_code=503, detail="Kampania DM wyłączona.")
+
+
+@app.get("/api/dm-export")
+async def dm_export(token: str = ""):
+    """Pełny eksport kontaktów DM — paginuje przez WSZYSTKIE rozmowy IG."""
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Instagram niedostępny")
+
+    from instagram import get_all_accounts
+    GRAPH = "https://graph.instagram.com/v21.0"
+    contacts = []
+    seen_ids = set()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        for acct in get_all_accounts():
+            if not acct.token:
+                continue
+            try:
+                me_r = await client.get(f"{GRAPH}/me", params={"fields": "id", "access_token": acct.token})
+                own_id = me_r.json().get("id", "") if me_r.status_code == 200 else ""
+            except Exception:
+                own_id = ""
+
+            page_url = (
+                f"{GRAPH}/me/conversations"
+                f"?fields=participants,updated_time"
+                f"&platform=instagram&limit=50"
+                f"&access_token={acct.token}"
+            )
+            page_num = 0
+            while page_url:
+                try:
+                    r = await client.get(page_url, timeout=20)
+                    if r.status_code != 200:
+                        break
+                    data = r.json()
+                    page_num += 1
+                    for conv in data.get("data", []):
+                        updated = conv.get("updated_time", "")
+                        for p in conv.get("participants", {}).get("data", []):
+                            pid = p.get("id", "")
+                            if pid and pid != own_id and pid not in seen_ids:
+                                seen_ids.add(pid)
+                                contacts.append({
+                                    "id": pid,
+                                    "username": p.get("username", "?"),
+                                    "konto": acct.name,
+                                    "ostatnia_wiadomosc": updated,
+                                    "strona": page_num,
+                                })
+                    page_url = data.get("paging", {}).get("next", "")
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    logger.error("dm-export błąd: %s", e)
+                    break
+
+    contacts.sort(key=lambda x: x["ostatnia_wiadomosc"], reverse=True)
+    return {"total": len(contacts), "contacts": contacts}
 
 
 @app.get("/api/dm-all-sent")
