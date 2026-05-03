@@ -613,3 +613,14 @@ function flhv2_cache_headers() {
         header('Vary: Accept-Encoding, Accept');
     }
 }
+
+// -- Auto-redirect: /rezerwacje -> /oferta-i-rezerwacje (301) ----------------
+add_action( "template_redirect", "flhv2_page_redirects" );
+function flhv2_page_redirects() {
+    global $post;
+    if ( ! $post ) return;
+    if ( $post->post_name === "rezerwacje" ) {
+        wp_redirect( home_url( "/oferta-i-rezerwacje/" ), 301 );
+        exit;
+    }
+}
