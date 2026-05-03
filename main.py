@@ -116,6 +116,31 @@ async def health():
         "openai_key": has_openai,
     }
 
+@app.get("/api/google-business/diagnose")
+async def google_business_diagnose():
+    """Diagnostyka Google Business — sprawdza konta, lokalizacje i recenzje bez odpowiedzi."""
+    if not HAS_GOOGLE_MODULES:
+        return {"error": "Google modules not loaded"}
+    try:
+        from google_business import diagnose
+        return diagnose()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/google-business/process")
+async def google_business_process():
+    """Ręczne wywołanie przetwarzania recenzji Google Business."""
+    if not HAS_GOOGLE_MODULES:
+        return {"error": "Google modules not loaded"}
+    try:
+        from google_business import process_reviews
+        count = process_reviews()
+        return {"processed": count}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
@@ -152,6 +177,99 @@ class EkipaRequest(BaseModel):
     sport: str | None = None
     locations: list[str] = []
 
+EKIPA_SHEET_NAME = "Ekipa FLH"
+EKIPA_SHEET_HEADERS = ["Data zapisu", "Imię", "Email", "Telefon", "Sport", "Lokalizacja"]
+_ekipa_sheet_id: str = ""  # cache ID arkusza w pamięci procesu
+
+
+def _get_ekipa_sheet_id() -> str:
+    """Zwraca ID arkusza Google Sheets 'Ekipa FLH' — tworzy jeśli nie istnieje."""
+    global _ekipa_sheet_id
+    if _ekipa_sheet_id:
+        return _ekipa_sheet_id
+
+    sheet_id = os.environ.get("EKIPA_SHEET_ID", "")
+    if sheet_id:
+        _ekipa_sheet_id = sheet_id
+        return sheet_id
+
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    drive = build("drive", "v3", credentials=creds)
+    sheets = build("sheets", "v4", credentials=creds)
+
+    # Szukaj istniejącego arkusza
+    res = drive.files().list(
+        q=f"name='{EKIPA_SHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+        spaces="drive", fields="files(id)"
+    ).execute()
+    files = res.get("files", [])
+
+    if files:
+        sheet_id = files[0]["id"]
+    else:
+        # Stwórz nowy arkusz z nagłówkami
+        spreadsheet = sheets.spreadsheets().create(body={
+            "properties": {"title": EKIPA_SHEET_NAME},
+            "sheets": [{"properties": {"title": "Zapisy"}}]
+        }).execute()
+        sheet_id = spreadsheet["spreadsheetId"]
+        sheets.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range="Zapisy!A1",
+            valueInputOption="RAW",
+            body={"values": [EKIPA_SHEET_HEADERS]}
+        ).execute()
+        logger.info("Stworzono nowy arkusz Ekipa FLH: %s", sheet_id)
+
+    _ekipa_sheet_id = sheet_id
+    return sheet_id
+
+
+def _sheets_append_ekipa(record: dict):
+    """Dopisuje wiersz do Google Sheets — trwałe przechowanie danych (przeżywa restart Rendera)."""
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    sheets = build("sheets", "v4", credentials=creds)
+    sheet_id = _get_ekipa_sheet_id()
+    row = [
+        record["created_at"][:19].replace("T", " "),
+        record["name"],
+        record["email"],
+        record["phone"],
+        record["sport"],
+        record["locations"],
+    ]
+    sheets.spreadsheets().values().append(
+        spreadsheetId=sheet_id,
+        range="Zapisy!A1",
+        valueInputOption="RAW",
+        insertDataOption="INSERT_ROWS",
+        body={"values": [row]}
+    ).execute()
+    logger.info("Ekipa zapisana do Google Sheets: %s | %s", record["name"], record["email"])
+
+
+def _sheets_read_ekipa() -> list[dict]:
+    """Czyta wszystkie zapisy z Google Sheets."""
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    sheets = build("sheets", "v4", credentials=creds)
+    sheet_id = _get_ekipa_sheet_id()
+    res = sheets.spreadsheets().values().get(
+        spreadsheetId=sheet_id,
+        range="Zapisy!A1:F"
+    ).execute()
+    rows = res.get("values", [])
+    if not rows or len(rows) < 2:
+        return []
+    headers = rows[0]
+    return [dict(zip(headers, row + [""] * (len(headers) - len(row)))) for row in rows[1:]]
+
+
 @app.post("/api/ekipa")
 async def ekipa_signup(req: EkipaRequest):
     """Zapis klienta z landing page /ekipa — email, telefon, sport, lokalizacja."""
@@ -166,10 +284,8 @@ async def ekipa_signup(req: EkipaRequest):
         "created_at": datetime.datetime.now().isoformat(),
     }
 
-    if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("USE_FIRESTORE"):
-        from google.cloud import firestore as _fs
-        _fs.Client().collection("ekipa").add(record)
-    else:
+    # SQLite — lokalny cache (ephemeral na Render, ale szybki)
+    try:
         import sqlite3
         db = sqlite3.connect("ekipa.db")
         db.execute("""CREATE TABLE IF NOT EXISTS ekipa (
@@ -183,10 +299,18 @@ async def ekipa_signup(req: EkipaRequest):
         )
         db.commit()
         db.close()
+    except Exception as _db_err:
+        logger.warning("SQLite ekipa zapis nieudany: %s", _db_err)
 
     logger.info("Nowy zapis do ekipy: %s | %s | %s | %s", req.name, req.email, req.sport, req.locations)
 
-    # SMS powiadomienie do właściciela — żeby nie stracić zapisu przy restarcie Rendera
+    # Google Sheets — TRWAŁY backup (przeżywa restart Rendera)
+    try:
+        _sheets_append_ekipa(record)
+    except Exception as _sh_err:
+        logger.warning("Google Sheets zapis ekipa nieudany: %s", _sh_err)
+
+    # SMS powiadomienie do właściciela
     try:
         from sms import send_sms
         locs = ",".join(req.locations) if req.locations else "?"
@@ -197,7 +321,7 @@ async def ekipa_signup(req: EkipaRequest):
     except Exception as _sms_err:
         logger.warning("SMS powiadomienie ekipa nie wysłane: %s", _sms_err)
 
-    # Zapis do Google Contacts — trwałe przechowywanie danych klientów
+    # Google Contacts — dodatkowy backup
     try:
         from google_contacts import create_contact
         locs = ",".join(req.locations) if req.locations else ""
@@ -216,18 +340,30 @@ async def ekipa_signup(req: EkipaRequest):
 
 @app.get("/api/ekipa/list")
 async def ekipa_list(token: str = ""):
-    """Lista zapisanych klientow (chroniona tokenem)."""
-    import sqlite3
+    """Lista zapisanych klientów — czyta z Google Sheets (trwałe) + SQLite (lokalny cache)."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Brak dostepu")
 
-    db = sqlite3.connect("ekipa.db")
-    db.row_factory = sqlite3.Row
-    rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
-    db.close()
-    return {"count": len(rows), "items": [dict(r) for r in rows]}
+    # Główne źródło: Google Sheets (trwałe, przeżywa restart)
+    try:
+        items = _sheets_read_ekipa()
+        items = [r for r in items if r.get("Email", "") not in ("", "Email")]
+        return {"count": len(items), "source": "sheets", "items": items}
+    except Exception as _sh_err:
+        logger.warning("Google Sheets read ekipa nieudany, fallback SQLite: %s", _sh_err)
+
+    # Fallback: SQLite (może być pusty po restarcie)
+    try:
+        import sqlite3
+        db = sqlite3.connect("ekipa.db")
+        db.row_factory = sqlite3.Row
+        rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
+        db.close()
+        return {"count": len(rows), "source": "sqlite", "items": [dict(r) for r in rows]}
+    except Exception as _db_err:
+        return {"count": 0, "source": "error", "items": [], "error": str(_db_err)}
 
 
 # ---------------------------------------------------------------------------
