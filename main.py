@@ -102,18 +102,44 @@ app.add_middleware(
 @app.get("/api/health")
 async def health():
     """Diagnostyka — sprawdza czy klucze API są ustawione."""
-    has_claude = bool(os.environ.get("ANTHROPIC_API_KEY", ""))
-    has_gemini = bool(os.environ.get("GEMINI_API_KEY", ""))
-    has_openai = bool(os.environ.get("OPENAI_API_KEY", ""))
+    import os as _os
+    import json as _json
+    has_claude = bool(_os.environ.get("ANTHROPIC_API_KEY", ""))
+    has_gemini = bool(_os.environ.get("GEMINI_API_KEY", ""))
+    has_openai = bool(_os.environ.get("OPENAI_API_KEY", ""))
+
+    # Sprawdź env vars Google
+    token_env = _os.environ.get("GOOGLE_TOKEN_JSON", "")
+    creds_env = _os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
+    token_valid = False
+    creds_valid = False
+    if token_env:
+        try:
+            _json.loads(token_env)
+            token_valid = True
+        except Exception:
+            pass
+    if creds_env:
+        try:
+            _json.loads(creds_env)
+            creds_valid = True
+        except Exception:
+            pass
+
     return {
         "status": "ok",
         "has_all_modules": HAS_ALL_MODULES,
         "has_instagram": HAS_ALL_MODULES,
         "has_google": HAS_GOOGLE_MODULES,
         "claude_key": has_claude,
-        "claude_key_prefix": os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
+        "claude_key_prefix": _os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
         "gemini_key": has_gemini,
         "openai_key": has_openai,
+        "google_token_env_set": bool(token_env),
+        "google_token_env_valid_json": token_valid,
+        "google_token_env_len": len(token_env),
+        "google_creds_env_set": bool(creds_env),
+        "google_creds_env_valid_json": creds_valid,
     }
 
 @app.get("/api/google-business/diagnose")
