@@ -66,10 +66,20 @@ def get_credentials() -> Credentials:
             logging.getLogger(__name__).error("Błąd ładowania token.json: %s", e)
 
     if not creds or not creds.valid:
+        import logging as _log
+        _log.getLogger(__name__).info(
+            "Token state — creds=%s valid=%s expired=%s has_refresh=%s",
+            bool(creds), getattr(creds, "valid", None),
+            getattr(creds, "expired", None), bool(getattr(creds, "refresh_token", None))
+        )
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            with open(TOKEN_FILE, "w") as f:
-                f.write(creds.to_json())
+            try:
+                creds.refresh(Request())
+                with open(TOKEN_FILE, "w") as f:
+                    f.write(creds.to_json())
+            except Exception as refresh_err:
+                _log.getLogger(__name__).error("Token refresh failed: %s", refresh_err)
+                raise RuntimeError(f"Token refresh failed: {refresh_err}")
         elif os.path.exists(CREDENTIALS_FILE):
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
@@ -77,7 +87,9 @@ def get_credentials() -> Credentials:
                 f.write(creds.to_json())
         else:
             raise RuntimeError(
-                "Brak Google credentials. Ustaw GOOGLE_TOKEN_JSON lub GOOGLE_CREDENTIALS_JSON."
+                f"Brak Google credentials. creds={bool(creds)} "
+                f"expired={getattr(creds,'expired',None)} "
+                f"refresh_token={bool(getattr(creds,'refresh_token',None))}"
             )
 
     return creds
