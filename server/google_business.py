@@ -1,5 +1,10 @@
 """
 Obsługa Google Business Profile — odpowiadanie na recenzje, posty, statystyki.
+
+API v1 (aktualne, zastąpiło deprecated v4 z 2022):
+- mybusinessaccountmanagement.googleapis.com/v1  — konta
+- mybusinessbusinessinformation.googleapis.com/v1 — lokalizacje
+- mybusinessreviews.googleapis.com/v1             — recenzje
 """
 
 import logging
@@ -9,8 +14,10 @@ from claude_agent import get_reply
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://mybusinessaccountmanagement.googleapis.com/v1"
-REVIEWS_URL = "https://mybusiness.googleapis.com/v4"
+ACCOUNTS_URL  = "https://mybusinessaccountmanagement.googleapis.com/v1"
+LOCATIONS_URL = "https://mybusinessbusinessinformation.googleapis.com/v1"
+REVIEWS_URL   = "https://mybusinessreviews.googleapis.com/v1"
+POSTS_URL     = "https://mybusiness.googleapis.com/v4"   # posty — v4 nadal działa
 
 
 def _headers() -> dict:
@@ -24,17 +31,21 @@ def _headers() -> dict:
 
 def get_accounts() -> list[dict]:
     """Pobiera listę kont Google Business."""
-    resp = httpx.get(f"{BASE_URL}/accounts", headers=_headers())
+    resp = httpx.get(f"{ACCOUNTS_URL}/accounts", headers=_headers(), timeout=15)
     resp.raise_for_status()
     return resp.json().get("accounts", [])
 
 
 def get_locations(account_name: str) -> list[dict]:
-    """Pobiera lokalizacje dla danego konta."""
+    """
+    Pobiera lokalizacje dla danego konta.
+    account_name = "accounts/{id}"
+    """
     resp = httpx.get(
-        f"https://mybusinessbusinessinformation.googleapis.com/v1/{account_name}/locations",
+        f"{LOCATIONS_URL}/{account_name}/locations",
         params={"readMask": "name,title,phoneNumbers,websiteUri,storefrontAddress"},
         headers=_headers(),
+        timeout=15,
     )
     resp.raise_for_status()
     return resp.json().get("locations", [])
@@ -44,36 +55,49 @@ def get_locations(account_name: str) -> list[dict]:
 # Recenzje
 # ---------------------------------------------------------------------------
 
-def get_reviews(account_name: str, location_name: str) -> list[dict]:
-    """Pobiera recenzje dla lokalizacji."""
+def get_reviews(parent: str) -> list[dict]:
+    """
+    Pobiera recenzje dla lokalizacji bez odpowiedzi.
+    parent = "accounts/{accountId}/locations/{locationId}"
+    """
     resp = httpx.get(
-        f"{REVIEWS_URL}/{account_name}/{location_name}/reviews",
+        f"{REVIEWS_URL}/{parent}/reviews",
         headers=_headers(),
+        timeout=15,
     )
     resp.raise_for_status()
     reviews = resp.json().get("reviews", [])
-
     # Zwracamy tylko recenzje bez odpowiedzi
     return [r for r in reviews if "reviewReply" not in r]
 
 
-def reply_to_review(account_name: str, location_name: str, review_name: str, reply_text: str) -> dict:
-    """Odpowiada na recenzję."""
+def reply_to_review(review_name: str, reply_text: str) -> dict:
+    """
+    Odpowiada na recenzję.
+    review_name = "accounts/{accountId}/locations/{locationId}/reviews/{reviewId}"
+    """
     resp = httpx.put(
-        f"{REVIEWS_URL}/{account_name}/{location_name}/{review_name}/reply",
+        f"{REVIEWS_URL}/{review_name}/reply",
         headers=_headers(),
         json={"comment": reply_text},
+        timeout=15,
     )
     resp.raise_for_status()
     return resp.json()
 
 
 # ---------------------------------------------------------------------------
-# Posty (Google Posts)
+# Posty (Google Posts) — v4 nadal obsługiwane
 # ---------------------------------------------------------------------------
 
 def create_post(account_name: str, location_name: str, text: str, call_to_action: str = None) -> dict:
-    """Publikuje post na Google Business Profile."""
+    """
+    Publikuje post na Google Business Profile.
+    account_name   = "accounts/{id}"
+    location_name  = "locations/{id}"
+    """
+    loc_id = location_name.split("/")[-1]
+    url = f"{POSTS_URL}/{account_name}/locations/{loc_id}/localPosts"
     body = {
         "languageCode": "pl",
         "summary": text,
@@ -85,11 +109,7 @@ def create_post(account_name: str, location_name: str, text: str, call_to_action
             "url": call_to_action,
         }
 
-    resp = httpx.post(
-        f"{REVIEWS_URL}/{account_name}/{location_name}/localPosts",
-        headers=_headers(),
-        json=body,
-    )
+    resp = httpx.post(url, headers=_headers(), json=body, timeout=15)
     resp.raise_for_status()
     return resp.json()
 
@@ -101,45 +121,119 @@ def create_post(account_name: str, location_name: str, text: str, call_to_action
 def process_reviews():
     """
     Pobiera recenzje bez odpowiedzi i automatycznie odpowiada przez agenta.
+    Zwraca liczbę obsłużonych recenzji.
     """
+    total = 0
     try:
         accounts = get_accounts()
         if not accounts:
             logger.info("Brak kont Google Business.")
-            return
+            return 0
 
         for account in accounts:
-            account_name = account["name"]
-            locations = get_locations(account_name)
+            account_name = account["name"]  # np. "accounts/1234567"
+            logger.info("Google Business — konto: %s", account_name)
+
+            try:
+                locations = get_locations(account_name)
+            except httpx.HTTPStatusError as e:
+                logger.error("Błąd pobierania lokalizacji dla %s: %s %s",
+                             account_name, e.response.status_code, e.response.text[:200])
+                continue
 
             for location in locations:
-                location_name = location["name"].split("/")[-1]
-                full_location = f"{account_name}/locations/{location_name}"
-                reviews = get_reviews(account_name, full_location)
+                loc_name = location["name"]           # np. "locations/9876543"
+                loc_id   = loc_name.split("/")[-1]
+                parent   = f"{account_name}/locations/{loc_id}"
+                title    = location.get("title", loc_id)
 
-                if not reviews:
-                    logger.info("Brak nowych recenzji dla %s.", location.get("title", location_name))
+                try:
+                    reviews = get_reviews(parent)
+                except httpx.HTTPStatusError as e:
+                    logger.error("Błąd pobierania recenzji dla %s (%s): %s %s",
+                                 title, parent, e.response.status_code, e.response.text[:200])
                     continue
 
-                for review in reviews:
-                    reviewer = review.get("reviewer", {}).get("displayName", "Klient")
-                    comment = review.get("comment", "")
-                    rating = review.get("starRating", "")
-                    review_name = review["name"]
+                if not reviews:
+                    logger.info("Brak nowych recenzji dla %s.", title)
+                    continue
 
-                    logger.info("Recenzja od %s (%s gwiazdek): %s", reviewer, rating, comment[:80])
+                logger.info("%d nowych recenzji dla %s.", len(reviews), title)
+
+                for review in reviews:
+                    reviewer    = review.get("reviewer", {}).get("displayName", "Klient")
+                    comment     = review.get("comment", "")
+                    rating      = review.get("starRating", "?")
+                    review_name = review["name"]   # pełna ścieżka zasobu
+
+                    logger.info("Recenzja od %s (%s★): %s", reviewer, rating, comment[:80])
 
                     prompt = (
                         f"Recenzja Google od {reviewer} (ocena: {rating}/5):\n{comment}\n\n"
                         f"Napisz krótką, profesjonalną odpowiedź w imieniu szkoły FUN like HEL."
                     )
-                    reply_text = get_reply(prompt, sender_id=reviewer, channel="google_business")
-                    reply_to_review(account_name, full_location, review_name, reply_text)
-                    logger.info("Odpowiedź na recenzję wysłana.")
+                    try:
+                        reply_text = get_reply(
+                            prompt, sender_id=reviewer, channel="google_business"
+                        )
+                        reply_to_review(review_name, reply_text)
+                        logger.info("Odpowiedź na recenzję wysłana dla %s.", reviewer)
+                        total += 1
+                    except httpx.HTTPStatusError as e:
+                        logger.error("Błąd odpowiedzi na recenzję %s: %s %s",
+                                     review_name, e.response.status_code, e.response.text[:200])
 
-    except Exception as e:
-        if "403" in str(e):
-            logger.warning("Google Business API — włącz API w Google Cloud Console: "
-                           "console.developers.google.com/apis/api/mybusinessaccountmanagement.googleapis.com")
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        if status == 403:
+            logger.warning(
+                "Google Business API — brak dostępu (403). "
+                "Włącz API w Google Cloud Console:\n"
+                "  • My Business Reviews API\n"
+                "  • My Business Account Management API\n"
+                "  • My Business Business Information API"
+            )
+        elif status == 401:
+            logger.warning("Google Business API — token wygasł lub brak scope 'business.manage' (401).")
         else:
-            logger.error("Błąd Google Business: %s", e)
+            logger.error("Google Business HTTP %s: %s", status, e.response.text[:300])
+    except Exception as e:
+        logger.error("Niespodziewany błąd Google Business: %s", e)
+
+    return total
+
+
+# ---------------------------------------------------------------------------
+# Diagnostyka — wywołaj ręcznie żeby sprawdzić połączenie
+# ---------------------------------------------------------------------------
+
+def diagnose() -> dict:
+    """Zwraca info diagnostyczne: konta, lokalizacje, liczba recenzji bez odpowiedzi."""
+    result = {"accounts": [], "errors": []}
+    try:
+        accounts = get_accounts()
+        for acc in accounts:
+            acc_info = {"name": acc["name"], "locations": []}
+            try:
+                locs = get_locations(acc["name"])
+                for loc in locs:
+                    loc_id = loc["name"].split("/")[-1]
+                    parent = f"{acc['name']}/locations/{loc_id}"
+                    try:
+                        reviews = get_reviews(parent)
+                        acc_info["locations"].append({
+                            "title": loc.get("title", loc_id),
+                            "parent": parent,
+                            "unanswered_reviews": len(reviews),
+                        })
+                    except Exception as e:
+                        acc_info["locations"].append({
+                            "title": loc.get("title", loc_id),
+                            "error": str(e)
+                        })
+            except Exception as e:
+                acc_info["error"] = str(e)
+            result["accounts"].append(acc_info)
+    except Exception as e:
+        result["errors"].append(str(e))
+    return result
