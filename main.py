@@ -689,15 +689,12 @@ async def auto_upload_loop():
 
 
 async def google_business_loop():
-    """Sprawdzanie recenzji Google Business — co 3 godziny."""
-    await asyncio.sleep(180)  # opóźnienie startu
-    while True:
-        try:
-            logger.info("Sprawdzam recenzje Google Business...")
-            process_reviews()
-        except Exception as e:
-            logger.error("Błąd Google Business polling: %s", e)
-        await asyncio.sleep(10800)  # 3 godziny
+    """Sprawdzanie recenzji Google Business — co 3 godziny.
+    UWAGA: Wyłączone do czasu zatwierdzenia dostępu GBP API przez Google.
+    Włącz po otrzymaniu potwierdzenia z Google (quota > 0).
+    """
+    logger.info("Google Business loop wyłączony — oczekiwanie na zatwierdzenie GBP API quota.")
+    return
 
 
 async def facebook_groups_loop():
