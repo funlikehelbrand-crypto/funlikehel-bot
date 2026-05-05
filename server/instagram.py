@@ -299,6 +299,44 @@ async def publish_reel(video_url: str, caption: str, account: str = "funlikehel"
         return result
 
 
+def publish_yt_short_story_sync(video_id: str, title: str, account: str = "funlikehel") -> dict:
+    """
+    Sync: publikuje Story na IG z miniaturą YouTube Shorta + link do YT.
+    Używane z auto_upload.py (kontekst synchroniczny).
+    """
+    acct = get_account(account)
+    if not acct or not acct.ig_user_id:
+        raise ValueError(f"Konto IG '{account}' nie skonfigurowane")
+
+    thumbnail_url = f"https://i.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+    yt_url = f"https://www.youtube.com/shorts/{video_id}"
+
+    payload = {
+        "image_url": thumbnail_url,
+        "media_type": "STORIES",
+        "link": yt_url,
+    }
+
+    with httpx.Client(timeout=60) as client:
+        r1 = client.post(
+            f"{GRAPH_API_URL}/{acct.ig_user_id}/media",
+            params={"access_token": acct.token},
+            json=payload,
+        )
+        r1.raise_for_status()
+        creation_id = r1.json()["id"]
+
+        r2 = client.post(
+            f"{GRAPH_API_URL}/{acct.ig_user_id}/media_publish",
+            params={"access_token": acct.token},
+            json={"creation_id": creation_id},
+        )
+        r2.raise_for_status()
+        result = r2.json()
+        logger.info("Story YT Short na @%s: %s → %s", acct.username, result.get("id"), yt_url)
+        return result
+
+
 async def publish_to_all(image_url: str, caption: str, accounts: list[str] | None = None) -> dict[str, dict]:
     """Publikuje ten sam post na wielu kontach."""
     targets = accounts or list(ACCOUNTS.keys())

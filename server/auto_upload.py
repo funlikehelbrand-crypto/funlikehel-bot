@@ -62,20 +62,16 @@ YOUTUBE_DESCRIPTION_TEMPLATE = """{title}
 
 YOUTUBE_SHORTS_DESCRIPTION_TEMPLATE = """{title}
 
-#Shorts #FunLikeHel #kitesurfing #Egipt #sportyWodne
+👉 Chcesz spróbować? Zadzwoń: 690 270 032
+🌐 www.funlikehel.pl | 📸 @funlikehel
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏄 FUN like HEL | Szkoła Kite & Wind
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎓 Kursy kitesurfingu i windsurfingu — Jastarnia & Hurghada
+✅ Dla dorosłych, dzieci i grup | ✅ Obozy & wyjazdy do Egiptu
 
-📍 POLSKA — Jastarnia | 📍 EGIPT — Hurghada
-
-📞 690 270 032
-🌐 www.funlikehel.pl
-📸 @funlikehel
+#Shorts #kitesurfing #kite #FunLikeHel #sportyWodne #Jastarnia #Hurghada #Egipt #kiteboarding #OdZeraDoKajtera #szkolaKite #kursKite
 """
 
-SHORT_MAX_SECONDS = 15  # filmy <= 15s wrzucane jako Short
+SHORT_MAX_SECONDS = 60  # filmy <= 60s wrzucane jako Short (YouTube limit dla Shorts)
 
 
 def get_video_duration(file_path: str) -> float:
@@ -270,11 +266,19 @@ def process_upload_folder():
         tmp_path = None
         try:
             tmp_path = download_file(file_id, filename)
-            upload_to_youtube(tmp_path, title, instrukcja)
+            video_id = upload_to_youtube(tmp_path, title, instrukcja)
 
             # Usuń z Drive po udanym uploadzie
             delete_file(file_id)
             logger.info("🗑️ Plik '%s' usunięty z Drive.", filename)
+
+            # Opublikuj Story na IG z miniaturą YT + link
+            try:
+                from instagram import publish_yt_short_story_sync
+                publish_yt_short_story_sync(video_id, title)
+                logger.info("📸 Story IG opublikowane dla '%s'.", title)
+            except Exception as ig_err:
+                logger.warning("⚠️ Błąd Story IG (film wgrany na YT): %s", ig_err)
 
         except Exception as e:
             err_str = str(e)

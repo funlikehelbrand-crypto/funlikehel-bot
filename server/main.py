@@ -95,6 +95,72 @@ async def health():
         "openai_key": has_openai,
     }
 
+@app.get("/api/google-business/diagnose")
+async def google_business_diagnose():
+    """Diagnostyka Google Business — sprawdza konta, lokalizacje i recenzje bez odpowiedzi."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły Google niedostępne")
+    try:
+        from google_business import diagnose
+        return diagnose()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/google-business/process")
+async def google_business_process():
+    """Ręczne wywołanie przetwarzania recenzji Google Business."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły Google niedostępne")
+    try:
+        from google_business import process_reviews
+        count = process_reviews()
+        return {"status": "ok", "answered": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/google-business/review-links")
+async def review_links():
+    """Zwraca linki do wystawiania opinii na Google Maps dla wszystkich profili FLH."""
+    from google_business import REVIEW_LINKS
+    return {
+        "links": REVIEW_LINKS,
+        "primary": REVIEW_LINKS["funlikehel_jastarnia"],
+        "note": "Główny profil FLH Jastarnia — tu zbieramy nowe opinie",
+    }
+
+
+class ReviewRequestBody(BaseModel):
+    phone: str
+    name: str = "Kliencie"
+    location: str = "funlikehel_jastarnia"   # funlikehel_jastarnia | surf4hel_jastarnia | flh_hurghada
+
+
+@app.post("/api/google-business/request-review")
+async def request_review(body: ReviewRequestBody):
+    """
+    Wysyła SMS z prośbą o opinię na Google Maps.
+    Domyślnie kieruje na główny profil FUN like HEL Jastarnia.
+    """
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły Google niedostępne")
+    try:
+        from google_business import get_review_link
+        from sms import send_sms
+
+        link = get_review_link(body.location)
+        msg = (
+            f"Hej {body.name}! Dziękujemy za kurs w FUN like HEL 🤙 "
+            f"Jeśli masz chwilę — zostaw nam opinię na Google, bardzo nam to pomaga! "
+            f"{link}"
+        )
+        result = send_sms(body.phone, msg)
+        return {"status": "sent", "phone": body.phone, "link": link, "sms": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
@@ -131,6 +197,99 @@ class EkipaRequest(BaseModel):
     sport: str | None = None
     locations: list[str] = []
 
+EKIPA_SHEET_NAME = "Ekipa FLH"
+EKIPA_SHEET_HEADERS = ["Data zapisu", "Imię", "Email", "Telefon", "Sport", "Lokalizacja"]
+_ekipa_sheet_id: str = ""  # cache ID arkusza w pamięci procesu
+
+
+def _get_ekipa_sheet_id() -> str:
+    """Zwraca ID arkusza Google Sheets 'Ekipa FLH' — tworzy jeśli nie istnieje."""
+    global _ekipa_sheet_id
+    if _ekipa_sheet_id:
+        return _ekipa_sheet_id
+
+    sheet_id = os.environ.get("EKIPA_SHEET_ID", "")
+    if sheet_id:
+        _ekipa_sheet_id = sheet_id
+        return sheet_id
+
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    drive = build("drive", "v3", credentials=creds)
+    sheets = build("sheets", "v4", credentials=creds)
+
+    # Szukaj istniejącego arkusza
+    res = drive.files().list(
+        q=f"name='{EKIPA_SHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+        spaces="drive", fields="files(id)"
+    ).execute()
+    files = res.get("files", [])
+
+    if files:
+        sheet_id = files[0]["id"]
+    else:
+        # Stwórz nowy arkusz z nagłówkami
+        spreadsheet = sheets.spreadsheets().create(body={
+            "properties": {"title": EKIPA_SHEET_NAME},
+            "sheets": [{"properties": {"title": "Zapisy"}}]
+        }).execute()
+        sheet_id = spreadsheet["spreadsheetId"]
+        sheets.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range="Zapisy!A1",
+            valueInputOption="RAW",
+            body={"values": [EKIPA_SHEET_HEADERS]}
+        ).execute()
+        logger.info("Stworzono nowy arkusz Ekipa FLH: %s", sheet_id)
+
+    _ekipa_sheet_id = sheet_id
+    return sheet_id
+
+
+def _sheets_append_ekipa(record: dict):
+    """Dopisuje wiersz do Google Sheets — trwałe przechowanie danych (przeżywa restart Rendera)."""
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    sheets = build("sheets", "v4", credentials=creds)
+    sheet_id = _get_ekipa_sheet_id()
+    row = [
+        record["created_at"][:19].replace("T", " "),
+        record["name"],
+        record["email"],
+        record["phone"],
+        record["sport"],
+        record["locations"],
+    ]
+    sheets.spreadsheets().values().append(
+        spreadsheetId=sheet_id,
+        range="Zapisy!A1",
+        valueInputOption="RAW",
+        insertDataOption="INSERT_ROWS",
+        body={"values": [row]}
+    ).execute()
+    logger.info("Ekipa zapisana do Google Sheets: %s | %s", record["name"], record["email"])
+
+
+def _sheets_read_ekipa() -> list[dict]:
+    """Czyta wszystkie zapisy z Google Sheets."""
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    sheets = build("sheets", "v4", credentials=creds)
+    sheet_id = _get_ekipa_sheet_id()
+    res = sheets.spreadsheets().values().get(
+        spreadsheetId=sheet_id,
+        range="Zapisy!A1:F"
+    ).execute()
+    rows = res.get("values", [])
+    if not rows or len(rows) < 2:
+        return []
+    headers = rows[0]
+    return [dict(zip(headers, row + [""] * (len(headers) - len(row)))) for row in rows[1:]]
+
+
 @app.post("/api/ekipa")
 async def ekipa_signup(req: EkipaRequest):
     """Zapis klienta z landing page /ekipa — email, telefon, sport, lokalizacja."""
@@ -145,10 +304,8 @@ async def ekipa_signup(req: EkipaRequest):
         "created_at": datetime.datetime.now().isoformat(),
     }
 
-    if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("USE_FIRESTORE"):
-        from google.cloud import firestore as _fs
-        _fs.Client().collection("ekipa").add(record)
-    else:
+    # SQLite — lokalny cache (ephemeral na Render, ale szybki)
+    try:
         import sqlite3
         db = sqlite3.connect("ekipa.db")
         db.execute("""CREATE TABLE IF NOT EXISTS ekipa (
@@ -162,10 +319,18 @@ async def ekipa_signup(req: EkipaRequest):
         )
         db.commit()
         db.close()
+    except Exception as _db_err:
+        logger.warning("SQLite ekipa zapis nieudany: %s", _db_err)
 
     logger.info("Nowy zapis do ekipy: %s | %s | %s | %s", req.name, req.email, req.sport, req.locations)
 
-    # SMS powiadomienie do właściciela — żeby nie stracić zapisu przy restarcie Rendera
+    # Google Sheets — TRWAŁY backup (przeżywa restart Rendera)
+    try:
+        _sheets_append_ekipa(record)
+    except Exception as _sh_err:
+        logger.warning("Google Sheets zapis ekipa nieudany: %s", _sh_err)
+
+    # SMS powiadomienie do właściciela
     try:
         from sms import send_sms
         locs = ",".join(req.locations) if req.locations else "?"
@@ -176,7 +341,7 @@ async def ekipa_signup(req: EkipaRequest):
     except Exception as _sms_err:
         logger.warning("SMS powiadomienie ekipa nie wysłane: %s", _sms_err)
 
-    # Zapis do Google Contacts — trwałe przechowywanie danych klientów
+    # Google Contacts — dodatkowy backup
     try:
         from google_contacts import create_contact
         locs = ",".join(req.locations) if req.locations else ""
@@ -195,18 +360,31 @@ async def ekipa_signup(req: EkipaRequest):
 
 @app.get("/api/ekipa/list")
 async def ekipa_list(token: str = ""):
-    """Lista zapisanych klientow (chroniona tokenem)."""
-    import sqlite3
+    """Lista zapisanych klientów — czyta z Google Sheets (trwałe) + SQLite (lokalny cache)."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Brak dostepu")
 
-    db = sqlite3.connect("ekipa.db")
-    db.row_factory = sqlite3.Row
-    rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
-    db.close()
-    return {"count": len(rows), "items": [dict(r) for r in rows]}
+    # Główne źródło: Google Sheets (trwałe, przeżywa restart)
+    try:
+        items = _sheets_read_ekipa()
+        # Filtruj nagłówki jeśli przypadkowo weszły jako dane
+        items = [r for r in items if r.get("Email", "") not in ("", "Email")]
+        return {"count": len(items), "source": "sheets", "items": items}
+    except Exception as _sh_err:
+        logger.warning("Google Sheets read ekipa nieudany, fallback SQLite: %s", _sh_err)
+
+    # Fallback: SQLite (może być pusty po restarcie)
+    try:
+        import sqlite3
+        db = sqlite3.connect("ekipa.db")
+        db.row_factory = sqlite3.Row
+        rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
+        db.close()
+        return {"count": len(rows), "source": "sqlite", "items": [dict(r) for r in rows]}
+    except Exception as _db_err:
+        return {"count": 0, "source": "error", "items": [], "error": str(_db_err)}
 
 
 # DM Campaign — USUNIĘTE po incydencie spamu 2026-04-30
@@ -518,16 +696,51 @@ async def auto_upload_loop():
         await asyncio.sleep(3600)  # 1 godzina
 
 
+# Odświeżone Shorty 2026-05-05 — promuj co godzinę jako Stories
+_SHORTS_CAMPAIGN_2026_05_05 = [
+    ("t2__Csj2WzU", "Freeride na Cabrinha — Low Wind Session | FUN like HEL Egipt"),
+    ("4pXuxouzdpY", "Piekny spot, zapraszamy do polskiej bazy | FUN like HEL Egipt"),
+    ("x4LhWYDcyaY", "What is kite for you? | FUN like HEL Egipt"),
+    ("QLd53kg00H4", "Kinga od zera do bohatera | FUN like HEL Egipt"),
+    ("cUVHT1Lhztc", "Pierwszenstwo na wodzie — zasady bezpieczenstwa kite | FUN like HEL"),
+    ("7KV9y0VQ6_4", "Sesja kitesurfingowa | FUN like HEL Egipt"),
+    ("L13PDZV01eU", "Darkslide — zmiana halsu | techniki kitesurfingu | FUN like HEL"),
+]
+
+
+async def shorts_stories_campaign_loop():
+    """Publikuje odświeżone Shorty jako Stories IG — co 1h, jeden po drugim."""
+    try:
+        from instagram import publish_yt_short_story_sync
+    except ImportError:
+        logger.warning("Brak instagram.py — shorts_stories_campaign_loop wyłączony.")
+        return
+
+    logger.info("Shorts Stories Campaign START — %d filmów co 1h.", len(_SHORTS_CAMPAIGN_2026_05_05))
+    for video_id, title in _SHORTS_CAMPAIGN_2026_05_05:
+        try:
+            publish_yt_short_story_sync(video_id, title)
+            logger.info("✅ Story Short opublikowane: %s", title[:50])
+        except Exception as e:
+            logger.error("❌ Błąd Story Short '%s': %s", video_id, e)
+        await asyncio.sleep(3600)  # 1 godzina między Story
+
+    logger.info("Shorts Stories Campaign KONIEC — wszystkie 7 Story opublikowane.")
+
+
 async def google_business_loop():
-    """Sprawdzanie recenzji Google Business — co 3 godziny."""
-    await asyncio.sleep(180)  # opóźnienie startu
+    """Sprawdzanie recenzji Google Business — co 24h.
+    Business Profile API pending approval (wniosek 2026-05-03).
+    Po zatwierdzeniu zmienić sleep na 10800 (3h).
+    """
+    await asyncio.sleep(300)  # opóźnienie startu
     while True:
         try:
             logger.info("Sprawdzam recenzje Google Business...")
             process_reviews()
         except Exception as e:
             logger.error("Błąd Google Business polling: %s", e)
-        await asyncio.sleep(10800)  # 3 godziny
+        await asyncio.sleep(86400)  # 24h — zmień na 10800 po zatwierdzeniu API
 
 
 async def facebook_groups_loop():
@@ -579,6 +792,7 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
+        asyncio.create_task(shorts_stories_campaign_loop())
     if _HAS_FB_LEAD_SCOUT:
         asyncio.create_task(fb_lead_scout_loop())
         logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
