@@ -22,9 +22,17 @@ from claude_agent import get_reply
 from booking_db import init_db
 from booking import booking_router
 
-# Opcjonalne moduły - mogą nie działać bez credentials/kluczy na serwerze
+# Instagram + WhatsApp — krytyczne dla odpowiadania na wiadomości
 try:
     from instagram import reply_to_comment, send_dm, init_accounts as init_ig_accounts, find_account_by_ig_id
+    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
+    HAS_ALL_MODULES = True
+except Exception as e:
+    logging.warning("Instagram/WhatsApp niedostępny: %s", e)
+    HAS_ALL_MODULES = False
+
+# Google + inne moduły — opcjonalne (background polling)
+try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
     from tiktok import get_auth_url, exchange_code_for_token
@@ -33,13 +41,11 @@ try:
     from auto_upload import process_upload_folder
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
-    from whatsapp import send_message as wa_send_message, mark_as_read as wa_mark_as_read
     from facebook_groups import process_facebook_groups
-    from dm_campaign import run_dm_campaign, get_campaign_stats
-    HAS_ALL_MODULES = True
+    HAS_GOOGLE_MODULES = True
 except Exception as e:
-    logging.warning("Niektóre moduły niedostępne (brak credentials): %s", e)
-    HAS_ALL_MODULES = False
+    logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
+    HAS_GOOGLE_MODULES = False
 
 load_dotenv("api.env")
 
@@ -81,11 +87,79 @@ async def health():
     return {
         "status": "ok",
         "has_all_modules": HAS_ALL_MODULES,
+        "has_instagram": HAS_ALL_MODULES,
+        "has_google": HAS_GOOGLE_MODULES,
         "claude_key": has_claude,
         "claude_key_prefix": os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
         "gemini_key": has_gemini,
         "openai_key": has_openai,
     }
+
+@app.get("/api/google-business/diagnose")
+async def google_business_diagnose():
+    """Diagnostyka Google Business — sprawdza konta, lokalizacje i recenzje bez odpowiedzi."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły Google niedostępne")
+    try:
+        from google_business import diagnose
+        return diagnose()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/google-business/process")
+async def google_business_process():
+    """Ręczne wywołanie przetwarzania recenzji Google Business."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły Google niedostępne")
+    try:
+        from google_business import process_reviews
+        count = process_reviews()
+        return {"status": "ok", "answered": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/google-business/review-links")
+async def review_links():
+    """Zwraca linki do wystawiania opinii na Google Maps dla wszystkich profili FLH."""
+    from google_business import REVIEW_LINKS
+    return {
+        "links": REVIEW_LINKS,
+        "primary": REVIEW_LINKS["funlikehel_jastarnia"],
+        "note": "Główny profil FLH Jastarnia — tu zbieramy nowe opinie",
+    }
+
+
+class ReviewRequestBody(BaseModel):
+    phone: str
+    name: str = "Kliencie"
+    location: str = "funlikehel_jastarnia"   # funlikehel_jastarnia | surf4hel_jastarnia | flh_hurghada
+
+
+@app.post("/api/google-business/request-review")
+async def request_review(body: ReviewRequestBody):
+    """
+    Wysyła SMS z prośbą o opinię na Google Maps.
+    Domyślnie kieruje na główny profil FUN like HEL Jastarnia.
+    """
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduły Google niedostępne")
+    try:
+        from google_business import get_review_link
+        from sms import send_sms
+
+        link = get_review_link(body.location)
+        msg = (
+            f"Hej {body.name}! Dziękujemy za kurs w FUN like HEL 🤙 "
+            f"Jeśli masz chwilę — zostaw nam opinię na Google, bardzo nam to pomaga! "
+            f"{link}"
+        )
+        result = send_sms(body.phone, msg)
+        return {"status": "sent", "phone": body.phone, "link": link, "sms": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -123,6 +197,99 @@ class EkipaRequest(BaseModel):
     sport: str | None = None
     locations: list[str] = []
 
+EKIPA_SHEET_NAME = "Ekipa FLH"
+EKIPA_SHEET_HEADERS = ["Data zapisu", "Imię", "Email", "Telefon", "Sport", "Lokalizacja"]
+_ekipa_sheet_id: str = ""  # cache ID arkusza w pamięci procesu
+
+
+def _get_ekipa_sheet_id() -> str:
+    """Zwraca ID arkusza Google Sheets 'Ekipa FLH' — tworzy jeśli nie istnieje."""
+    global _ekipa_sheet_id
+    if _ekipa_sheet_id:
+        return _ekipa_sheet_id
+
+    sheet_id = os.environ.get("EKIPA_SHEET_ID", "")
+    if sheet_id:
+        _ekipa_sheet_id = sheet_id
+        return sheet_id
+
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    drive = build("drive", "v3", credentials=creds)
+    sheets = build("sheets", "v4", credentials=creds)
+
+    # Szukaj istniejącego arkusza
+    res = drive.files().list(
+        q=f"name='{EKIPA_SHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+        spaces="drive", fields="files(id)"
+    ).execute()
+    files = res.get("files", [])
+
+    if files:
+        sheet_id = files[0]["id"]
+    else:
+        # Stwórz nowy arkusz z nagłówkami
+        spreadsheet = sheets.spreadsheets().create(body={
+            "properties": {"title": EKIPA_SHEET_NAME},
+            "sheets": [{"properties": {"title": "Zapisy"}}]
+        }).execute()
+        sheet_id = spreadsheet["spreadsheetId"]
+        sheets.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range="Zapisy!A1",
+            valueInputOption="RAW",
+            body={"values": [EKIPA_SHEET_HEADERS]}
+        ).execute()
+        logger.info("Stworzono nowy arkusz Ekipa FLH: %s", sheet_id)
+
+    _ekipa_sheet_id = sheet_id
+    return sheet_id
+
+
+def _sheets_append_ekipa(record: dict):
+    """Dopisuje wiersz do Google Sheets — trwałe przechowanie danych (przeżywa restart Rendera)."""
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    sheets = build("sheets", "v4", credentials=creds)
+    sheet_id = _get_ekipa_sheet_id()
+    row = [
+        record["created_at"][:19].replace("T", " "),
+        record["name"],
+        record["email"],
+        record["phone"],
+        record["sport"],
+        record["locations"],
+    ]
+    sheets.spreadsheets().values().append(
+        spreadsheetId=sheet_id,
+        range="Zapisy!A1",
+        valueInputOption="RAW",
+        insertDataOption="INSERT_ROWS",
+        body={"values": [row]}
+    ).execute()
+    logger.info("Ekipa zapisana do Google Sheets: %s | %s", record["name"], record["email"])
+
+
+def _sheets_read_ekipa() -> list[dict]:
+    """Czyta wszystkie zapisy z Google Sheets."""
+    from google_auth import get_credentials
+    from googleapiclient.discovery import build
+    creds = get_credentials()
+    sheets = build("sheets", "v4", credentials=creds)
+    sheet_id = _get_ekipa_sheet_id()
+    res = sheets.spreadsheets().values().get(
+        spreadsheetId=sheet_id,
+        range="Zapisy!A1:F"
+    ).execute()
+    rows = res.get("values", [])
+    if not rows or len(rows) < 2:
+        return []
+    headers = rows[0]
+    return [dict(zip(headers, row + [""] * (len(headers) - len(row)))) for row in rows[1:]]
+
+
 @app.post("/api/ekipa")
 async def ekipa_signup(req: EkipaRequest):
     """Zapis klienta z landing page /ekipa — email, telefon, sport, lokalizacja."""
@@ -137,10 +304,8 @@ async def ekipa_signup(req: EkipaRequest):
         "created_at": datetime.datetime.now().isoformat(),
     }
 
-    if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("USE_FIRESTORE"):
-        from google.cloud import firestore as _fs
-        _fs.Client().collection("ekipa").add(record)
-    else:
+    # SQLite — lokalny cache (ephemeral na Render, ale szybki)
+    try:
         import sqlite3
         db = sqlite3.connect("ekipa.db")
         db.execute("""CREATE TABLE IF NOT EXISTS ekipa (
@@ -154,10 +319,18 @@ async def ekipa_signup(req: EkipaRequest):
         )
         db.commit()
         db.close()
+    except Exception as _db_err:
+        logger.warning("SQLite ekipa zapis nieudany: %s", _db_err)
 
     logger.info("Nowy zapis do ekipy: %s | %s | %s | %s", req.name, req.email, req.sport, req.locations)
 
-    # SMS powiadomienie do właściciela — żeby nie stracić zapisu przy restarcie Rendera
+    # Google Sheets — TRWAŁY backup (przeżywa restart Rendera)
+    try:
+        _sheets_append_ekipa(record)
+    except Exception as _sh_err:
+        logger.warning("Google Sheets zapis ekipa nieudany: %s", _sh_err)
+
+    # SMS powiadomienie do właściciela
     try:
         from sms import send_sms
         locs = ",".join(req.locations) if req.locations else "?"
@@ -168,7 +341,7 @@ async def ekipa_signup(req: EkipaRequest):
     except Exception as _sms_err:
         logger.warning("SMS powiadomienie ekipa nie wysłane: %s", _sms_err)
 
-    # Zapis do Google Contacts — trwałe przechowywanie danych klientów
+    # Google Contacts — dodatkowy backup
     try:
         from google_contacts import create_contact
         locs = ",".join(req.locations) if req.locations else ""
@@ -187,103 +360,98 @@ async def ekipa_signup(req: EkipaRequest):
 
 @app.get("/api/ekipa/list")
 async def ekipa_list(token: str = ""):
-    """Lista zapisanych klientow (chroniona tokenem)."""
-    import sqlite3
+    """Lista zapisanych klientów — czyta z Google Sheets (trwałe) + SQLite (lokalny cache)."""
     secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
     if token != secret:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Brak dostepu")
 
-    db = sqlite3.connect("ekipa.db")
-    db.row_factory = sqlite3.Row
-    rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
-    db.close()
-    return {"count": len(rows), "items": [dict(r) for r in rows]}
-
-
-# ---------------------------------------------------------------------------
-# DM Campaign — kampania zaproszeniowa przez Instagram DM
-# ---------------------------------------------------------------------------
-
-class DMCampaignRequest(BaseModel):
-    dry_run: bool = False
-    account: str = ""
-
-_dm_campaign_status: dict = {"running": False, "last_result": None}
-
-async def _run_dm_campaign_bg(dry_run: bool, account: str):
-    """Background task — wysyła kampanię DM i zapisuje wynik."""
-    _dm_campaign_status["running"] = True
-    _dm_campaign_status["started_at"] = datetime.utcnow().isoformat()
+    # Główne źródło: Google Sheets (trwałe, przeżywa restart)
     try:
-        result = await run_dm_campaign(dry_run=dry_run, account=account)
-        _dm_campaign_status["last_result"] = result
+        items = _sheets_read_ekipa()
+        # Filtruj nagłówki jeśli przypadkowo weszły jako dane
+        items = [r for r in items if r.get("Email", "") not in ("", "Email")]
+        return {"count": len(items), "source": "sheets", "items": items}
+    except Exception as _sh_err:
+        logger.warning("Google Sheets read ekipa nieudany, fallback SQLite: %s", _sh_err)
+
+    # Fallback: SQLite (może być pusty po restarcie)
+    try:
+        import sqlite3
+        db = sqlite3.connect("ekipa.db")
+        db.row_factory = sqlite3.Row
+        rows = db.execute("SELECT * FROM ekipa ORDER BY created_at DESC").fetchall()
+        db.close()
+        return {"count": len(rows), "source": "sqlite", "items": [dict(r) for r in rows]}
+    except Exception as _db_err:
+        return {"count": 0, "source": "error", "items": [], "error": str(_db_err)}
+
+
+# DM Campaign — USUNIĘTE po incydencie spamu 2026-04-30
+# Wszystkie endpointy /api/dm-campaign/* zostały usunięte z kodu.
+
+
+@app.get("/api/dm-report")
+async def dm_report(token: str = ""):
+    """Raport: pełna historia wysłanych DM + info o kontach IG (followersi)."""
+    import sqlite3, httpx as _httpx
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    # 1. Historia wysłanych (SQLite)
+    sent = []
+    try:
+        DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dm_campaign.db")
+        conn = sqlite3.connect(DB)
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT recipient_id, username, status, sent_at FROM dm_sent ORDER BY sent_at ASC").fetchall()
+        sent = [dict(r) for r in rows]
+        conn.close()
     except Exception as e:
-        _dm_campaign_status["last_result"] = {"error": str(e)}
-        logger.error("DM Campaign background error: %s", e)
-    finally:
-        _dm_campaign_status["running"] = False
-        _dm_campaign_status["finished_at"] = datetime.utcnow().isoformat()
+        sent = [{"error": str(e)}]
 
-@app.post("/api/dm-campaign/run")
-async def dm_campaign_run(req: DMCampaignRequest, token: str = ""):
-    """Odpala kampanię DM w tle. Zwraca od razu. Sprawdź /stats po statusie."""
-    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
-    if token != secret:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
+    # 2. Info o kontach IG
+    GRAPH = "https://graph.instagram.com/v21.0"
+    accounts_info = {}
+    tokens = {
+        "funlikehel": os.environ.get("PAGE_ACCESS_TOKEN", ""),
+        "surf4hel": os.environ.get("Insta_surf4hel", ""),
+    }
+    for name, tok in tokens.items():
+        if not tok:
+            accounts_info[name] = {"error": "brak tokena"}
+            continue
+        try:
+            async with _httpx.AsyncClient(timeout=15) as client:
+                r = await client.get(f"{GRAPH}/me", params={
+                    "access_token": tok,
+                    "fields": "id,username,followers_count,follows_count,media_count,biography"
+                })
+                accounts_info[name] = r.json() if r.status_code == 200 else {"error": r.text[:200]}
+        except Exception as e:
+            accounts_info[name] = {"error": str(e)}
 
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
+    # 3. Kontakty (wszystkich którym można wysłać)
+    contacts_count = 0
+    not_sent_contacts = []
+    try:
+        from dm_campaign import get_all_dm_contacts
+        sent_ids = {s["recipient_id"] for s in sent if "recipient_id" in s}
+        all_contacts = get_all_dm_contacts()
+        contacts_count = len(all_contacts)
+        not_sent_contacts = [c for c in all_contacts if c["id"] not in sent_ids]
+    except Exception as e:
+        not_sent_contacts = [{"error": str(e)}]
 
-    if _dm_campaign_status["running"]:
-        return {"status": "already_running", "started_at": _dm_campaign_status.get("started_at")}
-
-    asyncio.create_task(_run_dm_campaign_bg(req.dry_run, req.account))
-    return {"status": "started", "dry_run": req.dry_run, "account": req.account or "all"}
-
-
-@app.get("/api/dm-campaign/stats")
-async def dm_campaign_stats(token: str = ""):
-    """Statystyki kampanii DM — ile wysłano, ostatni run, status bieżący."""
-    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
-    if token != secret:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduł dm_campaign niedostępny")
-
-    stats = get_campaign_stats()
-    stats["currently_running"] = _dm_campaign_status["running"]
-    stats["last_bg_result"] = _dm_campaign_status.get("last_result")
-    stats["started_at"] = _dm_campaign_status.get("started_at")
-    stats["finished_at"] = _dm_campaign_status.get("finished_at")
-    return stats
-
-
-@app.get("/api/dm-sent-history")
-async def dm_sent_history(token: str = ""):
-    """Pełna historia wysyłek DM — kto, kiedy, z jakiego konta, status."""
-    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
-    if token != admin_token:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    from dm_campaign import _drive_sent_cache
-    return {"count": len(_drive_sent_cache), "history": _drive_sent_cache}
-
-
-@app.get("/api/dm-contacts")
-async def dm_contacts_list(token: str = ""):
-    """Lista kontaktów DM z wszystkich kont IG."""
-    admin_token = os.environ.get("BOOKING_ADMIN_TOKEN", "")
-    if token != admin_token:
-        raise HTTPException(status_code=403, detail="Brak dostępu")
-
-    if not HAS_ALL_MODULES:
-        raise HTTPException(status_code=503, detail="Moduły niedostępne")
-
-    from dm_campaign import get_all_dm_contacts
-    contacts = get_all_dm_contacts()
-    return {"count": len(contacts), "contacts": contacts}
+    return {
+        "sent_total": len(sent),
+        "sent": sent,
+        "accounts": accounts_info,
+        "contacts_total": contacts_count,
+        "not_sent_count": len(not_sent_contacts),
+        "not_sent": not_sent_contacts,
+    }
 
 
 @app.get("/api/dm-history")
@@ -358,6 +526,81 @@ async def dm_history(token: str = "", limit: int = 50):
             all_conversations.append({"account": acct.name, "error": str(e)})
 
     return {"total_conversations": len(all_conversations), "conversations": all_conversations}
+
+
+@app.get("/api/dm-export")
+async def dm_export(token: str = ""):
+    """
+    Pełny eksport kontaktów DM — paginuje przez WSZYSTKIE rozmowy.
+    Zwraca listę uczestników (username, id, konto, data) bez treści wiadomości.
+    Chroni: EKIPA_SECRET.
+    """
+    secret = os.environ.get("EKIPA_SECRET", "flh2024ekipa")
+    if token != secret:
+        raise HTTPException(status_code=403, detail="Brak dostępu")
+
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="Instagram niedostępny")
+
+    from instagram import get_all_accounts
+    GRAPH = "https://graph.instagram.com/v21.0"
+    contacts = []
+    seen_ids = set()
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        for acct in get_all_accounts():
+            if not acct.token:
+                continue
+
+            # Pobierz własne ID konta (żeby pominąć siebie)
+            try:
+                me_r = await client.get(f"{GRAPH}/me", params={"fields": "id", "access_token": acct.token})
+                own_id = me_r.json().get("id", "") if me_r.status_code == 200 else ""
+            except Exception:
+                own_id = ""
+
+            page_url = (
+                f"{GRAPH}/me/conversations"
+                f"?fields=participants,updated_time"
+                f"&platform=instagram&limit=50"
+                f"&access_token={acct.token}"
+            )
+            page_num = 0
+
+            while page_url:
+                try:
+                    r = await client.get(page_url, timeout=20)
+                    if r.status_code != 200:
+                        break
+                    data = r.json()
+                    page_num += 1
+
+                    for conv in data.get("data", []):
+                        updated = conv.get("updated_time", "")
+                        for p in conv.get("participants", {}).get("data", []):
+                            pid = p.get("id", "")
+                            if pid and pid != own_id and pid not in seen_ids:
+                                seen_ids.add(pid)
+                                contacts.append({
+                                    "id": pid,
+                                    "username": p.get("username", "?"),
+                                    "konto": acct.name,
+                                    "ostatnia_wiadomosc": updated,
+                                    "strona": page_num,
+                                })
+
+                    page_url = data.get("paging", {}).get("next", "")
+                    await asyncio.sleep(0.5)  # 0.5s między stronami — bezpieczny rate limit
+
+                except Exception as e:
+                    logger.error("dm-export paginacja błąd: %s", e)
+                    break
+
+    contacts.sort(key=lambda x: x["ostatnia_wiadomosc"], reverse=True)
+    return {
+        "total": len(contacts),
+        "contacts": contacts,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -453,16 +696,51 @@ async def auto_upload_loop():
         await asyncio.sleep(3600)  # 1 godzina
 
 
+# Odświeżone Shorty 2026-05-05 — promuj co godzinę jako Stories
+_SHORTS_CAMPAIGN_2026_05_05 = [
+    ("t2__Csj2WzU", "Freeride na Cabrinha — Low Wind Session | FUN like HEL Egipt"),
+    ("4pXuxouzdpY", "Piekny spot, zapraszamy do polskiej bazy | FUN like HEL Egipt"),
+    ("x4LhWYDcyaY", "What is kite for you? | FUN like HEL Egipt"),
+    ("QLd53kg00H4", "Kinga od zera do bohatera | FUN like HEL Egipt"),
+    ("cUVHT1Lhztc", "Pierwszenstwo na wodzie — zasady bezpieczenstwa kite | FUN like HEL"),
+    ("7KV9y0VQ6_4", "Sesja kitesurfingowa | FUN like HEL Egipt"),
+    ("L13PDZV01eU", "Darkslide — zmiana halsu | techniki kitesurfingu | FUN like HEL"),
+]
+
+
+async def shorts_stories_campaign_loop():
+    """Publikuje odświeżone Shorty jako Stories IG — co 1h, jeden po drugim."""
+    try:
+        from instagram import publish_yt_short_story_sync
+    except ImportError:
+        logger.warning("Brak instagram.py — shorts_stories_campaign_loop wyłączony.")
+        return
+
+    logger.info("Shorts Stories Campaign START — %d filmów co 1h.", len(_SHORTS_CAMPAIGN_2026_05_05))
+    for video_id, title in _SHORTS_CAMPAIGN_2026_05_05:
+        try:
+            publish_yt_short_story_sync(video_id, title)
+            logger.info("✅ Story Short opublikowane: %s", title[:50])
+        except Exception as e:
+            logger.error("❌ Błąd Story Short '%s': %s", video_id, e)
+        await asyncio.sleep(3600)  # 1 godzina między Story
+
+    logger.info("Shorts Stories Campaign KONIEC — wszystkie 7 Story opublikowane.")
+
+
 async def google_business_loop():
-    """Sprawdzanie recenzji Google Business — co 3 godziny."""
-    await asyncio.sleep(180)  # opóźnienie startu
+    """Sprawdzanie recenzji Google Business — co 24h.
+    Business Profile API pending approval (wniosek 2026-05-03).
+    Po zatwierdzeniu zmienić sleep na 10800 (3h).
+    """
+    await asyncio.sleep(300)  # opóźnienie startu
     while True:
         try:
             logger.info("Sprawdzam recenzje Google Business...")
             process_reviews()
         except Exception as e:
             logger.error("Błąd Google Business polling: %s", e)
-        await asyncio.sleep(10800)  # 3 godziny
+        await asyncio.sleep(86400)  # 24h — zmień na 10800 po zatwierdzeniu API
 
 
 async def facebook_groups_loop():
@@ -477,14 +755,6 @@ async def facebook_groups_loop():
         await asyncio.sleep(7200)  # 2 godziny
 
 
-async def dm_campaign_loop():
-    """Kampania DM /ekipa — WYŁĄCZONA. Tylko ręcznie przez /api/dm-campaign/run."""
-    # SAFETY: auto-kampania permanentnie wyłączona po incydencie 256 spamów (2026-04-30)
-    # Kampanię można uruchomić TYLKO ręcznie przez endpoint /api/dm-campaign/run
-    logger.info("Auto-kampania DM wyłączona (safety lock). Użyj /api/dm-campaign/run do ręcznego uruchomienia.")
-    return
-
-
 async def keep_alive_loop():
     """Self-ping co 10 min żeby Render free tier nie usypiał serwera."""
     while True:
@@ -497,10 +767,24 @@ async def keep_alive_loop():
             pass
 
 
+async def fb_lead_scout_loop():
+    """Skanowanie grup Facebook w poszukiwaniu leadów — co 6 godzin."""
+    await asyncio.sleep(300)  # opóźnienie startu 5 min (po reszcie modułów)
+    while True:
+        try:
+            logger.info("FB Lead Scout: startuję skanowanie grup...")
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, _fb_lead_scan)
+            logger.info("FB Lead Scout: zakończono — %s", result)
+        except Exception as e:
+            logger.error("Błąd FB Lead Scout: %s", e)
+        await asyncio.sleep(21600)  # 6 godzin
+
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_alive_loop())
-    if HAS_ALL_MODULES:
+    if HAS_GOOGLE_MODULES:
         asyncio.create_task(gmail_polling_loop())
         asyncio.create_task(youtube_polling_loop())
         asyncio.create_task(daily_cleanup_loop())
@@ -508,9 +792,79 @@ async def startup_event():
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
-        asyncio.create_task(dm_campaign_loop())
+        asyncio.create_task(shorts_stories_campaign_loop())
+    if _HAS_FB_LEAD_SCOUT:
+        asyncio.create_task(fb_lead_scout_loop())
+        logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
+
+
+# ---------------------------------------------------------------------------
+# Instagram Stories — endpoint do ręcznego triggera
+# ---------------------------------------------------------------------------
+
+@app.post("/api/post-short-story")
+async def post_short_story_endpoint(video_id: str, title: str = ""):
+    """
+    Publikuje Story na IG z miniaturą YT Shorta + link.
+    Użycie: POST /api/post-short-story?video_id=ABC123&title=Tytuł
+    """
+    try:
+        from instagram import publish_yt_short_story_sync
+        result = publish_yt_short_story_sync(video_id, title)
+        return {"ok": True, "story_id": result.get("id"), "video_id": video_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/run-shorts-campaign")
+async def run_shorts_campaign_endpoint():
+    """Publikuje wszystkie 7 odświeżonych Shortów jako Stories od razu (bez czekania 1h)."""
+    try:
+        from instagram import publish_yt_short_story_sync
+        results = []
+        for video_id, title in _SHORTS_CAMPAIGN_2026_05_05:
+            try:
+                r = publish_yt_short_story_sync(video_id, title)
+                results.append({"video_id": video_id, "ok": True, "story_id": r.get("id")})
+            except Exception as e:
+                results.append({"video_id": video_id, "ok": False, "error": str(e)})
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# FB Lead Scout — endpointy
+# ---------------------------------------------------------------------------
+
+try:
+    from fb_lead_scout import scan_groups as _fb_lead_scan, get_leads_report as _fb_leads_report
+    _HAS_FB_LEAD_SCOUT = True
+except Exception as _fb_err:
+    logging.warning("fb_lead_scout niedostępny: %s", _fb_err)
+    _HAS_FB_LEAD_SCOUT = False
+
+
+@app.post("/api/fb-leads/scan")
+async def fb_leads_scan():
+    """Uruchamia skanowanie grup Facebook — szuka leadów dla kitesurfingu."""
+    if not _HAS_FB_LEAD_SCOUT:
+        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny (zainstaluj playwright).")
+    import asyncio
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _fb_lead_scan)
+    return result
+
+
+@app.get("/api/fb-leads/report")
+async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
+    """Zwraca listę leadów z bazy SQLite (score >= min_score)."""
+    if not _HAS_FB_LEAD_SCOUT:
+        raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny (zainstaluj playwright).")
+    leads = _fb_leads_report(min_score=min_score, limit=limit)
+    return {"count": len(leads), "leads": leads}
 
 
 # ---------------------------------------------------------------------------
@@ -880,6 +1234,12 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
 
     # Pomijamy echa (wiadomości wysłane przez bota)
     if message.get("is_echo") or not text or not sender_id:
+        return
+
+    # Auto-odpowiedzi DM tylko z konta funlikehel — surf4hel jest tylko do publikacji
+    dm_accounts = set(os.environ.get("DM_RESPONSE_ACCOUNTS", "funlikehel").split(","))
+    if account not in dm_accounts:
+        logger.info("Pomijam DM na @%s — konto nie ma włączonych auto-odpowiedzi DM", account)
         return
 
     # Pomijamy wiadomości od naszych własnych kont IG (anti-loop)
