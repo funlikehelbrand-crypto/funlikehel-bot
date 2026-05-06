@@ -801,6 +801,41 @@ async def startup_event():
 
 
 # ---------------------------------------------------------------------------
+# Instagram Stories — endpoint do ręcznego triggera
+# ---------------------------------------------------------------------------
+
+@app.post("/api/post-short-story")
+async def post_short_story_endpoint(video_id: str, title: str = ""):
+    """
+    Publikuje Story na IG z miniaturą YT Shorta + link.
+    Użycie: POST /api/post-short-story?video_id=ABC123&title=Tytuł
+    """
+    try:
+        from instagram import publish_yt_short_story_sync
+        result = publish_yt_short_story_sync(video_id, title)
+        return {"ok": True, "story_id": result.get("id"), "video_id": video_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/run-shorts-campaign")
+async def run_shorts_campaign_endpoint():
+    """Publikuje wszystkie 7 odświeżonych Shortów jako Stories od razu (bez czekania 1h)."""
+    try:
+        from instagram import publish_yt_short_story_sync
+        results = []
+        for video_id, title in _SHORTS_CAMPAIGN_2026_05_05:
+            try:
+                r = publish_yt_short_story_sync(video_id, title)
+                results.append({"video_id": video_id, "ok": True, "story_id": r.get("id")})
+            except Exception as e:
+                results.append({"video_id": video_id, "ok": False, "error": str(e)})
+        return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
 # FB Lead Scout — endpointy
 # ---------------------------------------------------------------------------
 
