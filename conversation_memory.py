@@ -8,7 +8,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "memory.db")
-MAX_HISTORY = 20   # ostatnie N wiadomości na klienta
+MAX_HISTORY = 10   # ostatnie N wiadomości na klienta
 MAX_AGE_DAYS = 30  # historia starsza niż 30 dni jest ignorowana
 
 
