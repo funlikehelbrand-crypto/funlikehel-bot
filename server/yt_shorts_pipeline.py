@@ -106,34 +106,33 @@ HASHTAGS = '#kitesurfing #FunLikeHel #KursKite #szkolaKite #Jastarnia #Egipt #ki
 
 
 def get_video_info(path: str) -> dict:
-    """Zwraca duration, width, height używając ffprobe."""
-    cmd = [
-        FFMPEG.replace('ffmpeg', 'ffprobe'), '-v', 'quiet',
-        '-print_format', 'json', '-show_streams', '-show_format', path
-    ]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        return {'duration': 0, 'width': 0, 'height': 0}
-    import json
-    d = json.loads(r.stdout)
-    info = {'duration': float(d.get('format', {}).get('duration', 0))}
-    for s in d.get('streams', []):
-        if s.get('codec_type') == 'video':
-            info['width'] = s.get('width', 0)
-            info['height'] = s.get('height', 0)
-    return info
+    """Zwraca duration, width, height używając ffmpeg -i (stderr parsing).
+    imageio_ffmpeg nie bundluje ffprobe na Windows — używamy ffmpeg."""
+    import re
+    cmd = [FFMPEG, '-i', path]
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    stderr = r.stderr  # ffmpeg -i zawsze pisze info do stderr
+
+    duration = 0.0
+    m = re.search(r'Duration:\s*(\d+):(\d+):(\d+\.?\d*)', stderr)
+    if m:
+        h, mn, s = m.groups()
+        duration = int(h) * 3600 + int(mn) * 60 + float(s)
+
+    width, height = 0, 0
+    # Szukaj "Video: ... NNNxNNN" (np. 1920x1080 lub 1080x1920)
+    mv = re.search(r'Video:.*?(\d{2,4})x(\d{2,4})', stderr)
+    if mv:
+        width, height = int(mv.group(1)), int(mv.group(2))
+
+    return {'duration': duration, 'width': width, 'height': height}
 
 
 def has_audio_voice(path: str) -> bool:
-    """Prosta heurystyka: zakłada że jest głos jeśli film ma ścieżkę audio."""
-    cmd = [FFMPEG.replace('ffmpeg', 'ffprobe'), '-v', 'quiet',
-           '-print_format', 'json', '-show_streams', path]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        return False
-    import json
-    d = json.loads(r.stdout)
-    return any(s.get('codec_type') == 'audio' for s in d.get('streams', []))
+    """Sprawdza czy plik ma ścieżkę audio (ffmpeg -i stderr parsing)."""
+    cmd = [FFMPEG, '-i', path]
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    return 'Audio:' in r.stderr
 
 
 def detect_topic(filename: str, title: str = '') -> str:
