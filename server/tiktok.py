@@ -57,8 +57,7 @@ def save_token(token_data: dict):
 
 SCOPES = [
     "user.info.basic",
-    "video.upload",
-    "video.publish",
+    "video.upload",   # Content Posting API — Direct Post
 ]
 
 
