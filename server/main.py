@@ -873,16 +873,20 @@ async def instagram_to_fb(mode: str = "latest"):
     if not page_token:
         raise HTTPException(status_code=500, detail="Brak PAGE_ACCESS_TOKEN")
 
-    # Krok 1 — znajdź IG Business Account ID przez FB Page
-    r = req_lib.get(f"{graph}/{page_id}", params={
-        "fields": "instagram_business_account",
-        "access_token": page_token
-    })
-    ig_data = r.json()
-    ig_id = ig_data.get("instagram_business_account", {}).get("id")
+    # Krok 1 — znajdź IG Business Account ID
+    # Najpierw z env, potem przez FB Page API, fallback = znany ID @funlikehel
+    ig_id = os.getenv("INSTAGRAM_ACCOUNT_ID", "")
 
     if not ig_id:
-        raise HTTPException(status_code=404, detail="Brak powiązanego konta Instagram z tą stroną FB")
+        r = req_lib.get(f"{graph}/{page_id}", params={
+            "fields": "instagram_business_account",
+            "access_token": page_token
+        })
+        ig_id = r.json().get("instagram_business_account", {}).get("id", "")
+
+    if not ig_id:
+        # Fallback: znany ID konta @funlikehel (Business Account)
+        ig_id = "27441134238823713"
 
     # Krok 2 — pobierz ostatnie posty IG
     r2 = req_lib.get(f"{graph}/{ig_id}/media", params={
@@ -929,6 +933,11 @@ async def instagram_to_fb(mode: str = "latest"):
         "fb_url": result.get("url"),
         "caption_preview": text[:100]
     }
+
+
+@app.get("/api/version")
+async def get_version():
+    return {"version": "ig-fallback-fix", "ig_id": "27441134238823713", "entry": "server/main.py"}
 
 
 @app.get("/api/fb-leads/report")
