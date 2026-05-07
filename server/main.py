@@ -1054,6 +1054,19 @@ async def polityka():
 tiktok_tokens: dict = {}
 
 
+@app.get("/tiktok/export-token")
+async def tiktok_export_token(secret: str = ""):
+    """Tymczasowy endpoint — zwraca token do kopiowania na lokalny dysk."""
+    import os, json
+    if secret != os.environ.get("ANTHROPIC_API_KEY", "")[:16]:
+        raise HTTPException(status_code=403, detail="forbidden")
+    token_file = os.path.join(os.path.dirname(__file__), "tiktok_token.json")
+    if not os.path.exists(token_file):
+        raise HTTPException(status_code=404, detail="token not found on server")
+    with open(token_file) as f:
+        return json.load(f)
+
+
 @app.get("/tiktok/debug")
 async def tiktok_debug():
     """Pokazuje aktualną konfigurację TikTok (do debugowania)."""
