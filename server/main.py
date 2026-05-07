@@ -873,30 +873,33 @@ async def instagram_to_fb(mode: str = "latest"):
     if not page_token:
         raise HTTPException(status_code=500, detail="Brak PAGE_ACCESS_TOKEN")
 
-    # Krok 1 — znajdź IG Business Account ID
-    # Najpierw z env, potem przez FB Page API, fallback = znany ID @funlikehel
-    ig_id = os.getenv("INSTAGRAM_ACCOUNT_ID", "")
+    # Krok 1 — token IGAA do odczytu postów IG (Instagram Business Login)
+    igaa_token = os.getenv("INSTAGRAM_IGAA_TOKEN", "") or os.getenv("IG_READ_TOKEN", "")
 
-    if not ig_id:
-        r = req_lib.get(f"{graph}/{page_id}", params={
-            "fields": "instagram_business_account",
+    # Krok 2 — pobierz posty IG przez Instagram Graph API (graph.instagram.com)
+    media = []
+    ig_err = "brak tokenu INSTAGRAM_IGAA_TOKEN"
+
+    if igaa_token:
+        r_ig = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
+            "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+            "limit": 10,
+            "access_token": igaa_token
+        })
+        media = r_ig.json().get("data", [])
+        ig_err = r_ig.json().get("error", {}).get("message", "")
+
+    if not media:
+        # Fallback: PAGE_ACCESS_TOKEN może być starym tokenem IGAA
+        r_ig2 = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
+            "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+            "limit": 10,
             "access_token": page_token
         })
-        ig_id = r.json().get("instagram_business_account", {}).get("id", "")
+        media = r_ig2.json().get("data", [])
 
-    if not ig_id:
-        # Fallback: znany ID konta @funlikehel (Business Account)
-        ig_id = "27441134238823713"
-
-    # Krok 2 — pobierz ostatnie posty IG
-    r2 = req_lib.get(f"{graph}/{ig_id}/media", params={
-        "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
-        "limit": 10,
-        "access_token": page_token
-    })
-    media = r2.json().get("data", [])
     if not media:
-        raise HTTPException(status_code=404, detail="Brak postów na koncie Instagram")
+        raise HTTPException(status_code=404, detail=f"Brak postów IG. Ustaw INSTAGRAM_IGAA_TOKEN na Render. Błąd: {ig_err}")
 
     # Krok 3 — wybierz post
     if mode == "top":
@@ -937,7 +940,7 @@ async def instagram_to_fb(mode: str = "latest"):
 
 @app.get("/api/version")
 async def get_version():
-    return {"version": "ig-fallback-fix", "ig_id": "27441134238823713", "entry": "server/main.py"}
+    return {"version": "igaa-2e3294a", "ig_id": "17841402381473231", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN"))}
 
 
 @app.get("/api/fb-leads/report")
