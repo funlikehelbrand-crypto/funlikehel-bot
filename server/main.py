@@ -858,6 +858,79 @@ async def fb_leads_scan():
     return result
 
 
+@app.post("/api/instagram-to-fb")
+async def instagram_to_fb(mode: str = "latest"):
+    """
+    Pobiera post z Instagrama i publikuje go na stronie Facebook Fun Like Hel.
+    mode: 'latest' = ostatni post, 'top' = post z największą liczbą polubień
+    """
+    import requests as req_lib
+
+    page_token = os.getenv("PAGE_ACCESS_TOKEN", "")
+    page_id = os.getenv("FB_PAGE_ID", "763267196880291")
+    graph = "https://graph.facebook.com/v25.0"
+
+    if not page_token:
+        raise HTTPException(status_code=500, detail="Brak PAGE_ACCESS_TOKEN")
+
+    # Krok 1 — znajdź IG Business Account ID przez FB Page
+    r = req_lib.get(f"{graph}/{page_id}", params={
+        "fields": "instagram_business_account",
+        "access_token": page_token
+    })
+    ig_data = r.json()
+    ig_id = ig_data.get("instagram_business_account", {}).get("id")
+
+    if not ig_id:
+        raise HTTPException(status_code=404, detail="Brak powiązanego konta Instagram z tą stroną FB")
+
+    # Krok 2 — pobierz ostatnie posty IG
+    r2 = req_lib.get(f"{graph}/{ig_id}/media", params={
+        "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+        "limit": 10,
+        "access_token": page_token
+    })
+    media = r2.json().get("data", [])
+    if not media:
+        raise HTTPException(status_code=404, detail="Brak postów na koncie Instagram")
+
+    # Krok 3 — wybierz post
+    if mode == "top":
+        post = max(media, key=lambda x: x.get("like_count", 0))
+    else:
+        post = media[0]  # najnowszy
+
+    caption = post.get("caption", "")
+    media_url = post.get("media_url") or post.get("thumbnail_url", "")
+    permalink = post.get("permalink", "")
+    media_type = post.get("media_type", "IMAGE")
+
+    # Krok 4 — opublikuj na FB
+    from fb_publisher import publish_post, publish_post_with_image
+
+    # Dodaj link do IG posta i skróć caption do 500 znaków
+    text = caption[:500] if caption else ""
+    if permalink:
+        text += f"\n\n📸 Zobacz na Instagram: {permalink}"
+
+    if media_url and media_type in ("IMAGE", "CAROUSEL_ALBUM"):
+        result = publish_post_with_image(text=text, image_url=media_url)
+    else:
+        result = publish_post(text=text, link=permalink)
+
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=f"Błąd publikacji FB: {result['error']}")
+
+    return {
+        "success": True,
+        "ig_post_id": post["id"],
+        "ig_media_type": media_type,
+        "fb_post_id": result["post_id"],
+        "fb_url": result.get("url"),
+        "caption_preview": text[:100]
+    }
+
+
 @app.get("/api/fb-leads/report")
 async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
     """Zwraca listę leadów z bazy SQLite (score >= min_score)."""
