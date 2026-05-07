@@ -2,15 +2,23 @@
 YT Shorts Pipeline — FUN like HEL
 Użycie: python yt_shorts_pipeline.py <plik_wideo> [--music <plik_muzyki>] [--title "Tytuł"]
 
-Kroków:
+Zasady muzyczne:
+- Style: summer-house, afro-house, sport-action, high-energy, chill-beach
+- BPM preferowane: 105–135
+- NIE: acoustic, piano, slow, lo-fi, corporate, ambient
+- Głośność z voice-over: 8–15%, bez mówienia: 25–35%
+- Fade in: 0.5s, fade out: 1.0s
+- Upload domyślnie NIEPUBLICZNY (--public żeby od razu opublikować)
+
+Kroki:
 1. Wczytaj wideo, oceń długość i format
-2. Dodaj muzykę z YouTube Audio Library (lub podaną)
-3. Skonwertuj do 9:16, max 55s
-4. Wgraj jako NIEPUBLICZNY na YouTube
-5. Zwróć link do sprawdzenia
+2. Wykryj temat → dobierz styl muzyczny → wybierz track (round-robin)
+3. Skonwertuj do 9:16, 1080×1920, domyślnie 35s (max 55s)
+4. Wgraj jako NIEPUBLICZNY na YouTube + TikTok
+5. Zwróć linki + informację o tracku i licencji
 """
 
-import sys, io, os, argparse, subprocess, tempfile
+import sys, io, os, argparse, subprocess
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # ── Ścieżka do ffmpeg ─────────────────────────────────────────────────────────
@@ -20,45 +28,71 @@ try:
 except ImportError:
     FFMPEG = 'ffmpeg'
 
-# ── Gotowe track-i z YouTube Audio Library (royalty-free, bez ograniczeń) ─────
-# Pobrane wcześniej i zapisane lokalnie — uzupełnij ścieżki
+# ── Katalog muzyki ────────────────────────────────────────────────────────────
 _MUSIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'music_library')
 
-# ── Pula funky tracków — każdy film dostaje inny (round-robin) ─────────────────
-_FUNKY_POOL = [
-    (os.path.join(_MUSIC_DIR, 'funky.mp3'),          'funky royalty-free | no copyright'),
-    (os.path.join(_MUSIC_DIR, 'funky_2_hepcat.mp3'), 'Jingle Punks — Hep Cat | royalty-free, no copyright'),
-    (os.path.join(_MUSIC_DIR, 'funky_3_happy.mp3'),  'Topher Mohr — Happy Go Lucky | royalty-free, no copyright'),
-    (os.path.join(_MUSIC_DIR, 'funky_4_green.mp3'),  'The Green Orbs | royalty-free, no copyright'),
-    (os.path.join(_MUSIC_DIR, 'funky_6_south.mp3'),  'Rondo Brothers — Southside | royalty-free, no copyright'),
-    (os.path.join(_MUSIC_DIR, 'funky_7_smile.mp3'),  'Silent Partner — Summer Smile | royalty-free, no copyright'),
-]
-_funky_index_file = os.path.join(_MUSIC_DIR, '.funky_index')
+
+def _p(filename: str) -> str:
+    return os.path.join(_MUSIC_DIR, filename)
 
 
-def _next_funky() -> tuple:
-    """Zwraca kolejny funky track z puli (round-robin), gwarantując różnorodność."""
+# ── Pule muzyczne wg stylu (tylko dynamiczne, royalty-free) ──────────────────
+# Lo-fi, ambient, acoustic — wykluczone zgodnie z zasadami
+STYLE_POOLS = {
+    'high-energy': [
+        (_p('funky.mp3'),         'funky royalty-free | YT Audio Library', '~120 BPM'),
+        (_p('funky_3_happy.mp3'), 'Topher Mohr — Happy Go Lucky | YT Audio Library', '~118 BPM'),
+    ],
+    'summer-house': [
+        (_p('funky_2_hepcat.mp3'), 'Jingle Punks — Hep Cat | YT Audio Library', '~115 BPM'),
+        (_p('funky_5_summer.mp3'), 'E.s.c.p — Summer | YT Audio Library', '~128 BPM'),
+        (_p('funky_7_smile.mp3'),  'Silent Partner — Summer Smile | YT Audio Library', '~110 BPM'),
+    ],
+    'afro-house': [
+        (_p('egipt_tropical.mp3'), 'MBB — Beach | royalty-free, no copyright', '~110 BPM'),
+        (_p('funky_6_south.mp3'),  'Rondo Brothers — Southside | YT Audio Library', '~112 BPM'),
+    ],
+    'sport-action': [
+        (_p('funky.mp3'),         'funky royalty-free | YT Audio Library', '~120 BPM'),
+        (_p('funky_3_happy.mp3'), 'Topher Mohr — Happy Go Lucky | YT Audio Library', '~118 BPM'),
+        (_p('funky_2_hepcat.mp3'), 'Jingle Punks — Hep Cat | YT Audio Library', '~115 BPM'),
+    ],
+    'chill-beach': [
+        (_p('funky_4_green.mp3'), 'The Green Orbs | YT Audio Library', '~108 BPM'),
+        (_p('hel_chill.mp3'),     'Scandinavianz — Sapporo | royalty-free, no copyright', '~105 BPM'),
+    ],
+    # 'reggaeton-vibe' — do uzupełnienia gdy pojawią się nowe track-i
+}
+
+# ── Topic → styl muzyczny ────────────────────────────────────────────────────
+TOPIC_STYLE = {
+    'kurs':       'sport-action',    # waterstart, nauka — energia, dynamika
+    'freeride':   'high-energy',     # tricki, jumpy — maksymalna energia
+    'cabrinha':   'sport-action',    # sprzęt, test center — elektronika
+    'egipt':      'afro-house',      # tropical, Morze Czerwone — etnika
+    'hel':        'chill-beach',     # Zatoka Pucka, Jastarnia — coastal vibe
+    'klimat':     'chill-beach',     # baza, atmosfera — spokojny ale żywy
+    'instruktor': 'summer-house',    # mówi do kamery — cichy ale dynamiczny beat
+}
+
+# ── Round-robin per styl ──────────────────────────────────────────────────────
+def _next_track(style: str) -> tuple:
+    """Zwraca kolejny track z danego stylu (round-robin)."""
+    pool = STYLE_POOLS.get(style, STYLE_POOLS['summer-house'])
+    index_file = os.path.join(_MUSIC_DIR, f'.idx_{style}')
     try:
-        idx = int(open(_funky_index_file).read().strip())
+        idx = int(open(index_file).read().strip())
     except Exception:
         idx = 0
-    track = _FUNKY_POOL[idx % len(_FUNKY_POOL)]
-    with open(_funky_index_file, 'w') as f:
-        f.write(str((idx + 1) % len(_FUNKY_POOL)))
-    return track
-
-
-MUSIC_LIBRARY = {
-    # temat       : (plik lokalny, opis licencji)
-    # Wszystkie tematy kite/sport dostają funky (round-robin via _next_funky())
-    'kurs':       None,  # → _next_funky()
-    'egipt':      (os.path.join(_MUSIC_DIR, 'egipt_tropical.mp3'),       'MBB — Beach | royalty-free, no copyright'),
-    'hel':        (os.path.join(_MUSIC_DIR, 'hel_chill.mp3'),            'Scandinavianz — Sapporo | royalty-free, no copyright'),
-    'cabrinha':   None,  # → _next_funky()
-    'freeride':   None,  # → _next_funky()
-    'klimat':     (os.path.join(_MUSIC_DIR, 'klimat_lofi.mp3'),          'Joakim Karud — Clouds | royalty-free, no copyright'),
-    'instruktor': None,  # → _next_funky()
-}
+    # Sprawdź czy plik istnieje
+    for attempt in range(len(pool)):
+        entry = pool[(idx + attempt) % len(pool)]
+        if os.path.exists(entry[0]):
+            actual_idx = (idx + attempt + 1) % len(pool)
+            with open(index_file, 'w') as f:
+                f.write(str(actual_idx))
+            return entry  # (path, license_info, bpm_info)
+    return pool[0]  # fallback
 
 TAGS = [
     'kitesurfing', 'kite', 'kiteboarding', 'kurs kitesurfingu', 'nauka kitesurfingu',
@@ -121,12 +155,13 @@ def detect_topic(filename: str, title: str = '') -> str:
 
 
 def process_video(input_path: str, music_path: str | None,
-                  target_duration: int = 55, title: str = '') -> str:
+                  target_duration: int = 35, title: str = '') -> str:
     """
     Przetwarza wideo:
-    - Przycina do target_duration sekund
-    - Konwertuje do 9:16 (crop lub blur background)
-    - Dodaje muzykę jeśli podana
+    - Przycina do target_duration sekund (domyślnie 35s, max 55s)
+    - Konwertuje do 9:16, 1080×1920 (blur background dla landscape)
+    - Dodaje muzykę: fade in 0.5s, fade out 1.0s
+    - Głośność: 10% z voice-over, 30% bez mówienia
     Zwraca ścieżkę do przetworzonego pliku.
     """
     info = get_video_info(input_path)
@@ -134,7 +169,9 @@ def process_video(input_path: str, music_path: str | None,
     w, h = info['width'], info['height']
     is_portrait = h > w
     voice = has_audio_voice(input_path)
-    music_vol = '0.12' if voice else '0.30'
+    # Z głosem/rozmową: 8-15% (używamy 10% jako środek)
+    # Bez mówienia: 25-35% (używamy 30% jako środek)
+    music_vol = '0.10' if voice else '0.30'
 
     out_path = input_path.rsplit('.', 1)[0] + '_shorts_ready.mp4'
 
@@ -142,10 +179,7 @@ def process_video(input_path: str, music_path: str | None,
 
     # 9:16 konwersja
     if not is_portrait:
-        # Poziomy → crop centralny do 9:16 + rozmyte tło
-        target_w = int(h * 9 / 16)
-        crop_x = (w - target_w) // 2
-        # Wersja z blur background (lepiej niż crop)
+        # Poziomy → scale + blur background (profesjonalnie, nie crop)
         filters.append(
             f'[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[bg];'
             f'[0:v]scale=-1:1080[fg];'
@@ -153,17 +187,17 @@ def process_video(input_path: str, music_path: str | None,
         )
         vmap = '[vout]'
     else:
-        # Już pionowy — tylko scale
+        # Już pionowy — scale do 1080×1920
         filters.append('[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2[vout]')
         vmap = '[vout]'
 
     if music_path and os.path.exists(music_path):
-        # Fade in/out muzyki
-        fade_out_start = duration - 1.5
+        # Fade in 0.5s, fade out 1.0s (zgodnie z zasadami)
+        fade_out_start = max(duration - 1.0, 0)
         music_filter = (
             f'[1:a]volume={music_vol},'
-            f'afade=t=in:st=0:d=1,'
-            f'afade=t=out:st={fade_out_start:.1f}:d=1.5[mout]'
+            f'afade=t=in:st=0:d=0.5,'
+            f'afade=t=out:st={fade_out_start:.1f}:d=1.0[mout]'
         )
         if voice:
             # Miks głosu + muzyki
@@ -324,33 +358,34 @@ def build_description(topic: str, short_title: str) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='FLH YT Shorts Pipeline')
+    parser = argparse.ArgumentParser(description='FLH YT Shorts Pipeline — dual channel YT + TikTok')
     parser.add_argument('video', help='Sciezka do pliku wideo')
-    parser.add_argument('--music', default=None, help='Sciezka do pliku muzyki (MP3/WAV)')
+    parser.add_argument('--music', default=None, help='Sciezka do pliku muzyki (MP3/WAV) — nadpisuje auto-wybor')
     parser.add_argument('--title', default='', help='Tytul filmu')
     parser.add_argument('--topic', default=None, help='Temat: kurs/egipt/hel/cabrinha/freeride/klimat/instruktor')
-    parser.add_argument('--duration', type=int, default=55, help='Docelowa dlugosc w sekundach (max 55)')
-    parser.add_argument('--publish', action='store_true', help='(nieużywany — zawsze publiczny)')
-    parser.add_argument('--no-tiktok', action='store_true', help='Pomiń upload na TikTok')
+    parser.add_argument('--duration', type=int, default=35, help='Docelowa dlugosc w sekundach (domyslnie 35, max 55)')
+    parser.add_argument('--public', action='store_true', help='Uploaduj od razu jako PUBLICZNY (domyslnie: niepubliczny)')
+    parser.add_argument('--no-tiktok', action='store_true', help='Pomin upload na TikTok')
     args = parser.parse_args()
 
     if not os.path.exists(args.video):
         print(f'❌ Plik nie istnieje: {args.video}')
         sys.exit(1)
 
-    # 1. Wykryj temat
+    # 1. Wykryj temat → styl muzyczny → wybierz track (round-robin)
     topic = args.topic or detect_topic(os.path.basename(args.video), args.title)
-    _lib_entry = MUSIC_LIBRARY.get(topic)
-    if _lib_entry is None:
-        music_path, music_license = _next_funky()
-    else:
-        music_path, music_license = _lib_entry
+    style = TOPIC_STYLE.get(topic, 'summer-house')
+
     if args.music:
         music_path = args.music
         music_license = 'dostarczona przez uzytkownika'
+        music_bpm = '?'
+    else:
+        track = _next_track(style)
+        music_path, music_license, music_bpm = track
 
-    print(f'🎯 Temat: {topic}')
-    print(f'🎵 Muzyka: {music_license}')
+    print(f'🎯 Temat: {topic}  |  styl: {style}')
+    print(f'🎵 Track: {music_license}  ({music_bpm})')
 
     # 2. Dobierz tytuł
     title = args.title or os.path.basename(args.video).rsplit('.', 1)[0].replace('_', ' ')
@@ -359,40 +394,50 @@ def main():
     if '| FUN like HEL' not in title:
         title = f'{title} | FUN like HEL'
 
-    # 3. Przetwórz wideo
-    processed = process_video(
-        args.video, music_path,
-        target_duration=min(args.duration, 55),
-        title=title
-    )
+    # 3. Przetwórz wideo: 9:16, fade 0.5s/1.0s, głośność wg voice detection
+    target_dur = min(args.duration, 55)
+    processed = process_video(args.video, music_path, target_duration=target_dur, title=title)
 
-    # 4. Przygotuj metadane
+    # 4. Metadane
     description = build_description(topic, title)
 
-    # 5. Upload YouTube — od razu jako PUBLICZNY, pełna automatyzacja
-    video_id = upload_to_youtube(
-        processed, title, description, TAGS,
-        unlisted=False
-    )
+    # 5. Upload YouTube (domyślnie NIEPUBLICZNY — sprawdź przed publikacją)
+    is_unlisted = not args.public
+    video_id = upload_to_youtube(processed, title, description, TAGS, unlisted=is_unlisted)
 
-    # 6. Upload TikTok — ta sama wersja 9:16, royalty-free muzyka
+    # 6. Upload TikTok — ta sama przetworzona wersja 9:16
     tt_publish_id = None if args.no_tiktok else upload_to_tiktok(processed, title, topic)
 
     info = get_video_info(processed)
+    visibility = 'NIEPUBLICZNY — sprawdź i opublikuj ręcznie' if is_unlisted else 'PUBLICZNY'
+
     print()
     print('=' * 60)
-    print(f'✅ YouTube Short opublikowany:')
-    print(f'   🔗 https://www.youtube.com/shorts/{video_id}')
+    print(f'✅ YouTube ({visibility}):')
+    print(f'   🔗 https://studio.youtube.com/video/{video_id}/edit')
+    print(f'   🔗 https://www.youtube.com/watch?v={video_id}')
     if tt_publish_id:
-        print(f'✅ TikTok opublikowany:')
-        print(f'   🔗 https://www.tiktok.com/@funlikehelbrand (publish_id: {tt_publish_id})')
+        print(f'✅ TikTok (procesowanie w tle):')
+        print(f'   🔗 https://www.tiktok.com/@funlikehelbrand')
+        print(f'   publish_id: {tt_publish_id}')
     else:
         print(f'⚠️  TikTok: pominięty (brak tokenu lub błąd)')
-    print(f'🎵 Muzyka: {music_license}')
-    print(f'⏱  Długość: {info["duration"]:.0f}s')
-    print(f'📐 Format: 9:16, 1080×1920')
-    print(f'📋 Tytuł: {title}')
+    print()
+    print(f'📋 Tytuł:       {title}')
+    print(f'⏱  Długość:     {info["duration"]:.0f}s')
+    print(f'📐 Format:      9:16, 1080×1920')
+    print(f'🎵 Muzyka:      {music_license}')
+    print(f'🎼 BPM:         {music_bpm}')
+    print(f'📄 Licencja:    YouTube Audio Library — royalty-free, bez ograniczeń')
+    print()
+    print('📌 Przypięty komentarz (skopiuj ręcznie):')
+    print(f'   🪁 Kursy kite: funlikehel.pl | Tel: 690 270 032')
+    print(f'   📍 Jastarnia + Hurghada (Egipt) | Cabrinha Test Center')
     print('=' * 60)
+    if is_unlisted:
+        print()
+        print(f'💡 Aby opublikować: python yt_shorts_pipeline.py --publish-id {video_id}')
+        print(f'   lub: --public flag przy następnym użyciu')
 
 
 # Oddzielna komenda do publikacji po zatwierdzeniu
