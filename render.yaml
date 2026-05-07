@@ -5,3 +5,10 @@ services:
     rootDir: server
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TT_CLIENT_KEY
+        value: sbawht30eoonlc1ano
+      - key: TT_CLIENT_SECRET
+        value: ygNRHa2WzRzAIHZYOeqF9bl08hcdlG6M
+      - key: TT_REDIRECT_URI
+        value: https://funlikehel-bot.onrender.com/tiktok/callback
