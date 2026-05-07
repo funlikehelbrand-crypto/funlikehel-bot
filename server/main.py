@@ -1092,11 +1092,30 @@ async def tiktok_login():
 @app.get("/tiktok/callback")
 async def tiktok_callback(code: str):
     """TikTok przekierowuje tutaj po autoryzacji."""
-    tokens = await exchange_code_for_token(code)  # exchange_code_for_token już zapisuje do pliku
-    tiktok_tokens["access_token"] = tokens.get("access_token")
-    tiktok_tokens["refresh_token"] = tokens.get("refresh_token")
-    logger.info("TikTok autoryzowany pomyślnie. Token zapisany do tiktok_token.json")
-    return {"status": "ok", "message": "TikTok połączony z FunLikeHel! Token zapisany trwale."}
+    tokens = await exchange_code_for_token(code)
+    access_token = tokens.get("access_token", "")
+    refresh_token = tokens.get("refresh_token", "")
+    tiktok_tokens["access_token"] = access_token
+    tiktok_tokens["refresh_token"] = refresh_token
+    logger.info("TikTok autoryzowany. access_token=%s...", access_token[:12])
+    # Zwracamy token — użytkownik musi go zapisać jako env var TT_ACCESS_TOKEN na Render
+    return HTMLResponse(f"""
+    <html><body style="font-family:monospace;padding:20px;background:#1a1a1a;color:#0f0">
+    <h2>✅ TikTok połączony!</h2>
+    <p>Skopiuj poniższe wartości do Render Dashboard → Environment:</p>
+    <hr/>
+    <p><b>TT_ACCESS_TOKEN</b><br>
+    <textarea rows="3" cols="80" onclick="this.select()">{access_token}</textarea></p>
+    <p><b>TT_REFRESH_TOKEN</b><br>
+    <textarea rows="3" cols="80" onclick="this.select()">{refresh_token}</textarea></p>
+    <hr/>
+    <p>1. Idź na <a href="https://dashboard.render.com" style="color:#0ff">dashboard.render.com</a></p>
+    <p>2. funlikehel-bot → Environment → Add env vars</p>
+    <p>3. Wklej TT_ACCESS_TOKEN i TT_REFRESH_TOKEN</p>
+    <p>4. Save Changes (Render auto-restartuje serwis)</p>
+    <p>5. Pipeline będzie działał na zawsze (refresh automatyczny)</p>
+    </body></html>
+    """)
 
 
 @app.get("/tiktok/status")
