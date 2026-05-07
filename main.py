@@ -1443,29 +1443,37 @@ async def instagram_to_fb(mode: str = "latest"):
         ig_id = r.json().get("instagram_business_account", {}).get("id", "")
 
     if not ig_id:
-        # Fallback: znany ID konta @funlikehel (Business Account)
-        ig_id = "27441134238823713"
+        # Fallback: znany ID konta @funlikehel (Instagram Business Login ID)
+        ig_id = "17841402381473231"
 
     # Krok 2 — pobierz posty IG
-    # Próba 1: Instagram Graph API (dla tokenów IGAA — graph.instagram.com/me)
-    r_ig = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
-        "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
-        "limit": 10,
-        "access_token": page_token
-    })
-    media = r_ig.json().get("data", [])
+    # Token IGAA (z Instagram Business Login) — oddzielny od PAGE_ACCESS_TOKEN
+    igaa_token = os.getenv("INSTAGRAM_IGAA_TOKEN", "") or os.getenv("IG_READ_TOKEN", "")
 
-    # Próba 2: Facebook Graph API (dla tokenów EAA z instagram_basic)
+    # Próba 1: IGAA token przez Instagram Graph API
+    if igaa_token:
+        r_ig = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
+            "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+            "limit": 10,
+            "access_token": igaa_token
+        })
+        media = r_ig.json().get("data", [])
+    else:
+        media = []
+        r_ig = type("r", (), {"json": lambda self: {}})()
+
+    # Próba 2: PAGE_ACCESS_TOKEN przez Instagram Graph API (dla starych IGAA w PAGE_ACCESS_TOKEN)
     if not media:
-        r2 = req_lib.get(f"{graph}/{ig_id}/media", params={
+        r_ig = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
             "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
             "limit": 10,
             "access_token": page_token
         })
-        media = r2.json().get("data", [])
+        media = r_ig.json().get("data", [])
 
     if not media:
-        raise HTTPException(status_code=404, detail=f"Brak postów IG. IG API: {r_ig.json().get('error',{}).get('message','?')}")
+        ig_err = r_ig.json().get("error", {}).get("message", "brak tokenu IGAA")
+        raise HTTPException(status_code=404, detail=f"Brak postów IG. Ustaw INSTAGRAM_IGAA_TOKEN na Render. Błąd: {ig_err}")
 
     # Krok 3 — wybierz post
     post = max(media, key=lambda x: x.get("like_count", 0)) if mode == "top" else media[0]
