@@ -51,7 +51,7 @@ except Exception as e:
 try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
-    from tiktok import get_auth_url, exchange_code_for_token
+    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token
     from cleanup_mail import daily_cleanup, trash_cleanup
     from google_business import process_reviews
     from auto_upload import process_upload_folder
@@ -931,6 +931,20 @@ async def polityka():
 tiktok_tokens: dict = {}
 
 
+@app.get("/tiktok/debug")
+async def tiktok_debug():
+    """Pokazuje aktualną konfigurację TikTok (do debugowania)."""
+    key = os.environ.get("TT_CLIENT_KEY", "")
+    redirect = os.environ.get("TT_REDIRECT_URI", "https://funlikehel-bot.onrender.com/tiktok/callback")
+    auth_url = get_auth_url() if HAS_ALL_MODULES else "unavailable"
+    return {
+        "client_key": key[:8] + "..." if key else "BRAK — env var nie ustawiona!",
+        "client_key_full": key,
+        "redirect_uri": redirect,
+        "auth_url": auth_url,
+    }
+
+
 @app.get("/tiktok/login")
 async def tiktok_login():
     """Otwórz ten URL w przeglądarce żeby autoryzować TikTok."""
@@ -942,10 +956,44 @@ async def tiktok_login():
 async def tiktok_callback(code: str):
     """TikTok przekierowuje tutaj po autoryzacji."""
     tokens = await exchange_code_for_token(code)
-    tiktok_tokens["access_token"] = tokens.get("access_token")
-    tiktok_tokens["refresh_token"] = tokens.get("refresh_token")
-    logger.info("TikTok autoryzowany pomyślnie.")
-    return {"status": "ok", "message": "TikTok połączony z FunLikeHel!"}
+    access_token = tokens.get("access_token", "")
+    refresh_token = tokens.get("refresh_token", "")
+    tiktok_tokens["access_token"] = access_token
+    tiktok_tokens["refresh_token"] = refresh_token
+    if HAS_ALL_MODULES and access_token:
+        save_token({"access_token": access_token, "refresh_token": refresh_token})
+    logger.info("TikTok autoryzowany. access_token=%s...", access_token[:12] if access_token else "")
+    return HTMLResponse(f"""
+    <html><body style="font-family:monospace;padding:20px;background:#1a1a1a;color:#0f0">
+    <h2>&#x2705; TikTok połączony!</h2>
+    <p>Token zapisany na Google Drive (przeżyje restarty Render).</p>
+    <hr/>
+    <p><b>TT_ACCESS_TOKEN</b><br>
+    <textarea rows="3" cols="80" onclick="this.select()">{access_token}</textarea></p>
+    <p><b>TT_REFRESH_TOKEN</b><br>
+    <textarea rows="3" cols="80" onclick="this.select()">{refresh_token}</textarea></p>
+    <hr/>
+    <p>Sprawdź status: <a href="/tiktok/status" style="color:#0ff">/tiktok/status</a></p>
+    </body></html>
+    """)
+
+
+@app.get("/tiktok/status")
+async def tiktok_status():
+    """Sprawdza stan autoryzacji TikTok."""
+    if not HAS_ALL_MODULES:
+        return {"status": "error", "message": "Moduł tiktok niedostępny"}
+    data = get_stored_token()
+    if not data:
+        return {"status": "unauthorized", "message": "Otwórz /tiktok/login żeby autoryzować"}
+    import time
+    expires_at = data.get("expires_at", 0)
+    return {
+        "status": "ok",
+        "has_token": True,
+        "expires_in_hours": round((expires_at - time.time()) / 3600, 1) if expires_at else "unknown",
+        "has_refresh": bool(data.get("refresh_token")),
+    }
 
 
 # ---------------------------------------------------------------------------
