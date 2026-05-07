@@ -1446,15 +1446,26 @@ async def instagram_to_fb(mode: str = "latest"):
         # Fallback: znany ID konta @funlikehel (Business Account)
         ig_id = "27441134238823713"
 
-    # Krok 2 — pobierz ostatnie posty IG
-    r2 = req_lib.get(f"{graph}/{ig_id}/media", params={
+    # Krok 2 — pobierz posty IG
+    # Próba 1: Instagram Graph API (dla tokenów IGAA — graph.instagram.com/me)
+    r_ig = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
         "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
         "limit": 10,
         "access_token": page_token
     })
-    media = r2.json().get("data", [])
+    media = r_ig.json().get("data", [])
+
+    # Próba 2: Facebook Graph API (dla tokenów EAA z instagram_basic)
     if not media:
-        raise HTTPException(status_code=404, detail="Brak postów na koncie Instagram")
+        r2 = req_lib.get(f"{graph}/{ig_id}/media", params={
+            "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+            "limit": 10,
+            "access_token": page_token
+        })
+        media = r2.json().get("data", [])
+
+    if not media:
+        raise HTTPException(status_code=404, detail=f"Brak postów IG. IG API: {r_ig.json().get('error',{}).get('message','?')}")
 
     # Krok 3 — wybierz post
     post = max(media, key=lambda x: x.get("like_count", 0)) if mode == "top" else media[0]
