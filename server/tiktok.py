@@ -25,35 +25,96 @@ REDIRECT_URI = os.getenv("TT_REDIRECT_URI", "https://funlikehel-bot.onrender.com
 _TOKEN_FILE = os.path.join(os.path.dirname(__file__), "tiktok_token.json")
 
 
-def get_stored_token() -> dict | None:
-    """Czyta token z pliku lub ze zmiennej środowiskowej TT_ACCESS_TOKEN."""
-    # Najpierw env (Render secrets)
-    env_token = os.environ.get("TT_ACCESS_TOKEN", "")
-    env_refresh = os.environ.get("TT_REFRESH_TOKEN", "")
-    if env_token:
-        return {
-            "access_token": env_token,
-            "refresh_token": env_refresh,
-            "expires_at": time.time() + 86400,  # zakładamy ważny
-        }
-    # Potem plik lokalny
+_GDRIVE_TOKEN_FILENAME = "tiktok_token_flh.json"
+
+
+def _gdrive_save(data: dict):
+    """Zapisuje token na Google Drive (przeżywa restart Render)."""
     try:
-        with open(_TOKEN_FILE) as f:
-            return json.load(f)
-    except Exception:
+        import sys, io as _io
+        sys.path.insert(0, os.path.dirname(__file__))
+        from google_drive import get_drive_service
+        service = get_drive_service()
+        content = json.dumps(data).encode()
+        # Sprawdź czy plik już istnieje
+        q = f"name='{_GDRIVE_TOKEN_FILENAME}' and trashed=false"
+        res = service.files().list(q=q, fields="files(id)").execute()
+        files = res.get("files", [])
+        from googleapiclient.http import MediaInMemoryUpload
+        media = MediaInMemoryUpload(content, mimetype="application/json")
+        if files:
+            service.files().update(fileId=files[0]["id"], media_body=media).execute()
+        else:
+            service.files().create(
+                body={"name": _GDRIVE_TOKEN_FILENAME},
+                media_body=media
+            ).execute()
+        logger.info("TikTok token zapisany na Google Drive (%s)", _GDRIVE_TOKEN_FILENAME)
+    except Exception as e:
+        logger.warning("Google Drive save failed: %s", e)
+
+
+def _gdrive_load() -> dict | None:
+    """Wczytuje token z Google Drive."""
+    try:
+        import sys
+        sys.path.insert(0, os.path.dirname(__file__))
+        from google_drive import get_drive_service
+        from googleapiclient.http import MediaIoBaseDownload
+        import io
+        service = get_drive_service()
+        q = f"name='{_GDRIVE_TOKEN_FILENAME}' and trashed=false"
+        res = service.files().list(q=q, fields="files(id)").execute()
+        files = res.get("files", [])
+        if not files:
+            return None
+        request = service.files().get_media(fileId=files[0]["id"])
+        buf = io.BytesIO()
+        dl = MediaIoBaseDownload(buf, request)
+        done = False
+        while not done:
+            _, done = dl.next_chunk()
+        return json.loads(buf.getvalue())
+    except Exception as e:
+        logger.warning("Google Drive load failed: %s", e)
         return None
 
 
+def get_stored_token() -> dict | None:
+    """Czyta token: 1) env var  2) plik lokalny  3) Google Drive."""
+    # 1. Env vars (ręcznie ustawione na Render)
+    env_token = os.environ.get("TT_ACCESS_TOKEN", "")
+    if env_token:
+        return {
+            "access_token": env_token,
+            "refresh_token": os.environ.get("TT_REFRESH_TOKEN", ""),
+            "expires_at": time.time() + 86400,
+        }
+    # 2. Plik lokalny
+    try:
+        with open(_TOKEN_FILE) as f:
+            data = json.load(f)
+            if data.get("access_token"):
+                return data
+    except Exception:
+        pass
+    # 3. Google Drive (przeżywa restart Render)
+    return _gdrive_load()
+
+
 def save_token(token_data: dict):
-    """Zapisuje token do pliku."""
+    """Zapisuje token do pliku lokalnego + Google Drive."""
     if "expires_in" in token_data and "expires_at" not in token_data:
         token_data["expires_at"] = time.time() + token_data["expires_in"]
+    # Plik lokalny
     try:
         with open(_TOKEN_FILE, "w") as f:
             json.dump(token_data, f)
         logger.info("TikTok token zapisany do %s", _TOKEN_FILE)
     except Exception as e:
         logger.error("Błąd zapisu tokenu TikTok: %s", e)
+    # Google Drive (backup dla Render)
+    _gdrive_save(token_data)
 
 SCOPES = [
     "user.info.basic",
