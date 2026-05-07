@@ -35,7 +35,7 @@ except Exception as e:
 try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
-    from tiktok import get_auth_url, exchange_code_for_token
+    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token
     from cleanup_mail import daily_cleanup, trash_cleanup
     from google_business import process_reviews
     from auto_upload import process_upload_folder
@@ -1064,11 +1064,29 @@ async def tiktok_login():
 @app.get("/tiktok/callback")
 async def tiktok_callback(code: str):
     """TikTok przekierowuje tutaj po autoryzacji."""
-    tokens = await exchange_code_for_token(code)
+    tokens = await exchange_code_for_token(code)  # exchange_code_for_token już zapisuje do pliku
     tiktok_tokens["access_token"] = tokens.get("access_token")
     tiktok_tokens["refresh_token"] = tokens.get("refresh_token")
-    logger.info("TikTok autoryzowany pomyślnie.")
-    return {"status": "ok", "message": "TikTok połączony z FunLikeHel!"}
+    logger.info("TikTok autoryzowany pomyślnie. Token zapisany do tiktok_token.json")
+    return {"status": "ok", "message": "TikTok połączony z FunLikeHel! Token zapisany trwale."}
+
+
+@app.get("/tiktok/status")
+async def tiktok_status():
+    """Sprawdza stan autoryzacji TikTok."""
+    if not HAS_GOOGLE_MODULES:
+        return {"status": "error", "message": "Moduł tiktok niedostępny"}
+    data = get_stored_token()
+    if not data:
+        return {"status": "unauthorized", "message": "Otwórz /tiktok/login żeby autoryzować"}
+    import time
+    expires_at = data.get("expires_at", 0)
+    return {
+        "status": "ok",
+        "has_token": True,
+        "expires_in_hours": round((expires_at - time.time()) / 3600, 1),
+        "has_refresh": bool(data.get("refresh_token")),
+    }
 
 
 # ---------------------------------------------------------------------------
