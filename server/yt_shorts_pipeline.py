@@ -363,8 +363,6 @@ def main():
     parser.add_argument('--music', default=None, help='Sciezka do pliku muzyki (MP3/WAV) — nadpisuje auto-wybor')
     parser.add_argument('--title', default='', help='Tytul filmu')
     parser.add_argument('--topic', default=None, help='Temat: kurs/egipt/hel/cabrinha/freeride/klimat/instruktor')
-    parser.add_argument('--duration', type=int, default=35, help='Docelowa dlugosc w sekundach (domyslnie 35, max 55)')
-    parser.add_argument('--public', action='store_true', help='Uploaduj od razu jako PUBLICZNY (domyslnie: niepubliczny)')
     parser.add_argument('--no-tiktok', action='store_true', help='Pomin upload na TikTok')
     args = parser.parse_args()
 
@@ -387,57 +385,80 @@ def main():
     print(f'🎯 Temat: {topic}  |  styl: {style}')
     print(f'🎵 Track: {music_license}  ({music_bpm})')
 
-    # 2. Dobierz tytuł
-    title = args.title or os.path.basename(args.video).rsplit('.', 1)[0].replace('_', ' ')
-    if '#Shorts' not in title:
-        title = f'{title} #Shorts'
+    # 2. Oceń długość i zdecyduj: Short (≤60s) czy zwykły film
+    raw_info = get_video_info(args.video)
+    raw_duration = raw_info['duration']
+
+    if raw_duration <= 60:
+        # Już mieści się w Shorts — zachowaj oryginalną długość
+        is_short = True
+        target_dur = int(raw_duration)
+    elif raw_duration <= 90:
+        # Trochę za długi — przytnij do 50s, zostaje Shortem
+        is_short = True
+        target_dur = 50
+        print(f'✂️  Film {raw_duration:.0f}s — przycinam do 50s (Short)')
+    else:
+        # Znacznie za długi — publikuj jako zwykły film (nie Short)
+        is_short = False
+        target_dur = int(raw_duration)
+        print(f'🎬 Film {raw_duration:.0f}s — publikuję jako FILM (nie Short)')
+
+    # 3. Dobierz tytuł
+    base_title = args.title or os.path.basename(args.video).rsplit('.', 1)[0].replace('_', ' ')
+    if is_short:
+        title = base_title
+        if '#Shorts' not in title:
+            title = f'{title} #Shorts'
+    else:
+        title = base_title  # bez #Shorts — to zwykły film
     if '| FUN like HEL' not in title:
         title = f'{title} | FUN like HEL'
 
-    # 3. Przetwórz wideo: 9:16, fade 0.5s/1.0s, głośność wg voice detection
-    target_dur = min(args.duration, 55)
+    # 4. Przetwórz wideo: 9:16, fade 0.5s/1.0s, głośność wg voice detection
     processed = process_video(args.video, music_path, target_duration=target_dur, title=title)
 
-    # 4. Metadane
+    # 5. Metadane
     description = build_description(topic, title)
 
-    # 5. Upload YouTube (domyślnie NIEPUBLICZNY — sprawdź przed publikacją)
-    is_unlisted = not args.public
-    video_id = upload_to_youtube(processed, title, description, TAGS, unlisted=is_unlisted)
+    # 6. Upload YouTube — zawsze PUBLICZNY, pełna automatyzacja
+    video_id = upload_to_youtube(processed, title, description, TAGS, unlisted=False)
 
-    # 6. Upload TikTok — ta sama przetworzona wersja 9:16
-    tt_publish_id = None if args.no_tiktok else upload_to_tiktok(processed, title, topic)
+    # 7. Upload TikTok — ta sama przetworzona wersja 9:16 (tylko Shorts)
+    tt_publish_id = None
+    if not args.no_tiktok and is_short:
+        tt_publish_id = upload_to_tiktok(processed, title, topic)
+    elif not is_short:
+        print('📲 TikTok: pominięty (film > 90s — nie nadaje się na Short)')
 
     info = get_video_info(processed)
-    visibility = 'NIEPUBLICZNY — sprawdź i opublikuj ręcznie' if is_unlisted else 'PUBLICZNY'
+    fmt = 'Short 9:16' if is_short else 'Film 9:16'
 
     print()
     print('=' * 60)
-    print(f'✅ YouTube ({visibility}):')
-    print(f'   🔗 https://studio.youtube.com/video/{video_id}/edit')
-    print(f'   🔗 https://www.youtube.com/watch?v={video_id}')
+    print(f'✅ YouTube PUBLICZNY ({fmt}):')
+    if is_short:
+        print(f'   🔗 https://www.youtube.com/shorts/{video_id}')
+    else:
+        print(f'   🔗 https://www.youtube.com/watch?v={video_id}')
+    print(f'   📝 https://studio.youtube.com/video/{video_id}/edit')
     if tt_publish_id:
         print(f'✅ TikTok (procesowanie w tle):')
         print(f'   🔗 https://www.tiktok.com/@funlikehelbrand')
-        print(f'   publish_id: {tt_publish_id}')
-    else:
+    elif is_short and not args.no_tiktok:
         print(f'⚠️  TikTok: pominięty (brak tokenu lub błąd)')
     print()
-    print(f'📋 Tytuł:       {title}')
-    print(f'⏱  Długość:     {info["duration"]:.0f}s')
-    print(f'📐 Format:      9:16, 1080×1920')
-    print(f'🎵 Muzyka:      {music_license}')
-    print(f'🎼 BPM:         {music_bpm}')
-    print(f'📄 Licencja:    YouTube Audio Library — royalty-free, bez ograniczeń')
+    print(f'📋 Tytuł:    {title}')
+    print(f'⏱  Długość:  {info["duration"]:.0f}s  (oryginał: {raw_duration:.0f}s)')
+    print(f'📐 Format:   1080×1920')
+    print(f'🎵 Muzyka:   {music_license}')
+    print(f'🎼 BPM:      {music_bpm}')
+    print(f'📄 Licencja: YouTube Audio Library — royalty-free, bez ograniczeń')
     print()
-    print('📌 Przypięty komentarz (skopiuj ręcznie):')
-    print(f'   🪁 Kursy kite: funlikehel.pl | Tel: 690 270 032')
-    print(f'   📍 Jastarnia + Hurghada (Egipt) | Cabrinha Test Center')
+    print('📌 Przypięty komentarz:')
+    print('   🪁 Kursy kite: funlikehel.pl | Tel: 690 270 032')
+    print('   📍 Jastarnia + Hurghada (Egipt) | Cabrinha Test Center')
     print('=' * 60)
-    if is_unlisted:
-        print()
-        print(f'💡 Aby opublikować: python yt_shorts_pipeline.py --publish-id {video_id}')
-        print(f'   lub: --public flag przy następnym użyciu')
 
 
 # Oddzielna komenda do publikacji po zatwierdzeniu
