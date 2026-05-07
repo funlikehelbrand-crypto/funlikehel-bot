@@ -1512,7 +1512,7 @@ async def instagram_to_fb(mode: str = "latest"):
 
 @app.get("/api/version")
 async def get_version():
-    return {"version": "76d4d8b", "ig_fallback": "27441134238823713"}
+    return {"version": "2e3294a", "ig_fallback": "17841402381473231", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN"))}
 
 
 # ---------------------------------------------------------------------------
