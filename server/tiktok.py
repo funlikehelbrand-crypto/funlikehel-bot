@@ -218,17 +218,23 @@ async def get_valid_access_token() -> str:
 async def upload_video_file(access_token: str, video_path: str, caption: str,
                            privacy_level: str = "PUBLIC_TO_EVERYONE") -> str:
     """
-    Wgrywa plik wideo bezpośrednio na TikTok (chunked FILE_UPLOAD).
+    Wgrywa plik wideo na TikTok.
+    Próbuje Direct Post (video.publish), fallback do Inbox (video.upload).
+    Inbox = film trafia do skrzynki użytkownika jako draft (nie publikuje automatycznie).
     Zwraca publish_id.
     """
     file_size = os.path.getsize(video_path)
-    chunk_size = 10 * 1024 * 1024  # 10 MB chunks (max allowed)
+    chunk_size = 10 * 1024 * 1024  # 10 MB chunks dla Direct Post
     total_chunks = math.ceil(file_size / chunk_size)
+    using_inbox = False
 
     async with httpx.AsyncClient(timeout=120) as client:
         # Krok 1: inicjalizacja uploadu
+        direct_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+        inbox_url  = "https://open.tiktokapis.com/v2/post/publish/inbox/video/init/"
+
         init_resp = await client.post(
-            "https://open.tiktokapis.com/v2/post/publish/video/init/",
+            direct_url,
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json; charset=UTF-8",
@@ -249,11 +255,34 @@ async def upload_video_file(access_token: str, video_path: str, caption: str,
                 },
             },
         )
+        # Fallback do inbox jeśli brak scope video.publish
+        if init_resp.status_code == 401:
+            logger.info("Direct post 401 — fallback do inbox (video.upload scope)")
+            using_inbox = True
+            # Inbox wymaga całego pliku jako 1 chunk
+            chunk_size = file_size
+            total_chunks = 1
+            init_resp = await client.post(
+                inbox_url,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json; charset=UTF-8",
+                },
+                json={
+                    "source_info": {
+                        "source": "FILE_UPLOAD",
+                        "video_size": file_size,
+                        "chunk_size": chunk_size,
+                        "total_chunk_count": total_chunks,
+                    },
+                },
+            )
         init_resp.raise_for_status()
         init_data = init_resp.json()
         publish_id = init_data["data"]["publish_id"]
         upload_url = init_data["data"]["upload_url"]
-        logger.info("TikTok upload zainicjowany. publish_id=%s, chunks=%d", publish_id, total_chunks)
+        mode = "inbox/draft" if using_inbox else "direct"
+        logger.info("TikTok upload zainicjowany [%s]. publish_id=%s, chunks=%d", mode, publish_id, total_chunks)
 
         # Krok 2: upload chunków
         with open(video_path, "rb") as fh:
