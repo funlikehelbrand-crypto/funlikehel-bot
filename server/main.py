@@ -1054,6 +1054,21 @@ async def polityka():
 tiktok_tokens: dict = {}
 
 
+@app.get("/tiktok/debug")
+async def tiktok_debug():
+    """Pokazuje aktualną konfigurację TikTok (do debugowania)."""
+    import os
+    key = os.environ.get("TT_CLIENT_KEY", "")
+    redirect = os.environ.get("TT_REDIRECT_URI", "https://funlikehel-bot.onrender.com/tiktok/callback")
+    auth_url = get_auth_url() if HAS_GOOGLE_MODULES else "unavailable"
+    return {
+        "client_key": key[:8] + "..." if key else "BRAK — env var nie ustawiona!",
+        "client_key_full": key,  # tymczasowo pełny klucz do debugowania
+        "redirect_uri": redirect,
+        "auth_url": auth_url,
+    }
+
+
 @app.get("/tiktok/login")
 async def tiktok_login():
     """Otwórz ten URL w przeglądarce żeby autoryzować TikTok."""
