@@ -17,8 +17,8 @@ load_dotenv("api.env")
 
 logger = logging.getLogger(__name__)
 
-CLIENT_KEY = os.environ.get("TT_CLIENT_KEY", "")
-CLIENT_SECRET = os.environ.get("TT_CLIENT_SECRET", "")
+CLIENT_KEY = os.environ.get("TT_CLIENT_KEY", "sbawht30eoonlc1ano")
+CLIENT_SECRET = os.environ.get("TT_CLIENT_SECRET", "ygNRHa2WzRzAIHZYOeqF9bl08hcdlG6M")
 REDIRECT_URI = os.getenv("TT_REDIRECT_URI", "https://funlikehel-bot.onrender.com/tiktok/callback")
 
 # Persistent token storage (przeżywa restart serwera)
