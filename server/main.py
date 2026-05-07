@@ -54,6 +54,11 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="FUN like HEL — Instagram Bot + Gmail + Chatbot")
 
+# deploy-probe: usuń po potwierdzeniu że działa
+@app.get("/api/probe")
+async def deploy_probe():
+    return {"deployed": "6c870fd", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN"))}
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Booking API
