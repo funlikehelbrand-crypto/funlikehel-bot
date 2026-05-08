@@ -291,6 +291,66 @@ def process_upload_folder():
                 os.remove(tmp_path)
 
 
+# ---------------------------------------------------------------------------
+# TikTok auto-upload z folderu Drive "TT do wrzucenia"
+# ---------------------------------------------------------------------------
+
+# TODO: stwórz folder "TT do wrzucenia" na Google Drive i wklej jego ID tutaj
+# (otwórz Drive → Nowy folder → wejdź w folder → skopiuj ID z URL: drive.google.com/drive/folders/TUTAJ_ID)
+TT_UPLOAD_FOLDER_ID = os.environ.get("TT_UPLOAD_FOLDER_ID", "")
+
+
+def get_new_tiktok_videos() -> list[dict]:
+    """Pobiera filmy z folderu TT do wrzucenia na Drive."""
+    if not TT_UPLOAD_FOLDER_ID:
+        logger.warning("TT_UPLOAD_FOLDER_ID nie ustawiony — pomiń TikTok auto-upload.")
+        return []
+    service = get_drive_service()
+    result = service.files().list(
+        q=f"'{TT_UPLOAD_FOLDER_ID}' in parents and mimeType contains 'video/' and trashed=false",
+        fields="files(id, name, mimeType)",
+    ).execute()
+    return result.get("files", [])
+
+
+def process_tiktok_upload_folder():
+    """Sprawdza folder TT do wrzucenia i uploaduje filmy na TikTok."""
+    import asyncio
+    from tiktok import get_valid_access_token, upload_video_file
+
+    videos = get_new_tiktok_videos()
+    if not videos:
+        return
+
+    logger.info("TikTok: znaleziono %d nowych filmów w 'TT do wrzucenia'.", len(videos))
+
+    for video in videos:
+        file_id = video["id"]
+        filename = video["name"]
+        title, _ = parse_filename(filename)
+
+        logger.info("TikTok: film %s | Tytuł: %s", filename, title)
+        tmp_path = None
+        try:
+            tmp_path = download_file(file_id, filename)
+
+            async def _do_upload():
+                token = await get_valid_access_token()
+                return await upload_video_file(token, tmp_path, title)
+
+            publish_id = asyncio.run(_do_upload())
+            logger.info("TikTok: upload zainicjowany, publish_id=%s", publish_id)
+
+            delete_file(file_id)
+            logger.info("TikTok: plik '%s' usunięty z Drive.", filename)
+
+        except Exception as e:
+            logger.error("TikTok: błąd przy uploadzie '%s': %s", filename, e)
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     process_upload_folder()
