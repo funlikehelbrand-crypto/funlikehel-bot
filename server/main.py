@@ -54,10 +54,13 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="FUN like HEL — Instagram Bot + Gmail + Chatbot")
 
-# deploy-probe: usuń po potwierdzeniu że działa
 @app.get("/api/probe")
 async def deploy_probe():
-    return {"deployed": "6c870fd", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN"))}
+    return {
+        "deployed": "cb3f888-tiktok-upload",
+        "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN")),
+        "tiktok_endpoints": ["/tiktok/upload", "/tiktok/upload-from-yt", "/tiktok/upload/status/{publish_id}"],
+    }
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
