@@ -118,7 +118,8 @@ def save_token(token_data: dict):
 
 SCOPES = [
     "user.info.basic",
-    "video.upload",   # Content Posting API — Direct Post
+    "video.publish",  # Content Posting API — Direct Post (publiczny upload)
+    "video.upload",   # Content Posting API — Inbox/Draft (fallback)
 ]
 
 
@@ -256,8 +257,16 @@ async def upload_video_file(access_token: str, video_path: str, caption: str,
             },
         )
         # Fallback do inbox jeśli brak scope video.publish
-        if init_resp.status_code == 401:
-            logger.info("Direct post 401 — fallback do inbox (video.upload scope)")
+        # TikTok zwraca 401, 403, lub error w body
+        direct_failed = init_resp.status_code in (401, 403)
+        if not direct_failed and init_resp.status_code == 200:
+            body = init_resp.json()
+            err_code = body.get("error", {}).get("code", "")
+            if err_code in ("scope_not_authorized", "access_token_invalid"):
+                direct_failed = True
+        if direct_failed:
+            logger.info("Direct post failed (status=%d) — fallback do inbox (video.upload scope)",
+                        init_resp.status_code)
             using_inbox = True
             # Inbox wymaga całego pliku jako 1 chunk
             chunk_size = file_size
