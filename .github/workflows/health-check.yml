@@ -1,0 +1,27 @@
+name: Health Check — Alicja żyje?
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # co 30 minut
+  workflow_dispatch:          # możliwość ręcznego uruchomienia
+
+jobs:
+  ping:
+    name: Ping bota
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sprawdź /health endpoint
+        id: health
+        run: |
+          STATUS=$(curl -s -o /tmp/body.txt -w "%{http_code}" --max-time 15 https://funlikehel-bot.onrender.com/api/health)
+          BODY=$(cat /tmp/body.txt)
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "HTTP $STATUS — $BODY"
+
+      - name: Zgłoś błąd jeśli bot nie żyje
+        if: steps.health.outputs.status != '200'
+        run: |
+          echo "BŁĄD: Bot odpowiada kodem ${{ steps.health.outputs.status }}"
+          echo "Sprawdź logi na: https://dashboard.render.com"
+          exit 1

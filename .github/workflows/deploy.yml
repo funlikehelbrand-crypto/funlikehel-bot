@@ -1,0 +1,25 @@
+name: Deploy — Wyślij na Render
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Wdróż bota Alicja
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wywołaj Render Deploy Hook
+        run: |
+          curl -s --fail -X POST "https://api.render.com/deploy/srv-d7gukht7vvec73ak6up0?key=_BVSbUUm5TQ" \
+            -o /dev/null -w "HTTP status: %{http_code}\n"
+
+      - name: Poczekaj na wdrożenie (60s) i sprawdź status
+        run: |
+          sleep 60
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://funlikehel-bot.onrender.com/api/health)
+          echo "Status serwera: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "UWAGA: serwer odpowiada kodem $STATUS (może jeszcze się uruchamiać)"
+          fi
