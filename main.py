@@ -1041,13 +1041,14 @@ async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
     """Pobiera film z YouTube przez yt-dlp i publikuje na TikTok."""
     if not HAS_GOOGLE_MODULES:
         raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
-    import subprocess, tempfile, os as _os
+    import subprocess, tempfile, os as _os, sys as _sys
     yt_url = f"https://www.youtube.com/watch?v={req.video_id}"
     tmp_dir = tempfile.mkdtemp()
     tmp_path = _os.path.join(tmp_dir, f"{req.video_id}.mp4")
     try:
         result = subprocess.run(
-            ["yt-dlp", "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
+            [_sys.executable, "-m", "yt_dlp",
+             "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
              "--merge-output-format", "mp4", "-o", tmp_path, yt_url],
             capture_output=True, text=True, timeout=300,
         )

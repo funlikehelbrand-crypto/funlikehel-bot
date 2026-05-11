@@ -1247,6 +1247,178 @@ async def tiktok_upload(req: TikTokUploadRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class YouTubeUploadFromIGRequest(BaseModel):
+    ig_url: str = ""       # URL reela/posta z IG (np. "https://www.instagram.com/reel/ABC123/")
+    ig_media_id: str = ""  # Albo bezpośrednio media ID z Graph API
+    title: str = ""        # Tytuł na YT; jeśli pusty — z opisu IG
+    description: str = ""  # Opis na YT; jeśli pusty — generowany
+    tags: list[str] = []
+    privacy: str = "public"  # public | unlisted | private
+    account: str = "funlikehel"  # Konto IG do użycia
+
+
+async def _fetch_ig_media_via_api(ig_url: str, ig_media_id: str, account: str) -> tuple[str, str, str]:
+    """Pobiera video_url, caption, shortcode z Graph API. Zwraca (video_url, caption, shortcode)."""
+    import re
+    token = os.getenv("PAGE_ACCESS_TOKEN", "")
+    if account != "funlikehel":
+        token = os.getenv(f"Insta_{account}", token)
+    if not token:
+        raise RuntimeError(f"Brak tokenu dla konta {account}")
+
+    # Wyciągnij shortcode z URL
+    shortcode = ""
+    if ig_url and not ig_media_id:
+        m = re.search(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)", ig_url)
+        if m:
+            shortcode = m.group(1)
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        if ig_media_id:
+            # Bezpośrednie pobranie po media ID
+            r = await client.get(
+                f"https://graph.facebook.com/v21.0/{ig_media_id}",
+                params={"access_token": token, "fields": "media_url,caption,media_type,shortcode"},
+            )
+            if r.status_code != 200:
+                raise RuntimeError(f"Graph API error: {r.text[:300]}")
+            data = r.json()
+            return data.get("media_url", ""), data.get("caption", ""), data.get("shortcode", shortcode)
+
+        # Szukaj po shortcode w ostatnich postach
+        if not shortcode:
+            raise RuntimeError("Nie mogę wyciągnąć shortcode z URL. Podaj ig_media_id lub poprawny URL.")
+
+        # Pobierz IG user ID
+        r = await client.get(
+            f"https://graph.facebook.com/v21.0/me/accounts",
+            params={"access_token": token, "fields": "instagram_business_account"},
+        )
+        pages = r.json().get("data", [])
+        ig_user_id = ""
+        for page in pages:
+            iba = page.get("instagram_business_account", {})
+            if iba.get("id"):
+                ig_user_id = iba["id"]
+                break
+        if not ig_user_id:
+            raise RuntimeError("Nie znaleziono IG Business Account")
+
+        # Pobierz ostatnie media i znajdź po shortcode
+        r = await client.get(
+            f"https://graph.facebook.com/v21.0/{ig_user_id}/media",
+            params={"access_token": token, "fields": "id,media_url,caption,media_type,shortcode", "limit": 50},
+        )
+        if r.status_code != 200:
+            raise RuntimeError(f"Graph API media list error: {r.text[:300]}")
+        for item in r.json().get("data", []):
+            if item.get("shortcode") == shortcode:
+                return item.get("media_url", ""), item.get("caption", ""), shortcode
+
+        raise RuntimeError(f"Nie znaleziono posta o shortcode '{shortcode}' w ostatnich 50 postach. Podaj ig_media_id.")
+
+
+@app.post("/youtube/upload-from-ig")
+async def youtube_upload_from_ig(req: YouTubeUploadFromIGRequest):
+    """Pobiera wideo z Instagrama (Graph API) i publikuje na YouTube."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł YouTube niedostępny")
+    if not req.ig_url and not req.ig_media_id:
+        raise HTTPException(status_code=400, detail="Podaj ig_url lub ig_media_id")
+
+    import tempfile, os as _os
+    from youtube import upload_video
+
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = _os.path.join(tmp_dir, "ig_video.mp4")
+    try:
+        video_url, caption, shortcode = await _fetch_ig_media_via_api(req.ig_url, req.ig_media_id, req.account)
+        if not video_url:
+            raise RuntimeError("Post nie zawiera wideo (media_url pusty). Upewnij się, że to reel/wideo, nie zdjęcie.")
+
+        # Pobierz plik wideo
+        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
+            r = await client.get(video_url)
+            if r.status_code != 200:
+                raise RuntimeError(f"Nie mogę pobrać wideo: HTTP {r.status_code}")
+            with open(tmp_path, "wb") as f:
+                f.write(r.content)
+
+        title = req.title or (caption[:80] if caption else "FUN like HEL")
+        description = req.description or caption or "Szkoła sportów wodnych FUN like HEL — Jastarnia & Hurghada\nwww.funlikehel.pl"
+        tags = req.tags or ["kitesurfing", "windsurfing", "funlikehel", "hel", "jastarnia", "sporty wodne"]
+
+        response = upload_video(
+            file_path=tmp_path,
+            title=title[:100],
+            description=description,
+            tags=tags,
+            privacy=req.privacy,
+        )
+        video_id = response.get("id", "unknown")
+        return {
+            "status": "ok",
+            "youtube_video_id": video_id,
+            "youtube_url": f"https://youtube.com/watch?v={video_id}",
+            "title": title[:100],
+            "ig_url": req.ig_url or f"https://instagram.com/reel/{shortcode}/",
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("IG→YT upload failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.get("/youtube/ig-media-list")
+async def youtube_ig_media_list(account: str = "funlikehel", limit: int = 20):
+    """Lista ostatnich wideo/reelsów z IG do wyboru."""
+    token = os.getenv("PAGE_ACCESS_TOKEN", "")
+    if account != "funlikehel":
+        token = os.getenv(f"Insta_{account}", token)
+    if not token:
+        raise HTTPException(status_code=400, detail=f"Brak tokenu dla konta {account}")
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.get(
+            f"https://graph.facebook.com/v21.0/me/accounts",
+            params={"access_token": token, "fields": "instagram_business_account"},
+        )
+        pages = r.json().get("data", [])
+        ig_user_id = ""
+        for page in pages:
+            iba = page.get("instagram_business_account", {})
+            if iba.get("id"):
+                ig_user_id = iba["id"]
+                break
+        if not ig_user_id:
+            raise HTTPException(status_code=400, detail="Nie znaleziono IG Business Account")
+
+        r = await client.get(
+            f"https://graph.facebook.com/v21.0/{ig_user_id}/media",
+            params={"access_token": token, "fields": "id,media_url,caption,media_type,shortcode,timestamp,thumbnail_url", "limit": limit},
+        )
+        if r.status_code != 200:
+            raise HTTPException(status_code=502, detail=r.text[:300])
+        items = r.json().get("data", [])
+        # Filtruj tylko wideo
+        videos = [
+            {
+                "id": i["id"],
+                "shortcode": i.get("shortcode", ""),
+                "caption": (i.get("caption", "") or "")[:120],
+                "media_type": i.get("media_type"),
+                "timestamp": i.get("timestamp"),
+                "url": f"https://instagram.com/reel/{i['shortcode']}/" if i.get("shortcode") else "",
+            }
+            for i in items if i.get("media_type") == "VIDEO"
+        ]
+        return {"videos": videos, "count": len(videos)}
+
+
 class TikTokUploadFromYTRequest(BaseModel):
     video_id: str          # YouTube video ID (np. "En4TFI2OrEg")
     caption: str = ""      # Opis TikTok; jeśli pusty — generowany z tytułu YT
@@ -1260,7 +1432,7 @@ async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
     """
     if not HAS_GOOGLE_MODULES:
         raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
-    import subprocess, tempfile, os as _os
+    import subprocess, tempfile, os as _os, sys as _sys
     yt_url = f"https://www.youtube.com/watch?v={req.video_id}"
     tmp_dir = tempfile.mkdtemp()
     tmp_path = _os.path.join(tmp_dir, f"{req.video_id}.mp4")
@@ -1268,7 +1440,7 @@ async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
         # Pobierz film przez yt-dlp (max 720p, mp4)
         result = subprocess.run(
             [
-                "yt-dlp",
+                _sys.executable, "-m", "yt_dlp",
                 "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
                 "--merge-output-format", "mp4",
                 "-o", tmp_path,
