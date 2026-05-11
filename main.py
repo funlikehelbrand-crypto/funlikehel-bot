@@ -1048,6 +1048,7 @@ async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
     try:
         result = subprocess.run(
             [_sys.executable, "-m", "yt_dlp",
+             "--extractor-args", "youtube:player_client=mediaconnect",
              "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
              "--merge-output-format", "mp4", "-o", tmp_path, yt_url],
             capture_output=True, text=True, timeout=300,

@@ -1257,16 +1257,24 @@ class YouTubeUploadFromIGRequest(BaseModel):
     account: str = "funlikehel"  # Konto IG do użycia
 
 
-async def _fetch_ig_media_via_api(ig_url: str, ig_media_id: str, account: str) -> tuple[str, str, str]:
-    """Pobiera video_url, caption, shortcode z Graph API. Zwraca (video_url, caption, shortcode)."""
-    import re
-    token = os.getenv("PAGE_ACCESS_TOKEN", "")
-    if account != "funlikehel":
-        token = os.getenv(f"Insta_{account}", token)
-    if not token:
-        raise RuntimeError(f"Brak tokenu dla konta {account}")
+IG_API = "https://graph.instagram.com/v21.0"
+IG_ACCOUNTS = {"funlikehel": "27441134238823713", "surf4hel": "35116715114638747"}
 
-    # Wyciągnij shortcode z URL
+
+def _ig_token(account: str) -> str:
+    """Zwraca IGAA token dla danego konta IG."""
+    if account == "funlikehel":
+        return os.getenv("INSTAGRAM_IGAA_TOKEN", "")
+    return os.getenv(f"Insta_{account}", "")
+
+
+async def _fetch_ig_media_via_api(ig_url: str, ig_media_id: str, account: str) -> tuple[str, str, str]:
+    """Pobiera video_url, caption, shortcode z Instagram Graph API. Zwraca (video_url, caption, shortcode)."""
+    import re
+    token = _ig_token(account)
+    if not token:
+        raise RuntimeError(f"Brak IGAA tokenu dla konta {account}")
+
     shortcode = ""
     if ig_url and not ig_media_id:
         m = re.search(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)", ig_url)
@@ -1275,42 +1283,32 @@ async def _fetch_ig_media_via_api(ig_url: str, ig_media_id: str, account: str) -
 
     async with httpx.AsyncClient(timeout=30) as client:
         if ig_media_id:
-            # Bezpośrednie pobranie po media ID
             r = await client.get(
-                f"https://graph.facebook.com/v21.0/{ig_media_id}",
+                f"{IG_API}/{ig_media_id}",
                 params={"access_token": token, "fields": "media_url,caption,media_type,shortcode"},
             )
             if r.status_code != 200:
-                raise RuntimeError(f"Graph API error: {r.text[:300]}")
+                raise RuntimeError(f"IG API error: {r.text[:300]}")
             data = r.json()
             return data.get("media_url", ""), data.get("caption", ""), data.get("shortcode", shortcode)
 
-        # Szukaj po shortcode w ostatnich postach
         if not shortcode:
             raise RuntimeError("Nie mogę wyciągnąć shortcode z URL. Podaj ig_media_id lub poprawny URL.")
 
-        # Pobierz IG user ID
-        r = await client.get(
-            f"https://graph.facebook.com/v21.0/me/accounts",
-            params={"access_token": token, "fields": "instagram_business_account"},
-        )
-        pages = r.json().get("data", [])
-        ig_user_id = ""
-        for page in pages:
-            iba = page.get("instagram_business_account", {})
-            if iba.get("id"):
-                ig_user_id = iba["id"]
-                break
+        ig_user_id = IG_ACCOUNTS.get(account, "")
         if not ig_user_id:
-            raise RuntimeError("Nie znaleziono IG Business Account")
+            r = await client.get(f"{IG_API}/me", params={"access_token": token, "fields": "id"})
+            if r.status_code == 200:
+                ig_user_id = r.json().get("id", "")
+        if not ig_user_id:
+            raise RuntimeError(f"Nie znaleziono IG user ID dla konta {account}")
 
-        # Pobierz ostatnie media i znajdź po shortcode
         r = await client.get(
-            f"https://graph.facebook.com/v21.0/{ig_user_id}/media",
+            f"{IG_API}/{ig_user_id}/media",
             params={"access_token": token, "fields": "id,media_url,caption,media_type,shortcode", "limit": 50},
         )
         if r.status_code != 200:
-            raise RuntimeError(f"Graph API media list error: {r.text[:300]}")
+            raise RuntimeError(f"IG API media list error: {r.text[:300]}")
         for item in r.json().get("data", []):
             if item.get("shortcode") == shortcode:
                 return item.get("media_url", ""), item.get("caption", ""), shortcode
@@ -1376,35 +1374,26 @@ async def youtube_upload_from_ig(req: YouTubeUploadFromIGRequest):
 @app.get("/youtube/ig-media-list")
 async def youtube_ig_media_list(account: str = "funlikehel", limit: int = 20):
     """Lista ostatnich wideo/reelsów z IG do wyboru."""
-    token = os.getenv("PAGE_ACCESS_TOKEN", "")
-    if account != "funlikehel":
-        token = os.getenv(f"Insta_{account}", token)
+    token = _ig_token(account)
     if not token:
-        raise HTTPException(status_code=400, detail=f"Brak tokenu dla konta {account}")
+        raise HTTPException(status_code=400, detail=f"Brak IGAA tokenu dla konta {account}")
 
+    ig_user_id = IG_ACCOUNTS.get(account, "")
     async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.get(
-            f"https://graph.facebook.com/v21.0/me/accounts",
-            params={"access_token": token, "fields": "instagram_business_account"},
-        )
-        pages = r.json().get("data", [])
-        ig_user_id = ""
-        for page in pages:
-            iba = page.get("instagram_business_account", {})
-            if iba.get("id"):
-                ig_user_id = iba["id"]
-                break
         if not ig_user_id:
-            raise HTTPException(status_code=400, detail="Nie znaleziono IG Business Account")
+            r = await client.get(f"{IG_API}/me", params={"access_token": token, "fields": "id"})
+            if r.status_code == 200:
+                ig_user_id = r.json().get("id", "")
+        if not ig_user_id:
+            raise HTTPException(status_code=400, detail="Nie znaleziono IG user ID")
 
         r = await client.get(
-            f"https://graph.facebook.com/v21.0/{ig_user_id}/media",
-            params={"access_token": token, "fields": "id,media_url,caption,media_type,shortcode,timestamp,thumbnail_url", "limit": limit},
+            f"{IG_API}/{ig_user_id}/media",
+            params={"access_token": token, "fields": "id,caption,media_type,shortcode,timestamp", "limit": limit},
         )
         if r.status_code != 200:
             raise HTTPException(status_code=502, detail=r.text[:300])
         items = r.json().get("data", [])
-        # Filtruj tylko wideo
         videos = [
             {
                 "id": i["id"],
@@ -1441,6 +1430,7 @@ async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
         result = subprocess.run(
             [
                 _sys.executable, "-m", "yt_dlp",
+                "--extractor-args", "youtube:player_client=mediaconnect",
                 "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
                 "--merge-output-format", "mp4",
                 "-o", tmp_path,
