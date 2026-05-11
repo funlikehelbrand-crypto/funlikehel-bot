@@ -1021,10 +1021,14 @@ async def tiktok_upload(req: TikTokUploadRequest):
     if not HAS_GOOGLE_MODULES:
         raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
     try:
+        from auto_upload import build_tiktok_caption
+        caption = req.caption
+        if "#" not in caption:
+            caption = build_tiktok_caption(caption)
         token = await get_valid_access_token()
-        result = await upload_video_from_url(token, req.video_url, req.caption)
+        result = await upload_video_from_url(token, req.video_url, caption)
         publish_id = result.get("data", {}).get("publish_id", "unknown")
-        return {"status": "ok", "publish_id": publish_id, "caption": req.caption}
+        return {"status": "ok", "publish_id": publish_id, "caption": caption}
     except RuntimeError as e:
         raise HTTPException(status_code=401, detail=str(e))
     except Exception as e:
@@ -1061,7 +1065,11 @@ async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
             if not files:
                 raise RuntimeError("yt-dlp nie zapisał pliku mp4")
             tmp_path = _os.path.join(tmp_dir, files[0])
-        caption = req.caption or "Kite i surf na maxa! 🏄 Jastarnia & Hurghada\n\n#kitesurfing #funlikehel #fyp #jastarnia #hurghada"
+        if req.caption:
+            caption = req.caption
+        else:
+            from auto_upload import build_tiktok_caption
+            caption = build_tiktok_caption("Kite i surf na maxa! 🏄 Jastarnia & Hurghada")
         token = await get_valid_access_token()
         from tiktok import upload_video_file
         publish_id = await upload_video_file(token, tmp_path, caption, req.privacy_level)
