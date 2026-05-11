@@ -13,16 +13,15 @@ claude_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", 
 
 # Opcjonalne silniki — Gemini i OpenAI (fallback)
 gemini_model = None
+gemini_genai_client = None
 openai_client = None
 try:
-    import warnings
-    warnings.filterwarnings("ignore", category=FutureWarning, message=".*google.generativeai.*")
-    import google.generativeai as genai
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
     if gemini_key:
-        genai.configure(api_key=gemini_key)
-        gemini_model = genai.GenerativeModel("gemini-2.0-flash")
-        logger.info("Gemini engine loaded")
+        from google import genai as google_genai
+        gemini_genai_client = google_genai.Client(api_key=gemini_key)
+        gemini_model = "gemini-2.0-flash"
+        logger.info("Gemini engine loaded (google.genai)")
 except Exception as e:
     logger.warning("Gemini niedostepny: %s", e)
 
@@ -109,17 +108,18 @@ def _call_claude(messages: list[dict], max_tokens: int) -> str:
 
 
 def _call_gemini(messages: list[dict], max_tokens: int) -> str:
-    """Gemini (Google) — fallback #1."""
-    # Konwersja formatu wiadomości na Gemini
-    history = []
-    for msg in messages:
-        role = "user" if msg["role"] == "user" else "model"
-        history.append({"role": role, "parts": [msg["content"]]})
+    """Gemini (Google) — fallback #1. Używa google.genai SDK."""
+    contents = [{"role": "user", "parts": [{"text": f"{SYSTEM_PROMPT}\n\n{messages[-1]['content']}"}]}]
+    if len(messages) > 1:
+        # Dodaj historię konwersacji
+        for msg in messages[:-1]:
+            role = "user" if msg["role"] == "user" else "model"
+            contents.insert(-1, {"role": role, "parts": [{"text": msg["content"]}]})
 
-    chat = gemini_model.start_chat(history=history[:-1])
-    response = chat.send_message(
-        f"[SYSTEM PROMPT]\n{SYSTEM_PROMPT}\n\n[WIADOMOŚĆ]\n{messages[-1]['content']}",
-        generation_config=genai.types.GenerationConfig(max_output_tokens=max_tokens),
+    response = gemini_genai_client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=contents,
+        config={"max_output_tokens": max_tokens},
     )
     return response.text
 
@@ -137,11 +137,11 @@ def _call_openai(messages: list[dict], max_tokens: int) -> str:
     return response.choices[0].message.content
 
 
-# Kolejność silników: Claude → Gemini → GPT
+# Kolejność silników: Claude → Gemini → GPT (pomijaj niedostępne)
 _ENGINES = [
-    ("Claude", _call_claude),
-    ("Gemini", _call_gemini),
-    ("GPT", _call_openai),
+    ("Claude", _call_claude, lambda: bool(claude_client.api_key)),
+    ("Gemini", _call_gemini, lambda: gemini_model is not None and gemini_genai_client is not None),
+    ("GPT", _call_openai, lambda: openai_client is not None),
 ]
 
 
@@ -169,8 +169,11 @@ def get_reply(
     if max_tokens is None:
         max_tokens = 1024 if channel == "email" else 512
 
-    # Próbuj każdy silnik po kolei
-    for engine_name, engine_fn in _ENGINES:
+    # Próbuj każdy silnik po kolei (pomijaj niedostępne)
+    for engine_name, engine_fn, is_available in _ENGINES:
+        if not is_available():
+            logger.debug("Pomijam %s — niedostępny (brak klucza API)", engine_name)
+            continue
         try:
             reply = engine_fn(messages, max_tokens)
             logger.info("Odpowiedź od %s (%d znaków)", engine_name, len(reply))
