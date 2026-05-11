@@ -709,7 +709,7 @@ async def tiktok_auto_upload_loop():
     await asyncio.sleep(180)  # opóźnienie startu (po YT loop)
     while True:
         try:
-            process_tiktok_upload_folder()
+            await process_tiktok_upload_folder()
         except Exception as e:
             logger.error("Błąd auto-upload TikTok: %s", e)
         await asyncio.sleep(7200)  # 2 godziny

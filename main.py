@@ -140,6 +140,7 @@ async def health():
         "google_token_env_len": len(token_env),
         "google_creds_env_set": bool(creds_env),
         "google_creds_env_valid_json": creds_valid,
+        "tt_upload_folder_id": bool(_os.environ.get("TT_UPLOAD_FOLDER_ID", "")),
     }
 
 @app.get("/api/google-business/diagnose")
@@ -693,7 +694,7 @@ async def tiktok_auto_upload_loop():
     await asyncio.sleep(180)
     while True:
         try:
-            process_tiktok_upload_folder()
+            await process_tiktok_upload_folder()
         except Exception as e:
             logger.error("Błąd auto-upload TikTok: %s", e)
         await asyncio.sleep(7200)

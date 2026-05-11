@@ -313,9 +313,8 @@ def get_new_tiktok_videos() -> list[dict]:
     return result.get("files", [])
 
 
-def process_tiktok_upload_folder():
+async def process_tiktok_upload_folder():
     """Sprawdza folder TT do wrzucenia i uploaduje filmy na TikTok."""
-    import asyncio
     from tiktok import get_valid_access_token, upload_video_file
 
     videos = get_new_tiktok_videos()
@@ -334,11 +333,8 @@ def process_tiktok_upload_folder():
         try:
             tmp_path = download_file(file_id, filename)
 
-            async def _do_upload():
-                token = await get_valid_access_token()
-                return await upload_video_file(token, tmp_path, title)
-
-            publish_id = asyncio.run(_do_upload())
+            token = await get_valid_access_token()
+            publish_id = await upload_video_file(token, tmp_path, title)
             logger.info("TikTok: upload zainicjowany, publish_id=%s", publish_id)
 
             delete_file(file_id)
