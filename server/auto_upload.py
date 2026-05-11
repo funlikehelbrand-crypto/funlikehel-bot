@@ -292,6 +292,59 @@ def process_upload_folder():
 
 
 # ---------------------------------------------------------------------------
+# TikTok — hashtagi i opis
+# ---------------------------------------------------------------------------
+
+# Stałe hashtagi rotowane losowo + zawsze obecne
+_TT_ALWAYS = ["#funlikehel", "#kitesurfing", "#fyp"]
+_TT_SPORT = [
+    "#kitesurf", "#kite", "#windsurfing", "#wingfoil", "#surf",
+    "#kiteboarding", "#kitesession", "#kitelife", "#kitetrip",
+    "#watersports", "#extremesports", "#windsurf", "#wingsurfing",
+    "#pumpfoil", "#wakeboarding", "#sup",
+]
+_TT_LOCATION = [
+    "#jastarnia", "#hel", "#poland", "#polskiemorze", "#bałtyk",
+    "#hurghada", "#egypt", "#elgouna", "#redsea",
+]
+_TT_VIRAL = [
+    "#foryou", "#foryoupage", "#viral", "#trending",
+    "#tiktok", "#viralvideo",
+]
+_TT_LIFESTYLE = [
+    "#summer", "#beach", "#beachlife", "#travel",
+    "#sportswodne", "#kitegirl", "#kiteboy",
+    "#sunset", "#adventure", "#freedomlife",
+]
+_TT_SCHOOL = [
+    "#kiteschool", "#kitelessons", "#kitecourse",
+    "#surf4hel", "#szkołakite", "#kursykite",
+    "#learntokite", "#kitesurfingschool",
+]
+
+
+def build_tiktok_caption(title: str, max_len: int = 2200) -> str:
+    """Buduje zoptymalizowany opis TikTok z hashtagami.
+
+    Bierze tytuł z nazwy pliku i dodaje mieszankę hashtagów:
+    - 3 stałe (funlikehel, kitesurfing, fyp)
+    - 3 sport, 2 lokalizacja, 2 viral, 2 lifestyle, 1 szkoła (losowe)
+    """
+    import random
+
+    tags = list(_TT_ALWAYS)
+    tags += random.sample(_TT_SPORT, min(3, len(_TT_SPORT)))
+    tags += random.sample(_TT_LOCATION, min(2, len(_TT_LOCATION)))
+    tags += random.sample(_TT_VIRAL, min(2, len(_TT_VIRAL)))
+    tags += random.sample(_TT_LIFESTYLE, min(2, len(_TT_LIFESTYLE)))
+    tags += random.sample(_TT_SCHOOL, min(1, len(_TT_SCHOOL)))
+
+    hashtags = " ".join(tags)
+    caption = f"{title}\n\n{hashtags}"
+    return caption[:max_len]
+
+
+# ---------------------------------------------------------------------------
 # TikTok auto-upload z folderu Drive "TT do wrzucenia"
 # ---------------------------------------------------------------------------
 
@@ -327,14 +380,15 @@ async def process_tiktok_upload_folder():
         file_id = video["id"]
         filename = video["name"]
         title, _ = parse_filename(filename)
+        caption = build_tiktok_caption(title)
 
-        logger.info("TikTok: film %s | Tytuł: %s", filename, title)
+        logger.info("TikTok: film %s | Caption: %s", filename, caption[:100])
         tmp_path = None
         try:
             tmp_path = download_file(file_id, filename)
 
             token = await get_valid_access_token()
-            publish_id = await upload_video_file(token, tmp_path, title)
+            publish_id = await upload_video_file(token, tmp_path, caption)
             logger.info("TikTok: upload zainicjowany, publish_id=%s", publish_id)
 
             delete_file(file_id)
