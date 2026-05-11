@@ -51,10 +51,10 @@ except Exception as e:
 try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
-    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token
+    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token, get_valid_access_token, upload_video_from_url, check_upload_status
     from cleanup_mail import daily_cleanup, trash_cleanup
     from google_business import process_reviews
-    from auto_upload import process_upload_folder
+    from auto_upload import process_upload_folder, process_tiktok_upload_folder
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
     from facebook_groups import process_facebook_groups
@@ -678,14 +678,25 @@ async def trash_cleanup_loop():
 
 
 async def auto_upload_loop():
-    """Sprawdza folder DO_UPLOADU i uploaduje nowe filmy na YouTube — co 1 godzinę."""
+    """Sprawdza folder YT do wrzucenia i uploaduje nowe filmy na YouTube — co 1 godzinę."""
     await asyncio.sleep(120)  # opóźnienie startu
     while True:
         try:
             process_upload_folder()
         except Exception as e:
-            logger.error("Błąd auto-upload: %s", e)
+            logger.error("Błąd auto-upload YT: %s", e)
         await asyncio.sleep(3600)  # 1 godzina
+
+
+async def tiktok_auto_upload_loop():
+    """Sprawdza folder TT do wrzucenia i uploaduje nowe filmy na TikTok — co 2 godziny."""
+    await asyncio.sleep(180)
+    while True:
+        try:
+            process_tiktok_upload_folder()
+        except Exception as e:
+            logger.error("Błąd auto-upload TikTok: %s", e)
+        await asyncio.sleep(7200)
 
 
 async def google_business_loop():
@@ -739,6 +750,7 @@ async def startup_event():
         asyncio.create_task(trash_cleanup_loop())
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
+        asyncio.create_task(tiktok_auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
     # DM campaign loop — permanentnie wyłączona
     asyncio.create_task(dm_campaign_loop())
@@ -981,7 +993,7 @@ async def tiktok_callback(code: str):
 @app.get("/tiktok/status")
 async def tiktok_status():
     """Sprawdza stan autoryzacji TikTok."""
-    if not HAS_ALL_MODULES:
+    if not HAS_GOOGLE_MODULES:
         return {"status": "error", "message": "Moduł tiktok niedostępny"}
     data = get_stored_token()
     if not data:
@@ -994,6 +1006,83 @@ async def tiktok_status():
         "expires_in_hours": round((expires_at - time.time()) / 3600, 1) if expires_at else "unknown",
         "has_refresh": bool(data.get("refresh_token")),
     }
+
+
+class TikTokUploadRequest(BaseModel):
+    video_url: str
+    caption: str
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+
+
+@app.post("/tiktok/upload")
+async def tiktok_upload(req: TikTokUploadRequest):
+    """Publikuje wideo na TikTok z podanego URL."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    try:
+        token = await get_valid_access_token()
+        result = await upload_video_from_url(token, req.video_url, req.caption)
+        publish_id = result.get("data", {}).get("publish_id", "unknown")
+        return {"status": "ok", "publish_id": publish_id, "caption": req.caption}
+    except RuntimeError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class TikTokUploadFromYTRequest(BaseModel):
+    video_id: str
+    caption: str = ""
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+
+
+@app.post("/tiktok/upload-from-yt")
+async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
+    """Pobiera film z YouTube przez yt-dlp i publikuje na TikTok."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    import subprocess, tempfile, os as _os
+    yt_url = f"https://www.youtube.com/watch?v={req.video_id}"
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = _os.path.join(tmp_dir, f"{req.video_id}.mp4")
+    try:
+        result = subprocess.run(
+            ["yt-dlp", "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
+             "--merge-output-format", "mp4", "-o", tmp_path, yt_url],
+            capture_output=True, text=True, timeout=300,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"yt-dlp error: {result.stderr[-500:]}")
+        if not _os.path.exists(tmp_path):
+            files = [f for f in _os.listdir(tmp_dir) if f.endswith(".mp4")]
+            if not files:
+                raise RuntimeError("yt-dlp nie zapisał pliku mp4")
+            tmp_path = _os.path.join(tmp_dir, files[0])
+        caption = req.caption or "Kite i surf na maxa! 🏄 Jastarnia & Hurghada\n\n#kitesurfing #funlikehel #fyp #jastarnia #hurghada"
+        token = await get_valid_access_token()
+        from tiktok import upload_video_file
+        publish_id = await upload_video_file(token, tmp_path, caption, req.privacy_level)
+        return {"status": "ok", "publish_id": publish_id, "yt_video_id": req.video_id}
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.get("/tiktok/upload/status/{publish_id}")
+async def tiktok_upload_status(publish_id: str):
+    """Sprawdza status publikacji wideo na TikTok."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    try:
+        token = await get_valid_access_token()
+        result = await check_upload_status(token, publish_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
@@ -1512,7 +1601,7 @@ async def instagram_to_fb(mode: str = "latest"):
 
 @app.get("/api/version")
 async def get_version():
-    return {"version": "2e3294a", "ig_fallback": "17841402381473231", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN"))}
+    return {"version": "tiktok-upload-v3", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN")), "tiktok_upload": True}
 
 
 # ---------------------------------------------------------------------------
