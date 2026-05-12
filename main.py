@@ -912,6 +912,22 @@ async def _handle_whatsapp_message(message: dict, value: dict):
         logger.error("Błąd WhatsApp odpowiedzi do %s: %s", sender_phone, e)
 
 
+class WASendRequest(BaseModel):
+    to: str
+    text: str
+
+
+@app.post("/whatsapp/send")
+async def whatsapp_send(req: WASendRequest):
+    """Wysyła wiadomość WhatsApp na podany numer."""
+    if not HAS_ALL_MODULES:
+        raise HTTPException(status_code=503, detail="WhatsApp niedostępny")
+    result = await wa_send_message(req.to, req.text)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result)
+    return {"status": "sent", "to": req.to, "result": result}
+
+
 # ---------------------------------------------------------------------------
 # Strony prawne (regulamin, polityka prywatności)
 # ---------------------------------------------------------------------------
