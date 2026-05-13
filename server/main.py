@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import hmac
+import json
 import logging
 import os
 from datetime import datetime
@@ -800,6 +801,109 @@ async def fb_lead_scout_loop():
         await asyncio.sleep(21600)  # 6 godzin
 
 
+# ---------------------------------------------------------------------------
+# IG Scheduled Posts — publikuje posty z ig_posts_queue.json o właściwej godzinie
+# ---------------------------------------------------------------------------
+
+RENDER_BASE_URL = "https://funlikehel.onrender.com"
+IG_QUEUE_FILE   = os.path.join(os.path.dirname(__file__), "ig_posts_queue.json")
+
+
+async def ig_scheduled_posts_loop():
+    """Co 5 minut sprawdza kolejkę IG i publikuje posty których czas minął."""
+    await asyncio.sleep(120)  # daj serwerowi chwilę na start
+    while True:
+        try:
+            if not os.path.exists(IG_QUEUE_FILE):
+                await asyncio.sleep(300)
+                continue
+
+            with open(IG_QUEUE_FILE, encoding="utf-8") as f:
+                queue = json.load(f)
+
+            now = int(__import__("time").time())
+            changed = False
+
+            for post in queue:
+                if post.get("status") != "pending":
+                    continue
+                if post["scheduled_ts"] > now:
+                    continue
+
+                # Czas publikacji nadszedł
+                label = post.get("label", "?")
+                logger.info("IG scheduler: publikuję post '%s'", label)
+
+                # Ustal URL zdjęcia
+                image_url = post.get("image_url")
+                if not image_url:
+                    local = post.get("image_local", "")
+                    # Wyciągnij nazwę pliku i zbuduj Render URL
+                    fname = os.path.basename(local)
+                    # Sprawdz czy to plik z week/ czy z rootu
+                    if "week" in local or "action_" in fname:
+                        image_url = f"{RENDER_BASE_URL}/static/week/{fname}"
+                    else:
+                        image_url = f"{RENDER_BASE_URL}/static/{fname}"
+
+                ig_token = os.getenv("INSTAGRAM_IGAA_TOKEN") or os.getenv("IGAA_TOKEN", "")
+                ig_user_id = "27441134238823713"
+                caption = post.get("caption", "")
+
+                try:
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        # 1. Utwórz media container
+                        media_resp = await client.post(
+                            f"https://graph.instagram.com/v21.0/{ig_user_id}/media",
+                            data={
+                                "image_url": image_url,
+                                "caption": caption,
+                                "access_token": ig_token,
+                            },
+                        )
+                        media_data = media_resp.json()
+                        creation_id = media_data.get("id")
+
+                        if not creation_id:
+                            raise ValueError(f"Brak creation_id: {media_data}")
+
+                        await asyncio.sleep(6)  # IG wymaga chwili na przetworzenie
+
+                        # 2. Opublikuj
+                        pub_resp = await client.post(
+                            f"https://graph.instagram.com/v21.0/{ig_user_id}/media_publish",
+                            data={
+                                "creation_id": creation_id,
+                                "access_token": ig_token,
+                            },
+                        )
+                        pub_data = pub_resp.json()
+                        post_id = pub_data.get("id")
+
+                        post["status"] = "published"
+                        post["ig_post_id"] = post_id
+                        post["published_at"] = now
+                        changed = True
+                        logger.info("IG scheduler: opublikowano '%s' — post_id: %s", label, post_id)
+
+                except Exception as e:
+                    logger.error("IG scheduler błąd dla '%s': %s", label, e)
+                    post["status"] = "error"
+                    post["error"] = str(e)
+                    changed = True
+
+                await asyncio.sleep(10)  # pauza między postami
+
+            if changed:
+                with open(IG_QUEUE_FILE, "w", encoding="utf-8") as f:
+                    json.dump(queue, f, ensure_ascii=False, indent=2)
+
+        except Exception as e:
+            logger.error("IG scheduler loop błąd: %s", e)
+
+        await asyncio.sleep(300)  # sprawdzaj co 5 minut
+
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_alive_loop())
@@ -818,6 +922,8 @@ async def startup_event():
         logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
     else:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
+    asyncio.create_task(ig_scheduled_posts_loop())
+    logger.info("IG Scheduled Posts loop uruchomiony — sprawdzanie co 5 min.")
 
 
 # ---------------------------------------------------------------------------
