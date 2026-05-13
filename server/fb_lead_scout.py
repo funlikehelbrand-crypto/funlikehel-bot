@@ -31,6 +31,11 @@ from email.mime.text import MIMEText
 
 import anthropic
 
+try:
+    from google import genai
+except ImportError:
+    genai = None
+
 logger = logging.getLogger(__name__)
 
 # ── Konfiguracja ─────────────────────────────────────────────────────────────
@@ -224,6 +229,13 @@ def _pre_filter(post_text: str, author_name: str) -> bool:
     if "wycieczk" in low and any(a in low for a in tour_agency_attractions) and "?" not in txt:
         return True
 
+    # Ogłoszenie SPRZEDAŻY sprzętu (autor wystawia sprzęt, nie pyta o zakup)
+    # Wyklucz tylko jeśli nie ma pytajnika i ma słowa sprzedażowe
+    gear_sale_markers = ("sprzedam", "sprzedaj", "do sprzedania", "na sprzedaż",
+                         "cena:", "zł obo", "zł do negocjacji")
+    if any(m in low for m in gear_sale_markers) and "?" not in txt:
+        return True
+
     # Za krótki post bez pytajnika — nie niesie intencji zakupowej
     if "?" not in txt and len(txt.strip()) < 50:
         return True
@@ -276,9 +288,22 @@ Szukamy postów gdzie turysta:
 - Pyta o polskie biuro/organizatora w Hurghadzie
 - Szuka "czegoś ekscytującego" lub aktywnego spędzenia wakacji
 
+## Sprzęt kite — nowa kategoria "gear_inquiry"
+
+Szukamy postów gdzie ktoś:
+- Pyta "jaki sprzęt kupić na start / dla początkującego"
+- Prosi o polecenie latawca, deski, baru — bez konretnego modelu do sprzedania
+- Pyta "ile kosztuje własny zestaw", "czy warto kupić sprzęt przed kursem"
+- Porównuje zestawy lub marki z punktu widzenia kupującego (nie serwisanta)
+
+Dla tych postów:
+- Alicja wchodzi w rozmowę jako osoba ze społeczności, NIE jako sprzedawca
+- Daje praktyczną radę ("na start 9-12m, flat-friendly laguna"), POTEM wspomina że mają sprzęt Cabrinha i pomagają dobrać
+- Jeśli pyta o kurs + sprzęt razem → wyższy score (synergia)
+
 ## IGNORUJ zawsze
-- Sprzedaż/kupno sprzętu
-- Pytania techniczne (bar, linki, naprawa, rozmiary)
+- Ogłoszenia sprzedaży sprzętu (autor wystawia coś na sprzedaż — bez pytajnika o kupno)
+- Pytania czysto serwisowe (naprawa, naprawa baru, wymiana linek)
 - Prognozy pogody bez intencji kursu
 - Relacje z sesji bez pytania ("byłem na wodzie", zdjęcia)
 - Ogłoszenia pracy dla instruktorów, recepcjonistów, ratowników, personelu — pytania o "wymagania godzinowe", "warunki zatrudnienia", "nocleg dla pracownika"
@@ -326,8 +351,9 @@ Tekst:
 
 SKALA SCORINGU (bazowy score przed modyfikatorami):
 85-100: Bezposrednie pytanie o kurs kite / szkole kite w lokalizacji FLH
-70-84: Pytanie o kite ogolnie (Polska/Egipt), spot, nauka od zera
-55-69: Aktywny turysta w Hurghadzie/El Gounie szuka aktywnosci sportowej
+75-84: Pytanie o kite ogolnie (Polska/Egipt), spot, nauka od zera
+65-74: Pytanie o sprzet dla poczatkujacego / "co kupic na start" / kurs + sprzet razem
+55-64: Aktywny turysta w Hurghadzie/El Gounie szuka aktywnosci sportowej
 40-54: Turysta szuka "dodatkowej atrakcji" w Hurghadzie, pyta o organizatora z cennikiem
 25-39: Slaby sygnal — turysta wspomina aktywnosci wodne lub sporty
 0-24: Ogloszenie firmy, safari, hotel, restauracja, pytanie niesportowe
@@ -337,8 +363,10 @@ MODYFIKATORY (dodaj do bazowego score, cap na 100):
 +10 jesli "El Gouna" lub "Sahl Hasheesh" w tekscie
 +10 jesli "polski instruktor" lub "po polsku" lub "polska szkola" w tekscie
 +10 jesli autor podal konkretny termin wyjazdu
++10 jesli post zawiera pytanie o sprzet ORAZ kurs/nauke razem (synergia)
 +5 jesli post zawiera pytajnik (faktyczne pytanie)
 -50 (cap score na 10) jesli post od strony firmowej / ogloszenie
+-30 jesli post to OGLOSZENIE SPRZEDAZY sprzetu (autor wystawia sprzet, nie pyta o zakup)
 FORCE 0 jesli post zawiera "Fun Like Hel" lub "funlikehel" (wlasny post szkoly)
 
 WYMOG: jesli score >= 55 ale post NIE zawiera pytajnika → obniz score o 20
@@ -351,7 +379,7 @@ Zwróć JSON w DOKŁADNIE tym formacie (bez żadnego markdown ani komentarzy):
   "priority": "<Hot|Warm|Low|Ignore>",
   "detected_language": "<PL|EN|Other>",
   "detected_location": "<Egypt|El Gouna|Hurghada|Dahab|Soma Bay|Poland|Hel|Jastarnia|Chalupy|Other|unknown>",
-  "detected_intent": "<direct_kite|active_tourist|family|spam|own_post|school_recommendation|beginner_course|advanced_course|kite_trip|spot_question|travel_activity|gear_sale|technical|job_offer|thread_reply|other>",
+  "detected_intent": "<direct_kite|active_tourist|family|spam|own_post|school_recommendation|beginner_course|advanced_course|kite_trip|spot_question|travel_activity|gear_inquiry|gear_sale|technical|job_offer|thread_reply|other>",
   "why_relevant": "<1 zdanie dlaczego warto / nie warto odpowiedziec jako FLH>",
   "score_reason": "<krotkie uzasadnienie wyniku: bazowy score + ktore modyfikatory zastosowano>",
   "suggested_reply_pl": "<gotowa odpowiedz po polsku TYLKO polskie znaki — null jesli Ignore/Low/thread_reply>",
@@ -404,25 +432,85 @@ def _apply_python_modifiers(analysis: dict, post_text: str, group_name: str) -> 
     return analysis
 
 
+def _analyze_with_claude(prompt: str) -> str:
+    """Scoring przez Claude Haiku."""
+    response = _get_claude().messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=600,
+        system=[{
+            "type": "text",
+            "text": _SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},
+        }],
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.content[0].text.strip()
+
+
+def _analyze_with_gemini(prompt: str) -> str:
+    """Scoring przez Gemini Flash (fallback gdy Claude nie ma kredytów)."""
+    if genai is None:
+        raise ImportError("google-genai nie zainstalowane")
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        raise ValueError("Brak GEMINI_API_KEY w api.env")
+    client = genai.Client(api_key=api_key)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=f"{_SYSTEM_PROMPT}\n\n---\n\n{prompt}",
+    )
+    return response.text.strip()
+
+
+# Śledzi który provider aktualnie działa — unika retry Claude przy każdym poście
+_active_provider = "claude"  # "claude" | "gemini"
+
+
 def _analyze_post(post: dict) -> dict:
-    """Wysyła post do Claude, stosuje Python-side modyfikatory i zwraca analizę leadową."""
+    """Wysyła post do AI (Claude → Gemini fallback), stosuje modyfikatory i zwraca analizę."""
+    global _active_provider
+
+    prompt = _USER_PROMPT.format(
+        group_name=post.get("group_name", "nieznana"),
+        author=post.get("author_name", "nieznany"),
+        text=post.get("post_text", "")[:1500],
+    )
+
+    raw = None
+    providers = (["claude", "gemini"] if _active_provider == "claude"
+                 else ["gemini", "claude"])
+
+    for provider in providers:
+        try:
+            if provider == "claude":
+                raw = _analyze_with_claude(prompt)
+            else:
+                raw = _analyze_with_gemini(prompt)
+            if _active_provider != provider:
+                logger.info("Przełączono lead scoring na: %s", provider)
+                _active_provider = provider
+            break
+        except Exception as e:
+            err_msg = str(e).lower()
+            is_credit_error = ("credit" in err_msg or "balance" in err_msg
+                               or "billing" in err_msg or "quota" in err_msg)
+            logger.warning("Błąd %s: %s%s", provider, e,
+                           " → próbuję fallback" if provider == providers[0] else "")
+            if is_credit_error and provider == "claude":
+                _active_provider = "gemini"
+            continue
+
+    if raw is None:
+        logger.error("Oba providery (Claude + Gemini) zawiodły dla posta od '%s'",
+                     post.get("author_name"))
+        return {
+            "is_lead": False, "lead_score": 0, "priority": "Ignore",
+            "detected_intent": "other", "detected_location": "unknown",
+            "why_relevant": "Błąd analizy (Claude + Gemini) — sprawdź ręcznie.",
+            "suggested_reply_pl": None, "suggested_reply_en": None,
+        }
+
     try:
-        prompt = _USER_PROMPT.format(
-            group_name=post.get("group_name", "nieznana"),
-            author=post.get("author_name", "nieznany"),
-            text=post.get("post_text", "")[:1500],
-        )
-        response = _get_claude().messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=600,
-            system=[{
-                "type": "text",
-                "text": _SYSTEM_PROMPT,
-                "cache_control": {"type": "ephemeral"},
-            }],
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw = response.content[0].text.strip()
         # Usuń markdown code fences jeśli model je dodał
         if raw.startswith("```"):
             parts = raw.split("```")
@@ -430,29 +518,60 @@ def _analyze_post(post: dict) -> dict:
             if raw.startswith("json"):
                 raw = raw[4:]
         analysis = json.loads(raw.strip())
-        # Zastosuj Python-side modyfikatory (deterministyczne, niezależne od modelu)
         analysis = _apply_python_modifiers(
-            analysis,
-            post.get("post_text", ""),
-            post.get("group_name", ""),
+            analysis, post.get("post_text", ""), post.get("group_name", ""),
         )
         return analysis
-    except Exception as e:
-        logger.warning("Błąd analizy Claude dla posta od '%s': %s",
-                       post.get("author_name"), e)
+    except (json.JSONDecodeError, IndexError) as e:
+        logger.warning("Błąd parsowania JSON od %s: %s | raw: %s",
+                       _active_provider, e, raw[:200])
         return {
-            "is_lead": False,
-            "lead_score": 0,
-            "priority": "Ignore",
-            "detected_intent": "other",
-            "detected_location": "unknown",
-            "why_relevant": "Błąd analizy — sprawdź ręcznie.",
-            "suggested_reply_pl": None,
-            "suggested_reply_en": None,
+            "is_lead": False, "lead_score": 0, "priority": "Ignore",
+            "detected_intent": "other", "detected_location": "unknown",
+            "why_relevant": "Błąd parsowania odpowiedzi AI.",
+            "suggested_reply_pl": None, "suggested_reply_en": None,
         }
 
 
 # ── Gmail alert ───────────────────────────────────────────────────────────────
+
+OWNER_WHATSAPP = os.environ.get("OWNER_WHATSAPP", "48690270032")
+
+
+def _send_gear_whatsapp_alert(lead: dict):
+    """
+    Wysyła WhatsApp alert do właściciela dla leadów gear_inquiry (zapytania o sprzęt).
+    Szybszy kanał niż email — Łukasz reaguje od razu.
+    """
+    try:
+        import asyncio
+        from whatsapp import send_message as wa_send
+
+        score   = lead.get("lead_score", 0)
+        author  = lead.get("author_name", "nieznany")
+        group   = lead.get("group_name", "FB")
+        post_url = lead.get("post_url", "brak linku")
+        reply   = lead.get("suggested_reply_pl") or "—"
+
+        text = (
+            f"🛒 *Lead sprzęt Cabrinha* (score {score}/100)\n"
+            f"Autor: {author} | Grupa: {group}\n"
+            f"Link: {post_url}\n\n"
+            f"Proponowana odpowiedź:\n_{reply}_\n\n"
+            f"Sklep: funlikehel.pl/sklep\n"
+            f"Kod absolwenta: ABSOLWENT10 (-10%)"
+        )
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(wa_send(OWNER_WHATSAPP, text))
+        finally:
+            loop.close()
+
+        logger.info("WhatsApp gear alert wysłany do właściciela (autor: %s)", author)
+    except Exception as e:
+        logger.warning("Błąd WhatsApp gear alert: %s", e)
+
 
 def _send_email_alert(lead: dict):
     """Wysyła alert email przez Gmail API (Google OAuth)."""
@@ -791,33 +910,75 @@ async def _scrape_group(page, group_url: str) -> tuple[list[dict], str]:
                 seen_hashes.add(h)
 
                 # ── Autor ──
-                # FB renderuje imię autora w różnych miejscach — próbuj kolejno
+                # FB renderuje imię autora jako link do profilu w h2/h3/h4/strong.
+                # Kluczowe: filtrujemy po href — tylko linki do profili użytkowników,
+                # nie do grup/stron/postów/eventów (które też mają linki w artykule).
                 author = "nieznany"
-                author_selectors = [
-                    # Najczęstszy: nagłówek h3/h4 z linkiem do profilu
-                    "h3 a span", "h4 a span", "h3 a", "h4 a",
-                    # Alternatywa: h2 (starszy layout)
-                    "h2 a span", "h2 a",
-                    # Strong/bold często zawiera imię
-                    "strong a", "strong span",
-                    # Aria-label na linku do profilu
-                    'a[aria-label]',
-                ]
-                for sel in author_selectors:
+                _SKIP_WORDS = {
+                    "lubię", "komentarz", "udostępnij", "odpowiedz", "obserwuj",
+                    "like", "comment", "share", "follow", "więcej", "see more",
+                    "zobacz", "zareaguj", "react", "·", "napisz", "write",
+                    "wyślij", "send", "polubionych", "liked", "members", "członk",
+                }
+                _NON_PROFILE = (
+                    "/groups/", "/pages/", "/events/", "/posts/", "/video/",
+                    "/photos/", "/marketplace/", "/watch/", "/reel/", "/hashtag/",
+                    "?comment", "story_fbid", "#",
+                )
+
+                def _is_profile_url(href: str) -> bool:
+                    """True jeśli href prowadzi do profilu użytkownika."""
+                    if not href:
+                        return False
+                    # Absolutne linki do FB (profil numeryczny lub username)
+                    if "facebook.com" in href:
+                        return not any(x in href for x in _NON_PROFILE)
+                    # Relatywne linki (np. /user/123456/ lub /jan.kowalski/)
+                    if href.startswith("/") and not any(x in href for x in _NON_PROFILE):
+                        return True
+                    return False
+
+                def _clean_candidate(txt: str) -> str:
+                    return txt.strip().split("\n")[0].strip()
+
+                # Próbuj nagłówki artykułu — najnowszy layout FB: h2, h3, h4
+                for sel in ["h2 a", "h3 a", "h4 a", "strong a"]:
+                    if author != "nieznany":
+                        break
                     try:
                         els = await article.query_selector_all(sel)
                         for el in els:
-                            candidate = (await el.inner_text()).strip()
-                            # Filtruj: imię = 2-50 znaków, nie zawiera "Lubię to", "Komentarz" itp.
-                            skip_words = {"lubię", "komentarz", "udostępnij", "odpowiedz",
-                                          "obserwuj", "like", "comment", "share", "follow",
-                                          "więcej", "see more", "zobacz"}
-                            if (2 < len(candidate) <= 50 and
-                                    not any(w in candidate.lower() for w in skip_words)):
+                            href = await el.get_attribute("href") or ""
+                            if not _is_profile_url(href):
+                                continue
+                            candidate = _clean_candidate(await el.inner_text())
+                            # Fallback: aria-label linka (FB czasem chowa tekst w aria)
+                            if not candidate or len(candidate) > 60:
+                                candidate = _clean_candidate(
+                                    await el.get_attribute("aria-label") or ""
+                                )
+                            if (2 < len(candidate) <= 60 and
+                                    not any(w in candidate.lower() for w in _SKIP_WORDS)):
                                 author = candidate
                                 break
-                        if author != "nieznany":
-                            break
+                    except Exception:
+                        pass
+
+                # Ostatni fallback: dowolny link z aria-label wyglądający jak profil
+                if author == "nieznany":
+                    try:
+                        els = await article.query_selector_all("a[aria-label]")
+                        for el in els:
+                            href = await el.get_attribute("href") or ""
+                            if not _is_profile_url(href):
+                                continue
+                            candidate = _clean_candidate(
+                                await el.get_attribute("aria-label") or ""
+                            )
+                            if (2 < len(candidate) <= 60 and
+                                    not any(w in candidate.lower() for w in _SKIP_WORDS)):
+                                author = candidate
+                                break
                     except Exception:
                         pass
 
@@ -914,6 +1075,11 @@ async def _scan_async() -> dict:
                         "hurghad", "egipt", "egypt", "gouna", "hel", "jastarni", "chałupy",
                         "wakacj", "sporty", "aktywn", "windsur", "wing", "foil", "surf",
                         "lec", "rezerwac", "obóz", "kitesur", "kiter",
+                        # Sprzęt kite — pytania o zakup/polecenie dla początkujących
+                        "sprzęt", "deska", "latawiec", "trapez", "bar ", " bar",
+                        "cabrinha", "north kite", "duotone", "f-one", "flysurfer",
+                        "zestaw kite", "setup kite", "co kupić", "polecacie sprzęt",
+                        "jaki sprzęt", "dla początkuj", "na start", "pierwszy sprzęt",
                     }
                     if not any(kw in txt_lower for kw in _KITE_KEYWORDS):
                         _save_lead({
@@ -981,6 +1147,11 @@ async def _scan_async() -> dict:
                         _send_email_alert(lead)
                         _mark_email_sent(post_hash)
                         stats["emails_sent"] += 1
+
+                    # Dla gear_inquiry — dodatkowy WhatsApp alert do właściciela
+                    if (analysis.get("detected_intent") == "gear_inquiry"
+                            and lead_score >= MIN_SCORE):
+                        _send_gear_whatsapp_alert(lead)
 
         finally:
             await browser.close()

@@ -1,42 +1,75 @@
 """
 Kampanie SMS i powiadomienia dla klientów FUN like HEL.
 
-Alicja generuje treść wiadomości, system pobiera kontakty z Google
-i wysyła SMS-y przez SerwerSMS.pl.
+Alicja generuje treść wiadomości (lub używamy gotowego tekstu),
+system pobiera kontakty z Google i wysyła SMS-y przez SerwerSMS.pl.
 """
 
 import logging
+import re
 from claude_agent import get_reply
 from google_contacts import get_contacts_with_phones
 from sms import send_bulk_sms, send_sms
 
 logger = logging.getLogger(__name__)
 
-# Max długość SMS bez dzielenia na części
+# Max długość SMS bez dzielenia na części (GSM-7)
 SMS_MAX_LEN = 160
 
 
-def run_campaign(topic: str, label: str = None, dry_run: bool = False) -> dict:
+def _strip_sms(text: str, max_len: int = SMS_MAX_LEN) -> str:
+    """
+    Czyści tekst do formatu SMS:
+    - usuwa markdown (**, __, #, *)
+    - usuwa emoji (blok Unicode Emoticons i inne)
+    - usuwa nadmiarowe białe znaki / nowe linie
+    - obcina do max_len znaków
+    """
+    # Usuń markdown bold/italic
+    text = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', text)
+    text = re.sub(r'_{1,2}(.*?)_{1,2}', r'\1', text)
+    # Usuń nagłówki Markdown
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    # Usuń emoji (szeroki zakres Unicode)
+    text = re.sub(
+        r'[\U0001F300-\U0001F9FF\U00002600-\U000027BF\U0001FA00-\U0001FAFF]',
+        '', text
+    )
+    # Usuń metadane typu "Wersja SMS (N znaków):" jeśli Alicja je dodała
+    text = re.sub(r'^.*?znaków\).*?\n\n', '', text, flags=re.DOTALL)
+    # Normalizuj białe znaki
+    text = re.sub(r'\s+', ' ', text).strip()
+    # Obetnij
+    if len(text) > max_len:
+        text = text[:max_len - 3] + "..."
+    return text
+
+
+def run_campaign(topic: str, label: str = None, dry_run: bool = False,
+                 message: str = None) -> dict:
     """
     Uruchamia kampanię SMS.
 
-    topic    — temat/instrukcja dla Alicji (np. "promocja na wakacyjne kursy kitesurfingu")
-    label    — opcjonalna etykieta Google Contacts do filtrowania (np. "Klienci VIP")
+    topic    — temat/instrukcja dla Alicji (generowanie treści)
+    label    — opcjonalna etykieta Google Contacts do filtrowania (np. "Klienci")
     dry_run  — jeśli True, tylko generuje treść i listę kontaktów bez wysyłki
+    message  — jeśli podany, używa tej treści zamiast generowania przez Alicję
 
     Zwraca słownik z wynikami kampanii.
     """
-    # Krok 1: Alicja generuje treść SMS
-    prompt = (
-        f"Napisz krótką wiadomość SMS dla klientów szkoły FUN like HEL na temat: {topic}. "
-        f"SMS max {SMS_MAX_LEN} znaków. Bez pozdrowień — tylko konkretna treść + CTA. "
-        f"Pisz po polsku, ciepło i entuzjastycznie."
-    )
-    message = get_reply(prompt)
-
-    # Upewnij się że zmieści się w SMS
-    if len(message) > SMS_MAX_LEN:
-        message = message[:SMS_MAX_LEN - 3] + "..."
+    # Krok 1: treść SMS — własna lub od Alicji
+    if message:
+        message = _strip_sms(message)
+        logger.info("Używam podanej treści SMS (%d znaków): %s", len(message), message)
+    else:
+        prompt = (
+            f"Napisz treść SMS dla klientów szkoły FUN like HEL na temat: {topic}. "
+            f"SMS max {SMS_MAX_LEN} znaków. Bez pozdrowień, bez formatowania markdown, "
+            f"bez emoji — tylko czysty tekst SMS + CTA. Pisz po polsku, ciepło i konkretnie. "
+            f"Odpowiedz TYLKO treścią SMS, żadnych nagłówków ani komentarzy."
+        )
+        message = _strip_sms(get_reply(prompt))
+        logger.info("Wygenerowana treść SMS (%d znaków): %s", len(message), message)
 
     logger.info("Wygenerowana treść SMS (%d znaków): %s", len(message), message)
 
