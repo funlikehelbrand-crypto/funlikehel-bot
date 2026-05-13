@@ -838,13 +838,13 @@ async def ig_scheduled_posts_loop():
                 image_url = post.get("image_url")
                 if not image_url:
                     local = post.get("image_local", "")
-                    # Wyciągnij nazwę pliku i zbuduj Render URL
-                    fname = os.path.basename(local)
-                    # Sprawdz czy to plik z week/ czy z rootu
-                    if "week" in local or "action_" in fname:
-                        image_url = f"{RENDER_BASE_URL}/static/week/{fname}"
+                    # Wyciągnij ścieżkę względną po "server/static/"
+                    static_marker = "server/static/"
+                    if static_marker in local:
+                        rel = local[local.index(static_marker) + len(static_marker):]
                     else:
-                        image_url = f"{RENDER_BASE_URL}/static/{fname}"
+                        rel = os.path.basename(local)
+                    image_url = f"{RENDER_BASE_URL}/static/{rel}"
 
                 ig_token = os.getenv("INSTAGRAM_IGAA_TOKEN") or os.getenv("IGAA_TOKEN", "")
                 ig_user_id = "27441134238823713"
