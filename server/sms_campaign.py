@@ -7,9 +7,11 @@ system pobiera kontakty z Google i wysyła SMS-y przez SerwerSMS.pl.
 
 import logging
 import re
+from datetime import datetime
 from claude_agent import get_reply
 from google_contacts import get_contacts_with_phones
 from sms import send_bulk_sms, send_sms
+from sms_tracker import record_sends
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +73,6 @@ def run_campaign(topic: str, label: str = None, dry_run: bool = False,
         message = _strip_sms(get_reply(prompt))
         logger.info("Wygenerowana treść SMS (%d znaków): %s", len(message), message)
 
-    logger.info("Wygenerowana treść SMS (%d znaków): %s", len(message), message)
-
     # Krok 2: Pobierz kontakty z Google
     contacts = get_contacts_with_phones(label=label)
 
@@ -86,17 +86,27 @@ def run_campaign(topic: str, label: str = None, dry_run: bool = False,
         }
 
     # Krok 3: Wyślij (lub tylko podejrzyj przy dry_run)
+    # Klucz kampanii: temat + data (unikalny per dzień)
+    campaign_key = f"{topic[:40]}_{datetime.now().strftime('%Y%m%d')}"
+
     if dry_run:
         logger.info("Dry run — pomijam wysyłkę. Kontaktów: %d", len(contacts))
         return {
             "status": "dry_run",
             "message": message,
             "contacts_count": len(contacts),
-            "contacts_preview": contacts[:5],  # pierwsze 5 dla podglądu
+            "contacts_preview": contacts[:5],
+            "campaign_key": campaign_key,
         }
 
     results = send_bulk_sms(contacts, message)
     success = sum(1 for r in results if not r["result"].get("error"))
+
+    # Zapisz do trackera (kto dostał SMS)
+    try:
+        record_sends(campaign_key, results, message, topic)
+    except Exception as e:
+        logger.warning("Błąd zapisu do sms_tracker: %s", e)
 
     return {
         "status": "sent",
@@ -104,6 +114,7 @@ def run_campaign(topic: str, label: str = None, dry_run: bool = False,
         "contacts_count": len(contacts),
         "success_count": success,
         "failed_count": len(contacts) - success,
+        "campaign_key": campaign_key,
         "results": results,
     }
 

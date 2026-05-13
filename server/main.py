@@ -1149,6 +1149,73 @@ async def sms_log(limit: int = 50):
 
 
 # ---------------------------------------------------------------------------
+# SMS Tracker — śledzenie kampanii i konwersji
+# ---------------------------------------------------------------------------
+
+try:
+    from sms_tracker import (
+        get_campaign_stats, get_converted_contacts,
+        get_pending_followup, record_conversion
+    )
+    _SMS_TRACKER_OK = True
+except ImportError:
+    _SMS_TRACKER_OK = False
+
+
+class SMSConversionRequest(BaseModel):
+    phone: str
+    name: str
+    conversion_type: str  # "kurs" | "demo_day" | "sklep" | "kontakt"
+    note: str | None = None
+    campaign_key: str | None = None
+
+
+@app.get("/sms/campaigns")
+async def sms_campaigns():
+    """Statystyki kampanii SMS: wysłano, dostarczono, konwersje."""
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    return {"campaigns": get_campaign_stats()}
+
+
+@app.post("/sms/conversion")
+async def sms_conversion(req: SMSConversionRequest):
+    """Rejestruje konwersję — klient zapisał się po kampanii SMS."""
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    record_conversion(
+        phone=req.phone, name=req.name,
+        conversion_type=req.conversion_type,
+        note=req.note, campaign_key=req.campaign_key
+    )
+    return {"status": "ok", "message": f"Konwersja zapisana: {req.name} ({req.conversion_type})"}
+
+
+@app.get("/sms/conversions")
+async def sms_conversions(campaign_key: str = None):
+    """Lista klientów którzy się zapisali po kampanii SMS."""
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    return {"conversions": get_converted_contacts(campaign_key)}
+
+
+@app.get("/sms/followup")
+async def sms_followup(campaign_key: str, min_days: int = 3):
+    """
+    Kontakty z kampanii bez konwersji (do follow-up).
+    min_days — ile dni minęło od wysyłki (domyślnie 3).
+    """
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    contacts = get_pending_followup(campaign_key, min_days)
+    return {
+        "campaign_key": campaign_key,
+        "pending_count": len(contacts),
+        "contacts": contacts,
+    }
+
+
+# ---------------------------------------------------------------------------
 # WhatsApp — webhook + obsługa wiadomości
 # ---------------------------------------------------------------------------
 
