@@ -805,7 +805,7 @@ async def fb_lead_scout_loop():
 # IG Scheduled Posts — publikuje posty z ig_posts_queue.json o właściwej godzinie
 # ---------------------------------------------------------------------------
 
-RENDER_BASE_URL = "https://funlikehel.onrender.com"
+RENDER_BASE_URL = "https://funlikehel-bot.onrender.com"
 IG_QUEUE_FILE   = os.path.join(os.path.dirname(__file__), "ig_posts_queue.json")
 
 
