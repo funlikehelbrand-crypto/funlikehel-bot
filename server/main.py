@@ -1086,6 +1086,7 @@ class SMSCampaignRequest(BaseModel):
     topic: str
     label: str | None = None
     dry_run: bool = False
+    message: str | None = None  # Gotowy tekst SMS (pomija generowanie przez Alicję)
 
 class SMSReminderRequest(BaseModel):
     phone: str
@@ -1101,8 +1102,9 @@ class SMSNotificationRequest(BaseModel):
 
 @app.post("/sms/campaign")
 async def sms_campaign(req: SMSCampaignRequest):
-    """Uruchamia kampanię SMS — Alicja generuje treść, wysyłka do kontaktów Google."""
-    result = run_campaign(topic=req.topic, label=req.label, dry_run=req.dry_run)
+    """Uruchamia kampanię SMS — Alicja generuje treść (lub używa podanej), wysyłka do kontaktów Google."""
+    result = run_campaign(topic=req.topic, label=req.label, dry_run=req.dry_run,
+                          message=req.message)
     return result
 
 @app.post("/sms/reminder")
@@ -2013,6 +2015,32 @@ async def wp_install_log(token: str = ""):
     if token != admin_token:
         raise HTTPException(status_code=403, detail="Brak dostępu")
     return {"log": _wp_install_log}
+
+
+# ---------------------------------------------------------------------------
+# Sklep — produkty z listings.db
+# ---------------------------------------------------------------------------
+
+@app.get("/shop/products")
+async def get_shop_products():
+    """Produkty z listings.db do wyswietlenia w FLH Panel (zakładka Sklep)."""
+    import sqlite3
+    db_path = os.path.join(os.path.dirname(__file__), "listings.db")
+    if not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="Baza listings.db nie istnieje")
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, product_id, full_name, category, product_type, size,
+               quantity, retail_price, sale_price, purchase_price,
+               image_file, status
+        FROM listings
+        ORDER BY id
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return {"products": rows}
 
 
 # ---------------------------------------------------------------------------
