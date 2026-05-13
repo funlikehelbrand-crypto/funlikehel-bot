@@ -124,5 +124,23 @@
     "image_local": "server/kontainer_downloads/week/action_logic.jpg",
     "caption": "Rok temu ktoś patrzył na takie zdjęcie i myślał \"kiedyś\".\n\nKiedyś spróbuję.\nKiedyś wezmę urlop.\nKiedyś nauczę się latać.\n\nNie ma idealnego momentu.\nJest tylko moment kiedy decydujesz że chcesz i po prostu dzwonisz.\n\n690 270 032",
     "status": "pending"
+  },
+  {
+    "id": "ig_base_egipt_2105",
+    "scheduled_ts": 1779350400,
+    "label": "21.05 12:00",
+    "image_url": null,
+    "image_local": "server/static/bases/IMG_5278.jpg",
+    "caption": "Baza Hurghada — otwarta przez cały rok. 🇪🇬\n\nCiepła woda, stały wiatr, płaska laguna.\nUczymy kitesurfingu w jednym z najlepszych spotów w Egipcie — od zera po zaawansowanych.\n\nPakiet all-in od 1910 zł — kurs + nocleg + transfer z Hurghady.\nTerminy dostępne teraz.\n\nZadzwoń i zarezerwuj miejsce: 690 270 032\nwww.funlikehel.pl\n\n#kitesurfing #Hurghada #Egipt #FunLikeHel #KursKitesurfingu #sportyWodne #CabrinhTestCenter",
+    "status": "pending"
+  },
+  {
+    "id": "ig_base_maszoperia_2205",
+    "scheduled_ts": 1779436800,
+    "label": "22.05 12:00",
+    "image_url": null,
+    "image_local": "server/static/bases/20260504_184502.jpg",
+    "caption": "Baza Jastarnia — Maszoperia. ⚓\n\n100 metrów od morza, 20 metrów od zatoki kite.\nTu startuje większość naszych kursantów na Półwyspie Helskim.\n\nKitesurfing, windsurfing, wing, wake, SUP — jeden spot, pełna oferta sportów wodnych.\nWolne miejsca w maju i czerwcu — zadzwoń teraz.\n\nZarezerwuj: 690 270 032\nwww.funlikehel.pl\n\n#kitesurfing #Jastarnia #PółwyspHelski #FunLikeHel #KursKitesurfingu #Maszoperia #sportyWodne",
+    "status": "pending"
   }
 ]
