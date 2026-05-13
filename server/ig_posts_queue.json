@@ -127,7 +127,7 @@
   },
   {
     "id": "ig_base_egipt_2105",
-    "scheduled_ts": 1779350400,
+    "scheduled_ts": 1778699378,
     "label": "21.05 12:00",
     "image_url": null,
     "image_local": "server/static/bases/IMG_5278.jpg",
@@ -136,7 +136,7 @@
   },
   {
     "id": "ig_base_maszoperia_2205",
-    "scheduled_ts": 1779436800,
+    "scheduled_ts": 1778699378,
     "label": "22.05 12:00",
     "image_url": null,
     "image_local": "server/static/bases/20260504_184502.jpg",
