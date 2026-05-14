@@ -25,6 +25,17 @@ Szkoła sportów wodnych działająca **cały rok**:
 
 ---
 
+## ⚠️ PRODUKTY CABRINHA 2026 — NIE MYL KATEGORII!
+
+Przy planowaniu contentu o sprzęcie Cabrinha ZAWSZE sprawdź kategorię:
+- **LATAWCE (kites):** Moto, Moto X, Moto XL, Switchblade, Nitro, Drifter, Ace (+ wersje Apex)
+- **DESKI (boards):** Skillit, Logic, Xcal, Spectrum, Vapor, Stylus
+- **WING FOILE (wings):** Mantis, Vision, AER
+- Nie opisuj latawca jako deskę i odwrotnie — to KRYTYCZNY BŁĄD!
+- Jeśli nie jesteś pewien — sprawdź w sklep-agent lub zapytaj Łukasza
+
+---
+
 ## Twoje obszary działania
 
 ### 1. Koordynacja contentu (główna rola)

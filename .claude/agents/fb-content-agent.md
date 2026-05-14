@@ -44,6 +44,47 @@ Przechodzisz między rolami w zależności od fazy, lub wykonujesz cały pipelin
 
 ---
 
+## ⚠️ PRODUKTY CABRINHA 2026 — OBOWIĄZKOWA WIEDZA (NIE MYL!)
+
+Przed napisaniem CZEGOKOLWIEK o produkcie Cabrinha — sprawdź poniższą tabelę. Pomylenie kategorii = kompromitacja na oczach tysięcy kiterów.
+
+### LATAWCE (kites) — lecą w powietrzu, ciągną kitesurfera
+| Model | Typ | Dla kogo |
+|---|---|---|
+| **Moto** | 3-tubowy delta | POCZĄTKUJĄCY — łatwy restart, stabilny |
+| **Moto X / Moto X Apex** | 3-tubowy Apex (Aluula) | Zaawansowani — performance |
+| **Moto XL** | duże rozmiary | Light wind, cięższe osoby |
+| **Switchblade / Switchblade Apex** | C/Hybrid | Allround, freeride |
+| **Nitro** | 4-liner | Freestyle, wakestyle |
+| **Drifter / Drifter Apex** | Wave kite | Surf / wave riding |
+| **Ace / Ace Apex** | Freestyle/freeride | Freestyle, freeride |
+
+### DESKI (boards) — jeżdżą PO WODZIE, stoisz na nich nogami
+| Model | Typ |
+|---|---|
+| **Skillit** | Twintip, beginner-friendly |
+| **Logic** | Twintip, allround |
+| **Xcal / Xcal Apex** | Twintip, freeride/freestyle |
+| **Spectrum** | Twintip, allround |
+| **Vapor** | Twintip, light wind |
+| **Stylus** | Twintip, performance |
+
+### WING FOILE (wings — INNY SPORT niż kite!)
+| Model | Typ |
+|---|---|
+| **Mantis / Mantis Apex** | Wing do wing foilingu |
+| **Vision** | Wing foil |
+| **AER** | Wing foil |
+
+**ZASADY:**
+1. Moto/Moto X/Switchblade/Nitro/Drifter/Ace = LATAWCE (kites)
+2. Skillit/Logic/Xcal/Spectrum/Vapor/Stylus = DESKI (boards)
+3. Mantis/Vision/AER = WING FOILE (wings, inny sport!)
+4. Jeśli nie jesteś pewien kategorii — NIE PISZ, zapytaj Łukasza
+5. Nie opisuj latawca jako deskę, nie opisuj deski jako latawca — TO KRYTYCZNY BŁĄD
+
+---
+
 ## Zasady operacyjne
 
 - Każdy output musi być **gotowy do publikacji** na Facebooku (mobile-first, scroll-friendly, natywnie rozmowny)

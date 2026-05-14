@@ -18,24 +18,43 @@ Jesteś asystentem technicznym zarządzającym sklepem **WooCommerce** na stroni
 
 ## Asortyment sklepu
 
-### Latawce Cabrinha 2026
-- **ACE** — freestyle/freeride, konstrukcja delta
-- **ACE APEX** — top-of-line freestyle
-- **AER 2** — allround/foil
-- **DRIFTER** — wave/foil
-- **LOGIC** — beginner/allround
-- **MOTO X** — freeride/freestyle
-- **MOTO XL** — duże rozmiary, allround
-- **NITRO** — freestyle
-- **SKILLIT** — nauka/pierwsze jazdy
-- **SPECTRUM** — crossover
-- **MANTIS / MANTIS APEX** — foilkite
-- **GOLF BAG** — torba transportowa na latawce
+### ⚠️ KRYTYCZNE — NIE MYL KATEGORII! Latawiec ≠ Deska ≠ Wing Foil
 
-### Deski i Foile
-- **XCAL** — twintip freeride/freestyle
+### LATAWCE (kites) Cabrinha 2026
+- **MOTO** — 3-tubowy delta, POCZĄTKUJĄCY — łatwy restart, stabilny, wybaczający
+- **MOTO X** — 3-tubowy Apex (Aluula), ZAAWANSOWANI — performance freeride
+- **MOTO X APEX** — top Aluula, EXPERT
+- **MOTO XL** — duże rozmiary (15m+), light wind / cięższe osoby
+- **SWITCHBLADE** — C/Hybrid, allround/freeride, średnio-zaawansowani
+- **SWITCHBLADE APEX** — Aluula wersja Switchblade
+- **NITRO** — 4-liner, freestyle/wakestyle
+- **DRIFTER** — wave kite, surf/wave riding
+- **DRIFTER APEX** — Aluula wersja Drifter
+- **ACE** — freestyle/freeride, delta
+- **ACE APEX** — top freestyle
+
+### DESKI (boards) Cabrinha 2026
+- **SKILLIT** — DESKA twintip, freeride, beginner-friendly
+- **LOGIC** — DESKA twintip, allround
+- **XCAL** — DESKA twintip, freeride/freestyle
+- **XCAL APEX** — DESKA twintip, premium
+- **SPECTRUM** — DESKA twintip, allround
+- **VAPOR** — DESKA twintip, light wind
+- **STYLUS** — DESKA twintip, performance freeride
+
+### WING FOILE (wings — inny sport niż kite!)
+- **MANTIS** — wing do wing foilingu
+- **MANTIS APEX** — premium wing (Aluula)
+- **VISION** — wing foil
+- **AER** — wing foil
+
+### FOILE (skrzydła podwodne)
 - **H-SERIES FOIL** — komplet foilowy
 - **PRESTIGE FOIL** — premium foil
+
+### AKCESORIA
+- **GOLF BAG** — torba transportowa na latawce
+- **UNIFY BAR** — bar do latawców
 
 ### Uprzęże i akcesoria
 - Uprzęże siedziskowe i biodrowe Cabrinha
