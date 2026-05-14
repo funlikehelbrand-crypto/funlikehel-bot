@@ -106,7 +106,10 @@ def mark_as_read(message_id: str):
     ).execute()
 
 
+BOT_OWN_EMAIL = "funlikehelbrand@gmail.com"
+
 IGNORED_SENDERS = [
+    BOT_OWN_EMAIL,  # własny adres bota — nigdy nie odpowiadaj na własne maile
     "mailer-daemon",
     "noreply",
     "no-reply",
@@ -143,6 +146,8 @@ IGNORED_SENDERS = [
     "aws.amazon.com",
     "cloud.google.com",
     "calendar-notification",
+    # Własny adres szkoły — bot nie odpowiada sam sobie
+    "funlikehelbrand@gmail.com",
 ]
 
 
@@ -194,11 +199,35 @@ Odpowiedź:"""
         return False
 
 
+def _bot_already_replied_in_thread(thread_id: str) -> bool:
+    """Sprawdza czy bot (Alicja) już odpowiedział w tym wątku.
+    Jeśli tak — nie odpowiadamy ponownie (człowiek przejmuje)."""
+    try:
+        service = get_gmail_service()
+        thread = service.users().threads().get(
+            userId="me", id=thread_id, format="metadata",
+            metadataHeaders=["From"],
+        ).execute()
+        for msg in thread.get("messages", []):
+            headers = {h["name"]: h["value"] for h in msg["payload"]["headers"]}
+            sender = headers.get("From", "").lower()
+            labels = msg.get("labelIds", [])
+            # Wiadomość wysłana przez bota (SENT label lub z naszego adresu)
+            if "SENT" in labels or BOT_OWN_EMAIL in sender:
+                return True
+    except Exception as e:
+        logger.warning("Nie udało się sprawdzić wątku %s: %s", thread_id, e)
+    return False
+
+
 def process_unread_emails():
     """
     Główna funkcja — pobiera nieprzeczytane maile,
     generuje odpowiedzi przez Claude i odsyła je.
     Ignoruje bounce'y, newslettery i spam.
+
+    ZASADA: Alicja wysyła tylko JEDNĄ odpowiedź na wątek.
+    Jeśli bot już odpowiedział — dalej obsługuje człowiek.
     """
     messages = get_unread_messages()
     if not messages:
@@ -213,6 +242,12 @@ def process_unread_emails():
                 logger.info("Pomijam (filtr nadawcy): %s", details["sender"])
                 mark_as_read(details["id"])
                 continue
+
+            # Sprawdź czy bot już odpowiedział w tym wątku — jeśli tak, nie odpowiadaj ponownie
+            if _bot_already_replied_in_thread(details["thread_id"]):
+                logger.info("Bot już odpowiedział w wątku — zostawiam dla człowieka: %s | %s",
+                            details["sender"], details["subject"])
+                continue  # zostawiamy jako NIEPRZECZYTANY — żeby człowiek widział
 
             is_thread_reply = details["subject"].strip().lower().startswith("re:")
             if not is_thread_reply and not _is_customer_inquiry(details["subject"], details["body"]):
