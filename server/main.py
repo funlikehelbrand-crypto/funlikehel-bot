@@ -1649,6 +1649,170 @@ async def tiktok_upload_status(publish_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/tiktok/user-info")
+async def tiktok_user_info():
+    """Pobiera informacje o koncie TikTok (scope: user.info.basic)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    try:
+        from tiktok import get_user_info
+        token = await get_valid_access_token()
+        return await get_user_info(token)
+    except RuntimeError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tiktok/dashboard")
+async def tiktok_dashboard():
+    """Prosty dashboard TikTok — do demo i codziennego użytku."""
+    if not HAS_GOOGLE_MODULES:
+        return HTMLResponse("<h1>TikTok module unavailable</h1>", status_code=503)
+    token_data = get_stored_token()
+    connected = bool(token_data and token_data.get("access_token"))
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLH Social Manager — TikTok</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#1a1a2e}}
+.top{{background:#1a1a2e;color:#fff;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}}
+.top h1{{font-size:20px;font-weight:700}}.top h1 span{{color:#00c9c9}}
+.top .badge{{background:#00c9c9;color:#1a1a2e;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700}}
+.container{{max-width:900px;margin:32px auto;padding:0 20px}}
+.card{{background:#fff;border-radius:14px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #e8e8e8}}
+.card h2{{font-size:20px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e8e8e8}}
+.status{{display:flex;align-items:center;gap:10px;margin-bottom:16px}}
+.dot{{width:12px;height:12px;border-radius:50%;background:{"#22c55e" if connected else "#ef4444"}}}
+.status span{{font-size:15px;font-weight:600}}
+.btn{{display:inline-block;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;border:none}}
+.btn-primary{{background:#00c9c9;color:#1a1a2e}}.btn-primary:hover{{background:#00b3b3}}
+.btn-outline{{border:2px solid #00c9c9;color:#00c9c9;background:transparent}}.btn-outline:hover{{background:#e8fafa}}
+#user-info{{margin-top:12px;font-size:14px;color:#555}}
+.form-group{{margin-bottom:16px}}
+.form-group label{{display:block;font-size:14px;font-weight:600;margin-bottom:6px}}
+.form-group input,.form-group textarea,.form-group select{{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px}}
+.form-group textarea{{height:80px;resize:vertical}}
+#upload-result{{margin-top:16px;padding:16px;border-radius:8px;display:none}}
+.success{{background:#dcfce7;border:1px solid #22c55e;color:#166534}}
+.error{{background:#fee2e2;border:1px solid #ef4444;color:#991b1b}}
+</style></head>
+<body>
+<div class="top">
+  <h1>FLH <span>Social Manager</span></h1>
+  <span class="badge">TikTok Integration</span>
+</div>
+<div class="container">
+
+  <div class="card">
+    <h2>Account Connection</h2>
+    <div class="status">
+      <div class="dot"></div>
+      <span>{"Connected" if connected else "Not connected"}</span>
+    </div>
+    {"" if connected else '<a href="/tiktok/login" class="btn btn-primary">Connect TikTok Account</a>'}
+    {"<button class='btn btn-outline' onclick='loadUserInfo()'>Load Account Info</button>" if connected else ""}
+    <div id="user-info"></div>
+  </div>
+
+  {"" if not connected else '''
+  <div class="card">
+    <h2>Upload Video to TikTok</h2>
+    <form id="upload-form" onsubmit="uploadVideo(event)">
+      <div class="form-group">
+        <label>Video URL (publicly accessible MP4)</label>
+        <input type="url" id="video-url" placeholder="https://example.com/video.mp4" required>
+      </div>
+      <div class="form-group">
+        <label>Caption</label>
+        <textarea id="caption" placeholder="Your video description and #hashtags" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Privacy</label>
+        <select id="privacy">
+          <option value="PUBLIC_TO_EVERYONE">Public</option>
+          <option value="MUTUAL_FOLLOW_FRIENDS">Friends</option>
+          <option value="SELF_ONLY">Private</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" id="upload-btn">Upload to TikTok</button>
+    </form>
+    <div id="upload-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Check Upload Status</h2>
+    <div class="form-group">
+      <label>Publish ID</label>
+      <input type="text" id="publish-id" placeholder="Enter publish_id from upload response">
+    </div>
+    <button class="btn btn-outline" onclick="checkStatus()">Check Status</button>
+    <div id="status-result" style="margin-top:12px;font-size:14px;color:#555"></div>
+  </div>
+  '''}
+</div>
+
+<script>
+async function loadUserInfo() {{
+  const el = document.getElementById('user-info');
+  el.innerHTML = 'Loading...';
+  try {{
+    const r = await fetch('/tiktok/user-info');
+    const d = await r.json();
+    const u = d.data && d.data.user ? d.data.user : d;
+    el.innerHTML = '<strong>Display Name:</strong> ' + (u.display_name||'N/A')
+      + '<br><strong>Followers:</strong> ' + (u.follower_count||'N/A')
+      + '<br><strong>Videos:</strong> ' + (u.video_count||'N/A')
+      + '<br><strong>Open ID:</strong> ' + (u.open_id||'N/A');
+  }} catch(e) {{ el.innerHTML = 'Error: ' + e.message; }}
+}}
+async function uploadVideo(evt) {{
+  evt.preventDefault();
+  const btn = document.getElementById('upload-btn');
+  const res = document.getElementById('upload-result');
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  res.style.display = 'none';
+  try {{
+    const r = await fetch('/tiktok/upload', {{
+      method: 'POST',
+      headers: {{'Content-Type': 'application/json'}},
+      body: JSON.stringify({{
+        video_url: document.getElementById('video-url').value,
+        caption: document.getElementById('caption').value,
+        privacy_level: document.getElementById('privacy').value
+      }})
+    }});
+    const d = await r.json();
+    if (r.ok) {{
+      res.className = 'success'; res.style.display = 'block';
+      res.innerHTML = 'Upload initiated! Publish ID: <strong>' + d.publish_id + '</strong>';
+      document.getElementById('publish-id').value = d.publish_id;
+    }} else {{
+      res.className = 'error'; res.style.display = 'block';
+      res.textContent = 'Error: ' + (d.detail || JSON.stringify(d));
+    }}
+  }} catch(e) {{
+    res.className = 'error'; res.style.display = 'block';
+    res.textContent = 'Error: ' + e.message;
+  }}
+  btn.disabled = false; btn.textContent = 'Upload to TikTok';
+}}
+async function checkStatus() {{
+  const pid = document.getElementById('publish-id').value;
+  const el = document.getElementById('status-result');
+  if (!pid) {{ el.textContent = 'Enter a Publish ID first.'; return; }}
+  el.textContent = 'Checking...';
+  try {{
+    const r = await fetch('/tiktok/upload/status/' + pid);
+    const d = await r.json();
+    el.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>';
+  }} catch(e) {{ el.textContent = 'Error: ' + e.message; }}
+}}
+</script>
+</body></html>""")
+
+
 @app.get("/tiktok/status")
 async def tiktok_status():
     """Sprawdza stan autoryzacji TikTok."""
