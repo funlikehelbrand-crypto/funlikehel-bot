@@ -3,7 +3,6 @@ Obsługa Gmaila — odczyt wiadomości i automatyczne odpowiedzi przez agenta Fu
 """
 
 import base64
-import email as email_lib
 import logging
 import re
 from email.mime.text import MIMEText
@@ -93,6 +92,20 @@ def send_reply(thread_id: str, to: str, subject: str, body: str,
     service.users().messages().send(
         userId="me",
         body={"raw": raw, "threadId": thread_id},
+    ).execute()
+
+
+def send_email(to: str, subject: str, body: str):
+    """Wysyła nową wiadomość email (nie odpowiedź)."""
+    service = get_gmail_service()
+    clean_to = _extract_email(to)
+    message = MIMEText(body, "plain", "utf-8")
+    message["to"] = clean_to
+    message["subject"] = subject
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    service.users().messages().send(
+        userId="me",
+        body={"raw": raw},
     ).execute()
 
 
@@ -199,6 +212,30 @@ Odpowiedź:"""
         return False
 
 
+def _thread_started_by_us(thread_id: str) -> bool:
+    """Sprawdza czy PIERWSZY mail w wątku został wysłany przez FLH.
+    Jeśli tak — to nasz wątek wychodzący (np. zapytanie ofertowe do dostawcy)
+    i bot NIE powinien odpowiadać na odpowiedzi w tym wątku."""
+    try:
+        service = get_gmail_service()
+        thread = service.users().threads().get(
+            userId="me", id=thread_id, format="metadata",
+            metadataHeaders=["From"],
+        ).execute()
+        messages = thread.get("messages", [])
+        if not messages:
+            return False
+        first_msg = messages[0]
+        headers = {h["name"]: h["value"] for h in first_msg["payload"]["headers"]}
+        sender = headers.get("From", "").lower()
+        labels = first_msg.get("labelIds", [])
+        if "SENT" in labels or BOT_OWN_EMAIL in sender:
+            return True
+    except Exception as e:
+        logger.warning("Nie udało się sprawdzić pierwszego maila wątku %s: %s", thread_id, e)
+    return False
+
+
 def _bot_already_replied_in_thread(thread_id: str) -> bool:
     """Sprawdza czy bot (Alicja) już odpowiedział w tym wątku.
     Jeśli tak — nie odpowiadamy ponownie (człowiek przejmuje)."""
@@ -242,6 +279,14 @@ def process_unread_emails():
                 logger.info("Pomijam (filtr nadawcy): %s", details["sender"])
                 mark_as_read(details["id"])
                 continue
+
+            # Sprawdź czy wątek został ROZPOCZĘTY przez nas (FLH wysłał pierwszy mail)
+            # Jeśli tak — to nasz mail wychodzący (zapytanie do dostawcy, itp.)
+            # Bot NIE odpowiada na odpowiedzi w naszych własnych wątkach
+            if _thread_started_by_us(details["thread_id"]):
+                logger.info("Wątek rozpoczęty przez FLH — pomijam (mail wychodzący): %s | %s",
+                            details["sender"], details["subject"])
+                continue  # zostawiamy jako NIEPRZECZYTANY — człowiek obsługuje
 
             # Sprawdź czy bot już odpowiedział w tym wątku — jeśli tak, nie odpowiadaj ponownie
             if _bot_already_replied_in_thread(details["thread_id"]):

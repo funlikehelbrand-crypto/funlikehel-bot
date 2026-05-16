@@ -84,10 +84,81 @@ if HAS_ALL_MODULES:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://faceless-security-enactment.ngrok-free.dev"],
+    allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://panel.funlikehel.pl", "https://faceless-security-enactment.ngrok-free.dev"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# Booking confirmation email
+# ---------------------------------------------------------------------------
+
+class BookingEmailRequest(BaseModel):
+    customerName: str
+    customerEmail: str
+    serviceName: str
+    startDate: str
+    startTime: str | None = None
+    endTime: str | None = None
+    instructorName: str | None = None
+    location: str = "hel"
+    totalPrice: float = 0
+    currency: str = "PLN"
+    bookingRef: str = ""
+
+
+@app.post("/api/send-booking-email")
+async def send_booking_email(req: BookingEmailRequest):
+    """Send booking confirmation email via Gmail API."""
+    if not req.customerEmail or "@" not in req.customerEmail:
+        raise HTTPException(400, "Invalid email")
+
+    loc_name = "Jastarnia, Polska" if req.location == "hel" else "Hurghada, Egipt"
+    time_str = ""
+    if req.startTime:
+        time_str = f" o {req.startTime[:5]}"
+        if req.endTime:
+            time_str += f"-{req.endTime[:5]}"
+
+    subject = f"Potwierdzenie rezerwacji {req.bookingRef} — FUN like HEL"
+    body = f"""Czesc {req.customerName}!
+
+Twoja rezerwacja zostala potwierdzona:
+
+  Usluga: {req.serviceName}
+  Data: {req.startDate}{time_str}
+  Lokalizacja: {loc_name}
+  Instruktor: {req.instructorName or 'Do przypisania'}
+  Cena: {req.totalPrice} {req.currency}
+  Ref: {req.bookingRef}
+
+Pamietaj:
+- Przyjdz 15 minut wczesniej
+- Zabierz stroj kapielowy i recznik
+- W razie zlej pogody skontaktujemy sie z Toba
+
+Do zobaczenia na wodzie!
+
+FUN like HEL | Szkola Kite Wind
+Tel: 690 270 032
+www.funlikehel.pl
+"""
+
+    try:
+        if HAS_GOOGLE_MODULES:
+            from google_mail import send_email
+            await asyncio.get_event_loop().run_in_executor(
+                None, send_email, req.customerEmail, subject, body
+            )
+            logger.info("Booking email sent to %s for %s", req.customerEmail, req.bookingRef)
+            return {"sent": True, "to": req.customerEmail}
+        else:
+            logger.warning("Google modules not available, email not sent")
+            return {"sent": False, "reason": "email_module_unavailable"}
+    except Exception as e:
+        logger.error("Failed to send booking email: %s", e)
+        raise HTTPException(500, f"Email error: {e}")
 
 
 # ---------------------------------------------------------------------------
