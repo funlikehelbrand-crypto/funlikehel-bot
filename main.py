@@ -829,37 +829,70 @@ async def sms_log(limit: int = 50):
 # SMS v2 — tracking pixel (landing page JS pinguje po wykryciu ?ref={token})
 # ---------------------------------------------------------------------------
 
+SMS_TRACKING_SHEET_ID = os.environ.get(
+    "SMS_TRACKING_SHEET_ID", "1nlr-_NsyjHmTPxR6I01qGQjkTuBjiy4P3LW7Kwaitd8"
+)
+
+
+def _log_click_to_sheets(token: str, user_agent: str, ip_hash: str):
+    """Zapisuje kliknięcie do Google Sheets (trwały storage, przetrwa redeploy)."""
+    try:
+        from google_auth import get_credentials
+        from googleapiclient.discovery import build
+
+        creds = get_credentials()
+        if not creds:
+            logger.warning("SMS pixel: brak Google credentials — klik nie zapisany do Sheets")
+            return
+
+        sheets = build('sheets', 'v4', credentials=creds, cache_discovery=False)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        sheets.spreadsheets().values().append(
+            spreadsheetId=SMS_TRACKING_SHEET_ID,
+            range='Clicks!A:F',
+            valueInputOption='RAW',
+            insertDataOption='INSERT_ROWS',
+            body={'values': [[now, token, '', user_agent[:100], ip_hash, '']]}
+        ).execute()
+        logger.info("SMS pixel: klik zapisany do Sheets (token=%s)", token)
+    except Exception as e:
+        logger.warning("SMS pixel: błąd zapisu do Sheets: %s", e)
+
+
 @app.get("/api/sms/pixel/{token}")
 async def sms_tracking_pixel(token: str, request: Request):
     """
     Lekki tracking pixel — JS na landing page wywołuje ten endpoint
-    gdy wykryje ?ref={token} w URL. Rejestruje kliknięcie bez redirect.
+    gdy wykryje ?ref={token} w URL. Rejestruje kliknięcie.
+
+    Zapisuje do:
+    1. Google Sheets (trwałe — przetrwa redeploy)
+    2. Logi Render (stdout)
+    3. SQLite (jeśli token istnieje w lokalnej DB)
     """
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
+        request.client.host if request.client else ""
+    )
+    user_agent = request.headers.get("user-agent", "")
+    ip_hash = hashlib.sha256(client_ip.encode()).hexdigest()[:16] if client_ip else ""
+
+    # 1. Zawsze loguj do stdout (widoczne w Render logs)
+    logger.info("SMS pixel CLICK: token=%s ip=%s ua=%s", token, ip_hash, user_agent[:80])
+
+    # 2. Zapisz do Google Sheets (async-safe, fire-and-forget)
+    try:
+        _log_click_to_sheets(token, user_agent, ip_hash)
+    except Exception as e:
+        logger.warning("SMS pixel Sheets error: %s", e)
+
+    # 3. Próbuj zapisać do lokalnej SQLite (jeśli token istnieje)
     try:
         from sms_tracker import record_click
-
-        forwarded_for = request.headers.get("x-forwarded-for", "")
-        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
-            request.client.host if request.client else ""
-        )
-        user_agent = request.headers.get("user-agent", "")
-
-        result = record_click(
-            tracking_token=token,
-            user_agent=user_agent[:500] if user_agent else None,
-            ip=client_ip or None,
-        )
-
-        if result.get("found"):
-            logger.info(
-                "SMS pixel: token=%s recipient=%s campaign=%s",
-                token, result.get("recipient_id"), result.get("campaign_id"),
-            )
-        else:
-            logger.info("SMS pixel: nieznany token=%s", token)
-
-    except Exception as e:
-        logger.error("Błąd SMS pixel dla token=%s: %s", token, e)
+        record_click(tracking_token=token, user_agent=user_agent[:500], ip=client_ip or None)
+    except Exception:
+        pass  # OK — token może nie być w lokalnej DB
 
     # 1x1 przezroczysty GIF
     gif = b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x00\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
