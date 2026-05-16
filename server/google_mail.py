@@ -11,6 +11,7 @@ from googleapiclient.discovery import build
 
 from claude_agent import get_reply
 from google_auth import get_credentials
+from team_tasks import is_team_member, process_team_email
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +279,31 @@ def process_unread_emails():
             if not _is_real_customer(details["sender"]):
                 logger.info("Pomijam (filtr nadawcy): %s", details["sender"])
                 mark_as_read(details["id"])
+                continue
+
+            # === TEAM ROUTING ===
+            # Jeśli mail od członka ekipy → przetwórz jako polecenie wewnętrzne
+            sender_email = _extract_email(details["sender"])
+            if is_team_member(sender_email):
+                logger.info("TEAM TASK od %s: %s", sender_email, details["subject"])
+                try:
+                    reply_text = process_team_email(
+                        sender=sender_email,
+                        subject=details["subject"],
+                        body=details["body"],
+                    )
+                    send_reply(
+                        thread_id=details["thread_id"],
+                        to=details["sender"],
+                        subject=details["subject"],
+                        body=reply_text,
+                        in_reply_to=details["message_id"],
+                        references=details["references"],
+                    )
+                    mark_as_read(details["id"])
+                    logger.info("TEAM TASK odpowiedź wysłana do %s", sender_email)
+                except Exception as e:
+                    logger.error("Błąd TEAM TASK od %s: %s", sender_email, e)
                 continue
 
             # Sprawdź czy wątek został ROZPOCZĘTY przez nas (FLH wysłał pierwszy mail)
