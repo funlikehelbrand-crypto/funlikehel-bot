@@ -10,7 +10,7 @@ import httpx
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import PlainTextResponse, HTMLResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -36,7 +36,7 @@ except Exception as e:
 try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
-    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token, get_valid_access_token, upload_video_from_url, check_upload_status
+    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token, get_valid_access_token, upload_video_from_url, check_upload_status, list_videos, refresh_access_token
     from cleanup_mail import daily_cleanup, trash_cleanup
     from google_business import process_reviews
     from auto_upload import process_upload_folder, process_tiktok_upload_folder
@@ -60,7 +60,7 @@ async def deploy_probe():
     return {
         "deployed": "cb3f888-tiktok-upload",
         "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN")),
-        "tiktok_endpoints": ["/tiktok/upload", "/tiktok/upload-from-yt", "/tiktok/upload/status/{publish_id}"],
+        "tiktok_endpoints": ["/tiktok/upload", "/tiktok/upload-from-yt", "/tiktok/upload-from-ig", "/tiktok/upload-from-drive", "/tiktok/upload/status/{publish_id}", "/tiktok/videos", "/tiktok/refresh-token"],
     }
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -70,6 +70,13 @@ app.include_router(booking_router)
 
 # Init booking DB on startup
 init_db()
+
+# Init SMS v2 — migracje (idempotentne, bezpieczne)
+try:
+    from sms_migrations import run_migrations as _run_sms_migrations
+    _run_sms_migrations()
+except Exception as _sms_mig_err:
+    logging.warning("SMS migracje nieudane (kontynuuję): %s", _sms_mig_err)
 
 # Init Instagram multi-account
 if HAS_ALL_MODULES:
@@ -1216,6 +1223,272 @@ async def sms_followup(campaign_key: str, min_days: int = 3):
 
 
 # ---------------------------------------------------------------------------
+# SMS v2 — tracking redirect (NIGDY nie wygasa → nie 404, zawsze redirect)
+# ---------------------------------------------------------------------------
+
+@app.get("/s/{token}")
+async def sms_tracking_redirect(token: str, request: Request):
+    """
+    Endpoint trackingowy SMS — obsługuje linki z wiadomości SMS.
+
+    Rejestruje kliknięcie (IP hash + user-agent) i przekierowuje na target_url z UTM.
+    Jeśli token nieznany — przekierowuje na funlikehel.pl (NIGDY 404!).
+    Token jest permanentny — nie wygasa nigdy.
+    """
+    try:
+        from sms_tracker import record_click
+
+        # Pobierz IP klienta (może być za proxy)
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
+            request.client.host if request.client else ""
+        )
+        user_agent = request.headers.get("user-agent", "")
+
+        result = record_click(
+            tracking_token=token,
+            user_agent=user_agent[:500] if user_agent else None,
+            ip=client_ip or None,
+        )
+
+        redirect_url = result.get("redirect_url", "https://funlikehel.pl")
+        if result.get("found"):
+            logger.info(
+                "SMS click: token=%s recipient=%s campaign=%s → %s",
+                token, result.get("recipient_id"), result.get("campaign_id"), redirect_url,
+            )
+        else:
+            logger.info("SMS click: nieznany token=%s → fallback redirect", token)
+
+        return RedirectResponse(url=redirect_url, status_code=302)
+
+    except Exception as e:
+        logger.error("Błąd tracking redirect dla token=%s: %s", token, e)
+        # Zawsze redirect, nigdy 404
+        return RedirectResponse(url="https://funlikehel.pl", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — tracking pixel (wywoływany z JS na landing page, ?ref={token})
+# ---------------------------------------------------------------------------
+
+@app.get("/api/sms/pixel/{token}")
+async def sms_tracking_pixel(token: str, request: Request):
+    """
+    Lekki tracking pixel — JS na landing page wywołuje ten endpoint
+    gdy wykryje ?ref={token} w URL. Rejestruje kliknięcie bez redirect.
+
+    Zwraca 1x1 przezroczysty GIF + CORS headers.
+    """
+    from starlette.responses import Response
+    try:
+        from sms_tracker import record_click
+
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
+            request.client.host if request.client else ""
+        )
+        user_agent = request.headers.get("user-agent", "")
+
+        result = record_click(
+            tracking_token=token,
+            user_agent=user_agent[:500] if user_agent else None,
+            ip=client_ip or None,
+        )
+
+        if result.get("found"):
+            logger.info(
+                "SMS pixel: token=%s recipient=%s campaign=%s",
+                token, result.get("recipient_id"), result.get("campaign_id"),
+            )
+        else:
+            logger.info("SMS pixel: nieznany token=%s", token)
+
+    except Exception as e:
+        logger.error("Błąd SMS pixel dla token=%s: %s", token, e)
+
+    # 1x1 przezroczysty GIF
+    gif = b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x00\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+    return Response(
+        content=gif,
+        media_type="image/gif",
+        headers={
+            "Access-Control-Allow-Origin": "https://funlikehel.pl",
+            "Cache-Control": "no-store, no-cache",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — webhook przychodzący (opt-out STOP/WYPISZ)
+# ---------------------------------------------------------------------------
+
+@app.post("/api/sms/inbound")
+async def sms_inbound(request: Request):
+    """
+    Webhook przychodzących SMS z SerwerSMS.pl.
+
+    Obsługuje opt-outy: STOP / WYPISZ / CANCEL / REZYGNACJA / UNSUBSCRIBE.
+    Po wykryciu opt-out:
+      - ustawia contact.unsubscribed_at
+      - zapisuje do sms_opt_outs
+      - anuluje wszystkie pending wysyłki do tego kontaktu
+
+    WAŻNE: ten numer NIGDY więcej nie dostanie marketingowego SMS.
+    """
+    try:
+        from sms_tracker import is_stop_message, process_opt_out
+        from sms import _normalize_phone
+
+        # SerwerSMS może wysyłać JSON lub form-data
+        content_type = request.headers.get("content-type", "")
+        if "json" in content_type:
+            body = await request.json()
+        else:
+            form = await request.form()
+            body = dict(form)
+
+        # Pola SerwerSMS.pl inbound webhook
+        phone_raw = (
+            body.get("phone") or body.get("sender") or body.get("from") or ""
+        )
+        message_text = (
+            body.get("message") or body.get("text") or body.get("content") or ""
+        )
+
+        logger.info("SMS inbound: phone=%s text=%s", phone_raw, message_text[:50])
+
+        if not phone_raw or not message_text:
+            logger.warning("SMS inbound: brak phone lub message w payloadzie: %s", body)
+            return {"status": "ignored", "reason": "missing_fields"}
+
+        # Normalizuj numer do E.164
+        phone_normalized = phone_raw.strip().replace(" ", "")
+        if not phone_normalized.startswith("+"):
+            phone_normalized = "+" + _normalize_phone(phone_normalized)
+
+        # Sprawdź czy to opt-out
+        is_stop, keyword = is_stop_message(message_text)
+
+        if is_stop:
+            result = process_opt_out(
+                phone_e164=phone_normalized,
+                raw_message=message_text,
+                keyword=keyword,
+                source="inbound_sms",
+            )
+            logger.info(
+                "Opt-out zarejestrowany: %s | keyword=%s | action=%s",
+                phone_normalized, keyword, result.get("action"),
+            )
+            return {
+                "status": "opt_out_processed",
+                "phone": phone_normalized,
+                "keyword": keyword,
+                "action": result.get("action"),
+            }
+
+        # Nie jest opt-out — logujemy i ignorujemy (ewentualnie przekaż do chatbota)
+        logger.info(
+            "SMS inbound (nie opt-out): %s → '%s'", phone_normalized, message_text[:80]
+        )
+        return {"status": "received", "is_opt_out": False}
+
+    except Exception as e:
+        logger.error("Błąd obsługi SMS inbound: %s", e)
+        # SerwerSMS oczekuje 200 — nie rzucaj wyjątku
+        return {"status": "error", "detail": str(e)}
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — kampanie (kolejkowanie, batch, status)
+# ---------------------------------------------------------------------------
+
+class SmsCampaignV2Request(BaseModel):
+    name: str
+    type: str  # 'marketing' | 'transactional'
+    message_template: str
+    contacts: list[dict]  # [{phone, first_name, last_name, ...}]
+    target_url: str = "https://funlikehel.pl"
+
+
+class SmsCampaignSendRequest(BaseModel):
+    batch_size: int = 20
+    dry_run: bool = False
+
+
+@app.post("/api/sms/campaigns")
+async def api_create_campaign_v2(req: SmsCampaignV2Request):
+    """
+    Tworzy kampanię SMS v2 z kolejkowaniem i tracking tokenami.
+    Kontakty: [{phone: "+48600000000", first_name: "Jan", ...}]
+    """
+    try:
+        from sms_campaign import prepare_campaign
+        result = prepare_campaign(
+            name=req.name,
+            campaign_type=req.type,
+            message_template=req.message_template,
+            contacts=req.contacts,
+            target_url=req.target_url,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/sms/campaigns/{campaign_id}/send")
+async def api_send_campaign_batch(campaign_id: int, req: SmsCampaignSendRequest):
+    """
+    Wysyła batch kampanii SMS v2.
+    Wznawialny — uruchom wielokrotnie jeśli ma_more=true.
+    """
+    try:
+        from sms_campaign import send_campaign_batch
+        result = send_campaign_batch(
+            campaign_id=campaign_id,
+            batch_size=req.batch_size,
+            dry_run=req.dry_run,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/sms/campaigns/{campaign_id}/status")
+async def api_campaign_status(campaign_id: int):
+    """Status kampanii SMS v2 ze statystykami."""
+    try:
+        from sms_campaign import get_campaign_status
+        return get_campaign_status(campaign_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/sms/opt-outs")
+async def api_sms_opt_outs():
+    """Lista wypisanych kontaktów (opt-out)."""
+    try:
+        from sms_tracker import get_opt_out_list
+        opt_outs = get_opt_out_list()
+        return {"count": len(opt_outs), "opt_outs": opt_outs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/sms/migrations")
+async def api_run_sms_migrations():
+    """Uruchamia migracje DB SMS v2 (bezpieczne — idempotentne)."""
+    try:
+        from sms_migrations import run_migrations, get_migration_status
+        result = run_migrations()
+        status = get_migration_status()
+        return {"migrations": result, "status": status}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
 # WhatsApp — webhook + obsługa wiadomości
 # ---------------------------------------------------------------------------
 
@@ -1829,6 +2102,108 @@ async def tiktok_status():
         "expires_in_hours": round((expires_at - time.time()) / 3600, 1),
         "has_refresh": bool(data.get("refresh_token")),
     }
+
+
+@app.get("/tiktok/videos")
+async def tiktok_videos(max_count: int = 20, cursor: int | None = None):
+    """Lista opublikowanych filmów na TikTok (scope: video.list)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    try:
+        token = await get_valid_access_token()
+        return await list_videos(token, max_count, cursor)
+    except RuntimeError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/tiktok/refresh-token")
+async def tiktok_refresh_token():
+    """Wymusza odswiezenie tokenu TikTok (uzywa refresh_token)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    data = get_stored_token()
+    if not data or not data.get("refresh_token"):
+        raise HTTPException(status_code=401, detail="Brak refresh_token. Zaloguj ponownie: /tiktok/login")
+    try:
+        new_data = await refresh_access_token(data["refresh_token"])
+        import time as _time
+        return {
+            "status": "ok",
+            "expires_in_hours": round((new_data.get("expires_at", 0) - _time.time()) / 3600, 1),
+            "scopes": new_data.get("scope", ""),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class TikTokUploadFromIGRequest(BaseModel):
+    ig_url: str = ""
+    ig_media_id: str = ""
+    caption: str = ""
+    account: str = "funlikehel"
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+
+
+@app.post("/tiktok/upload-from-ig")
+async def tiktok_upload_from_ig(req: TikTokUploadFromIGRequest):
+    """Pobiera wideo z Instagrama (Graph API) i publikuje na TikTok.
+    Body: { ig_url?, ig_media_id?, caption?, account?, privacy_level? }
+    """
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    if not req.ig_url and not req.ig_media_id:
+        raise HTTPException(status_code=400, detail="Podaj ig_url lub ig_media_id")
+
+    import tempfile, shutil
+    from tiktok import upload_video_file
+
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = os.path.join(tmp_dir, "ig_video.mp4")
+    try:
+        video_url, caption_ig, shortcode = await _fetch_ig_media_via_api(
+            req.ig_url, req.ig_media_id, req.account
+        )
+        if not video_url:
+            raise RuntimeError("Post nie zawiera wideo (media_url pusty). Upewnij sie, ze to reel/wideo.")
+
+        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
+            r = await client.get(video_url)
+            if r.status_code != 200:
+                raise RuntimeError(f"Nie moge pobrac wideo: HTTP {r.status_code}")
+            with open(tmp_path, "wb") as f:
+                f.write(r.content)
+
+        caption = req.caption or caption_ig or "FUN like HEL\n#kitesurfing #funlikehel #fyp"
+        token = await get_valid_access_token()
+        publish_id = await upload_video_file(token, tmp_path, caption, req.privacy_level)
+        return {
+            "status": "ok",
+            "publish_id": publish_id,
+            "caption": caption[:200],
+            "ig_source": req.ig_url or req.ig_media_id,
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("IG->TikTok upload failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.post("/tiktok/upload-from-drive")
+async def tiktok_upload_from_drive():
+    """Wymusza natychmiastowy upload filmow z folderu 'TT do wrzucenia' na Google Drive."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    try:
+        results = await process_tiktok_upload_folder()
+        return {"status": "ok", "message": "Upload z Drive zakonczony", "details": results}
+    except Exception as e:
+        logger.exception("TikTok upload from Drive failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
