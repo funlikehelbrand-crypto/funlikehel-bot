@@ -74,7 +74,7 @@ def process_team_email(sender: str, subject: str, body: str) -> str:
             "- \"Zmień cenę kite 2h na 600 zł na stronie cennik\"\n"
             "- \"Dodaj do opisu Magdy w team: lubi bieganie\"\n"
             "- \"Zmień tekst na stronie Egipt: zamiast X napisz Y\"\n\n"
-            "Pozdrawiam,\nBot FLH"
+            "Pozdrawiam,\nBosman / FUN like HEL"
         )
 
     # 2. Wykonaj zadanie
@@ -106,7 +106,7 @@ def _get_team_name(email: str) -> str:
 
 def _parse_task(sender_name: str, subject: str, body: str) -> dict | None:
     """Claude parsuje email i zwraca strukturę zadania."""
-    prompt = f"""Jesteś asystentem szkoły FUN like HEL. Członek ekipy ({sender_name}) wysłał email z poleceniem.
+    prompt = f"""Jesteś Bosman — asystent operacyjny szkoły FUN like HEL. Członek ekipy ({sender_name}) wysłał email z poleceniem.
 Przeanalizuj treść i zwróć JSON z opisem zadania.
 
 Email:
@@ -231,7 +231,7 @@ def _smart_edit(page_id: int, page_slug: str, current_content: str, task: dict) 
     details = task.get("details", {})
 
     # Daj Claude aktualną treść + polecenie
-    prompt = f"""Jesteś asystentem edycji strony WordPress szkoły FUN like HEL.
+    prompt = f"""Jesteś Bosman — asystent operacyjny szkoły FUN like HEL. Edytujesz stronę WordPress.
 
 AKTUALNA TREŚĆ STRONY (HTML):
 {current_content[:6000]}
@@ -287,7 +287,7 @@ def _format_reply(sender_name: str, task: dict, result: dict) -> str:
             f"Strona: {result.get('page_url', '?')}\n"
             f"Zmiana: {result.get('change', '?')}\n\n"
             f"Sprawdź czy jest OK. Jeśli coś nie gra — odpisz co poprawić.\n\n"
-            f"Pozdrawiam,\nBot FLH"
+            f"Pozdrawiam,\nBosman / FUN like HEL"
         )
     elif status == "manual":
         return (
@@ -295,7 +295,7 @@ def _format_reply(sender_name: str, task: dict, result: dict) -> str:
             f"Rozumiem polecenie, ale nie mogę tego zrobić automatycznie:\n"
             f"{result.get('message', '?')}\n\n"
             f"Przekazuję Łukaszowi — zajmie się tym ręcznie.\n\n"
-            f"Pozdrawiam,\nBot FLH"
+            f"Pozdrawiam,\nBosman / FUN like HEL"
         )
     else:
         return (
@@ -303,5 +303,5 @@ def _format_reply(sender_name: str, task: dict, result: dict) -> str:
             f"Nie udało się wykonać zadania:\n"
             f"{result.get('message', 'nieznany błąd')}\n\n"
             f"Spróbuj opisać inaczej lub skontaktuj się z Łukaszem.\n\n"
-            f"Pozdrawiam,\nBot FLH"
+            f"Pozdrawiam,\nBosman / FUN like HEL"
         )
