@@ -1204,6 +1204,49 @@ except Exception as _sc_err:
     _HAS_SURFIQ_CHAT = False
 
 
+# ---------------------------------------------------------------------------
+# SurfIQ Telegram Bot
+# ---------------------------------------------------------------------------
+
+try:
+    from telegram_bot import handle_message as _tg_handle, set_webhook as _tg_set_webhook, get_webhook_info as _tg_webhook_info
+    _HAS_TELEGRAM = True
+except Exception as _tg_err:
+    logging.warning("telegram_bot unavailable: %s", _tg_err)
+    _HAS_TELEGRAM = False
+
+
+@app.post("/api/telegram/webhook")
+async def telegram_webhook(request: Request):
+    """Telegram Bot webhook — receives messages and replies with SurfIQ AI."""
+    if not _HAS_TELEGRAM:
+        return {"ok": False}
+    try:
+        update = await request.json()
+        await _tg_handle(update)
+        return {"ok": True}
+    except Exception as e:
+        logging.error("Telegram webhook error: %s", e)
+        return {"ok": False}
+
+
+@app.post("/api/telegram/setup")
+async def telegram_setup():
+    """Set up Telegram webhook."""
+    if not _HAS_TELEGRAM:
+        return {"error": "telegram_bot unavailable"}
+    result = await _tg_set_webhook("https://funlikehel-bot.onrender.com/api/telegram/webhook")
+    return result
+
+
+@app.get("/api/telegram/status")
+async def telegram_status():
+    """Check Telegram webhook status."""
+    if not _HAS_TELEGRAM:
+        return {"error": "telegram_bot unavailable"}
+    return await _tg_webhook_info()
+
+
 @app.post("/api/surfiq-chat")
 async def surfiq_chat_endpoint(request: Request):
     """SurfIQ chatbot endpoint — called from surfiq.eu chat widget."""
