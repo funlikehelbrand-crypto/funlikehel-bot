@@ -48,6 +48,21 @@ except Exception as e:
     logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
     HAS_GOOGLE_MODULES = False
 
+# LinkedIn — opcjonalny
+try:
+    from linkedin_agent import (
+        get_auth_url as li_get_auth_url,
+        exchange_code_for_token as li_exchange_code,
+        get_access_token as li_get_access_token,
+        LinkedInAgent,
+        publish_next_post as li_publish_next,
+        list_post_status as li_list_posts,
+    )
+    HAS_LINKEDIN = True
+except Exception as e:
+    logging.warning("LinkedIn moduł niedostępny: %s", e)
+    HAS_LINKEDIN = False
+
 load_dotenv("api.env")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -84,7 +99,7 @@ if HAS_ALL_MODULES:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://panel.funlikehel.pl", "https://faceless-security-enactment.ngrok-free.dev"],
+    allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://panel.funlikehel.pl", "https://surfiq.eu", "https://www.surfiq.eu", "https://demo.surfiq.eu", "https://faceless-security-enactment.ngrok-free.dev"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
@@ -879,6 +894,24 @@ async def fb_lead_scout_loop():
         await asyncio.sleep(21600)  # 6 godzin
 
 
+async def surfiq_scout_loop():
+    """SurfIQ B2B prospect scanning — every 12 hours."""
+    await asyncio.sleep(600)  # 10 min delay after startup
+    while True:
+        try:
+            logger.info("SurfIQ Prospect Scout: starting scan...")
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, _surfiq_scan)
+            logger.info("SurfIQ Prospect Scout: done — %s", result)
+            # Run enrichment pass after scan
+            if _HAS_SURFIQ_SCOUT:
+                await loop.run_in_executor(None, _surfiq_enrich, 20)
+                logger.info("SurfIQ Prospect Scout: enrichment pass done.")
+        except Exception as e:
+            logger.error("SurfIQ Prospect Scout error: %s", e)
+        await asyncio.sleep(43200)  # 12 hours
+
+
 # ---------------------------------------------------------------------------
 # IG Scheduled Posts — publikuje posty z ig_posts_queue.json o właściwej godzinie
 # ---------------------------------------------------------------------------
@@ -998,7 +1031,10 @@ async def startup_event():
     if _HAS_FB_LEAD_SCOUT:
         asyncio.create_task(fb_lead_scout_loop())
         logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
-    else:
+    if _HAS_SURFIQ_SCOUT:
+        asyncio.create_task(surfiq_scout_loop())
+        logger.info("SurfIQ Prospect Scout loop uruchomiony — skanowanie co 12h.")
+    if not _HAS_FB_LEAD_SCOUT and not _HAS_SURFIQ_SCOUT:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
     asyncio.create_task(ig_scheduled_posts_loop())
     logger.info("IG Scheduled Posts loop uruchomiony — sprawdzanie co 5 min.")
@@ -1154,6 +1190,112 @@ async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
         raise HTTPException(status_code=503, detail="Moduł fb_lead_scout niedostępny (zainstaluj playwright).")
     leads = _fb_leads_report(min_score=min_score, limit=limit)
     return {"count": len(leads), "leads": leads}
+
+
+# ---------------------------------------------------------------------------
+# SurfIQ Chat Bot — website chatbot for surfiq.eu
+# ---------------------------------------------------------------------------
+
+try:
+    from surfiq_chat import get_surfiq_reply
+    _HAS_SURFIQ_CHAT = True
+except Exception as _sc_err:
+    logging.warning("surfiq_chat unavailable: %s", _sc_err)
+    _HAS_SURFIQ_CHAT = False
+
+
+@app.post("/api/chat")
+async def surfiq_chat_endpoint(request: Request):
+    """SurfIQ chatbot endpoint — called from surfiq.eu chat widget."""
+    if not _HAS_SURFIQ_CHAT:
+        return {"reply": "Chat is temporarily unavailable. Email us at office@surfiq.eu!"}
+    try:
+        body = await request.json()
+        message = body.get("message", "")
+        history = body.get("history", [])
+        if not message:
+            return {"reply": "How can I help you? Ask me about SurfIQ features, pricing, or demo!"}
+        loop = asyncio.get_event_loop()
+        reply = await loop.run_in_executor(None, get_surfiq_reply, message, history)
+        return {"reply": reply}
+    except Exception as e:
+        logging.error("SurfIQ chat error: %s", e)
+        return {"reply": "Something went wrong. Please email office@surfiq.eu!"}
+
+
+# ---------------------------------------------------------------------------
+# SurfIQ Prospect Scout — B2B sales prospecting for SurfIQ SaaS
+# ---------------------------------------------------------------------------
+
+try:
+    from surfiq_prospect_scout import (
+        scan_prospects as _surfiq_scan,
+        get_prospects_report as _surfiq_report,
+        enrich_pending_prospects as _surfiq_enrich,
+        export_prospects_csv as _surfiq_csv,
+        update_prospect_status as _surfiq_update_status,
+        get_prospects_markdown_report as _surfiq_md_report,
+    )
+    _HAS_SURFIQ_SCOUT = True
+except Exception as _surfiq_err:
+    logging.warning("surfiq_prospect_scout niedostępny: %s", _surfiq_err)
+    _HAS_SURFIQ_SCOUT = False
+
+
+@app.post("/api/surfiq/scan")
+async def surfiq_scan():
+    """Triggers SurfIQ B2B prospect scan across Facebook groups."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _surfiq_scan)
+    return result
+
+
+@app.get("/api/surfiq/report")
+async def surfiq_report(min_score: int = 30, limit: int = 50, status: str = None):
+    """Returns SurfIQ B2B prospects from database."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    prospects = _surfiq_report(min_score=min_score, limit=limit, status=status)
+    return {"count": len(prospects), "prospects": prospects}
+
+
+@app.post("/api/surfiq/enrich")
+async def surfiq_enrich(limit: int = 20):
+    """Runs web enrichment pass for pending prospects."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _surfiq_enrich, limit)
+    return result
+
+
+@app.get("/api/surfiq/export")
+async def surfiq_export(min_score: int = 25):
+    """Returns CSV export of prospects."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    csv_data = _surfiq_csv(min_score=min_score)
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=surfiq_prospects_{datetime.now().strftime('%Y%m%d')}.csv"
+        },
+    )
+
+
+@app.patch("/api/surfiq/status")
+async def surfiq_update_status(prospect_id: int, status: str, notes: str = None):
+    """Updates prospect outreach status (new/contacted/demo_scheduled/converted/rejected)."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    ok = _surfiq_update_status(prospect_id, status, notes)
+    if not ok:
+        raise HTTPException(status_code=400,
+                            detail=f"Invalid status '{status}' or prospect_id {prospect_id} not found.")
+    return {"ok": True, "prospect_id": prospect_id, "status": status}
 
 
 # ---------------------------------------------------------------------------
@@ -2718,6 +2860,128 @@ async def get_shop_products():
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     return {"products": rows}
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn — SurfIQ Company Page
+# ---------------------------------------------------------------------------
+
+@app.get("/linkedin/login")
+async def linkedin_login():
+    """Otwórz ten URL w przeglądarce żeby autoryzować LinkedIn."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    return RedirectResponse(li_get_auth_url())
+
+
+@app.get("/linkedin/callback")
+async def linkedin_callback(code: str):
+    """LinkedIn przekierowuje tutaj po autoryzacji OAuth2."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    token_data = li_exchange_code(code)
+    if "access_token" in token_data:
+        return HTMLResponse(f"""
+        <html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;text-align:center">
+        <h1>LinkedIn Connected!</h1>
+        <p>Token uzyskany pomyślnie. Wygasa za <b>{token_data.get('expires_in', 0) // 86400} dni</b>.</p>
+        <p>Możesz teraz publikować posty: <code>python linkedin_agent.py post</code></p>
+        <a href="/linkedin/dashboard">Dashboard</a>
+        </body></html>""")
+    return HTMLResponse(f"""
+    <html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;text-align:center">
+    <h1>LinkedIn Error</h1>
+    <pre>{json.dumps(token_data, indent=2)}</pre>
+    <a href="/linkedin/login">Spróbuj ponownie</a>
+    </body></html>""", status_code=400)
+
+
+@app.get("/linkedin/status")
+async def linkedin_status():
+    """Status połączenia LinkedIn."""
+    if not HAS_LINKEDIN:
+        return {"status": "unavailable", "message": "Moduł LinkedIn niedostępny"}
+    token = li_get_access_token()
+    if not token:
+        return {"status": "unauthorized", "message": "Otwórz /linkedin/login"}
+    return {"status": "connected", "posts": li_list_posts()}
+
+
+@app.post("/linkedin/post")
+async def linkedin_post_next():
+    """Publikuj następny post z kolejki."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    token = li_get_access_token()
+    if not token:
+        raise HTTPException(status_code=401, detail="Brak tokena LinkedIn. Otwórz /linkedin/login")
+    agent = LinkedInAgent(token)
+    result = li_publish_next(agent)
+    if result is None:
+        return {"message": "Wszystkie posty już opublikowane"}
+    return result
+
+
+@app.get("/linkedin/dashboard")
+async def linkedin_dashboard():
+    """Prosty dashboard LinkedIn — status postów i akcje."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    token = li_get_access_token()
+    connected = bool(token)
+    posts = li_list_posts() if connected else []
+
+    posts_html = ""
+    for p in posts:
+        status_badge = (
+            '<span style="color:#22c55e;font-weight:bold">PUBLISHED</span>'
+            if p["status"] == "published"
+            else '<span style="color:#f59e0b;font-weight:bold">PENDING</span>'
+        )
+        pub_info = f'<br><small>{p.get("published_at", "")}</small>' if p["status"] == "published" else ""
+        posts_html += f"""
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:8px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>{p["title"]}</strong> {status_badge}
+          </div>
+          <p style="color:#6b7280;font-size:14px">{p["text_preview"]}</p>
+          {pub_info}
+        </div>"""
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>LinkedIn — SurfIQ</title>
+<style>
+  body {{ font-family: -apple-system, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }}
+  .btn {{ display:inline-block; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:600; margin:4px; cursor:pointer; border:none; font-size:14px; }}
+  .btn-primary {{ background:#0a66c2; color:white; }}
+  .btn-outline {{ background:white; color:#0a66c2; border:2px solid #0a66c2; }}
+  h1 {{ color:#0a66c2; }}
+</style></head>
+<body>
+  <h1>LinkedIn — SurfIQ</h1>
+  <div style="display:flex;align-items:center;gap:8px;margin:16px 0">
+    <div style="width:12px;height:12px;border-radius:50%;background:{'#22c55e' if connected else '#ef4444'}"></div>
+    <span>{'Connected' if connected else 'Not connected'}</span>
+  </div>
+  {"" if connected else '<a href="/linkedin/login" class="btn btn-primary">Connect LinkedIn</a>'}
+  {"<button class='btn btn-primary' onclick='publishNext()'>Publish Next Post</button>" if connected else ""}
+  <div id="result" style="margin:16px 0;display:none;padding:12px;border-radius:8px;background:#f0f9ff"></div>
+  <h2>Posts ({len([p for p in posts if p['status'] == 'published'])}/{len(posts)} published)</h2>
+  {posts_html}
+  <script>
+  async function publishNext() {{
+    const el = document.getElementById('result');
+    el.style.display = 'block';
+    el.textContent = 'Publishing...';
+    try {{
+      const r = await fetch('/linkedin/post', {{ method: 'POST' }});
+      const d = await r.json();
+      el.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>';
+      setTimeout(() => location.reload(), 2000);
+    }} catch(e) {{ el.textContent = 'Error: ' + e.message; }}
+  }}
+  </script>
+</body></html>""")
 
 
 # ---------------------------------------------------------------------------
