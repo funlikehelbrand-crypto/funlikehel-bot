@@ -1204,7 +1204,7 @@ except Exception as _sc_err:
     _HAS_SURFIQ_CHAT = False
 
 
-@app.post("/api/chat")
+@app.post("/api/surfiq-chat")
 async def surfiq_chat_endpoint(request: Request):
     """SurfIQ chatbot endpoint — called from surfiq.eu chat widget."""
     if not _HAS_SURFIQ_CHAT:
