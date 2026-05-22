@@ -842,9 +842,8 @@ async def shorts_stories_campaign_loop():
 
 
 async def google_business_loop():
-    """Sprawdzanie recenzji Google Business — co 24h.
-    Business Profile API pending approval (wniosek 2026-05-03).
-    Po zatwierdzeniu zmienić sleep na 10800 (3h).
+    """Sprawdzanie recenzji Google Business — co 3h.
+    GBP API approved 2026-05-20. Alicja odpowiada na recenzje.
     """
     await asyncio.sleep(300)  # opóźnienie startu
     while True:
@@ -853,7 +852,7 @@ async def google_business_loop():
             process_reviews()
         except Exception as e:
             logger.error("Błąd Google Business polling: %s", e)
-        await asyncio.sleep(86400)  # 24h — zmień na 10800 po zatwierdzeniu API
+        await asyncio.sleep(10800)  # 3h
 
 
 async def facebook_groups_loop():
@@ -3025,6 +3024,80 @@ async def linkedin_dashboard():
   }}
   </script>
 </body></html>""")
+
+
+# ---------------------------------------------------------------------------
+# SurfIQ Email Notification — SMTP via home.pl (office@surfiq.eu)
+# ---------------------------------------------------------------------------
+
+class SendNotificationRequest(BaseModel):
+    to: str
+    cc: str | None = None
+    subject: str
+    html: str
+
+
+@app.post("/api/send-notification")
+async def send_notification_email(req: SendNotificationRequest):
+    """
+    Send an email via SMTP (office@surfiq.eu → home.pl).
+    Accepts JSON: { to, cc?, subject, html }
+    """
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    # Validate
+    if not req.to or "@" not in req.to:
+        raise HTTPException(400, "Invalid 'to' email address")
+    if not req.subject:
+        raise HTTPException(400, "Missing 'subject'")
+    if not req.html:
+        raise HTTPException(400, "Missing 'html' body")
+
+    # SMTP config — office@surfiq.eu via home.pl
+    smtp_host = os.getenv("SURFIQ_SMTP_HOST", "serwer2620595.home.pl")
+    smtp_port = int(os.getenv("SURFIQ_SMTP_PORT", "587"))
+    smtp_user = os.getenv("SURFIQ_SMTP_USER", "office@surfiq.eu")
+    smtp_pass = os.getenv("SURFIQ_SMTP_PASS", "surfiq2026@")
+    from_name = os.getenv("SURFIQ_FROM_NAME", "SurfIQ")
+    from_addr = os.getenv("SURFIQ_FROM_ADDR", smtp_user)
+
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"{from_name} <{from_addr}>"
+    msg["To"] = req.to
+    if req.cc:
+        msg["Cc"] = req.cc
+    msg["Subject"] = req.subject
+    msg["Reply-To"] = from_addr
+
+    # Attach HTML body (+ plain-text fallback)
+    plain_text = req.subject  # minimal fallback
+    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+    msg.attach(MIMEText(req.html, "html", "utf-8"))
+
+    # Build recipient list
+    recipients = [req.to]
+    if req.cc:
+        recipients.extend([addr.strip() for addr in req.cc.split(",") if addr.strip()])
+
+    try:
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _smtp_send, smtp_host, smtp_port, smtp_user, smtp_pass, msg, recipients)
+        logger.info("Notification email sent: to=%s cc=%s subject=%s", req.to, req.cc, req.subject)
+        return {"ok": True, "to": req.to, "cc": req.cc, "subject": req.subject}
+    except Exception as e:
+        logger.error("Notification email FAILED: to=%s error=%s", req.to, e)
+        raise HTTPException(500, f"SMTP error: {e}")
+
+
+def _smtp_send(host: str, port: int, user: str, password: str, msg, recipients: list[str]):
+    """Blocking SMTP send — runs in executor."""
+    import smtplib
+    with smtplib.SMTP(host, port, timeout=30) as server:
+        server.starttls()
+        server.login(user, password)
+        server.send_message(msg, to_addrs=recipients)
 
 
 # ---------------------------------------------------------------------------
