@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 
 ACCOUNTS_URL  = "https://mybusinessaccountmanagement.googleapis.com/v1"
 LOCATIONS_URL = "https://mybusinessbusinessinformation.googleapis.com/v1"
-REVIEWS_URL   = "https://mybusinessreviews.googleapis.com/v1"
-POSTS_URL     = "https://mybusiness.googleapis.com/v4"   # posty — v4 nadal działa
+# Reviews via v4 (mybusinessreviews.googleapis.com/v1 daje 404 — użyj v4)
+V4_URL        = "https://mybusiness.googleapis.com/v4"
+POSTS_URL     = "https://mybusiness.googleapis.com/v4"
 
 
 def _headers() -> dict:
@@ -59,9 +60,10 @@ def get_reviews(parent: str) -> list[dict]:
     """
     Pobiera recenzje dla lokalizacji bez odpowiedzi.
     parent = "accounts/{accountId}/locations/{locationId}"
+    Uses v4 API (mybusiness.googleapis.com/v4).
     """
     resp = httpx.get(
-        f"{REVIEWS_URL}/{parent}/reviews",
+        f"{V4_URL}/{parent}/reviews",
         headers=_headers(),
         timeout=15,
     )
@@ -75,9 +77,10 @@ def reply_to_review(review_name: str, reply_text: str) -> dict:
     """
     Odpowiada na recenzję.
     review_name = "accounts/{accountId}/locations/{locationId}/reviews/{reviewId}"
+    Uses v4 API.
     """
     resp = httpx.put(
-        f"{REVIEWS_URL}/{review_name}/reply",
+        f"{V4_URL}/{review_name}/reply",
         headers=_headers(),
         json={"comment": reply_text},
         timeout=15,
