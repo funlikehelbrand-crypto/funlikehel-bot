@@ -59,14 +59,14 @@ Created by FUN like HEL school (Jastarnia, Poland + Hurghada, Egypt). Battle-tes
 
 ## Pricing
 
-| Plan | Price/month | Students | Instructors | AI |
-|------|------------|----------|-------------|-----|
-| Starter | 499 PLN (~€115) | up to 100 | up to 3 | 1 channel |
-| Pro | 899 PLN (~€210) | up to 500 | up to 10 | 2 channels |
-| Enterprise | 1,499 PLN (~€350) | unlimited | unlimited | 6 channels + API |
+| Plan | Price/month | Instructors | Locations | AI channels | AI conversations |
+|------|------------|-------------|-----------|-------------|-----------------|
+| Essential | 599 PLN (~€140) | up to 3 | 1 | 1 | 100/month |
+| Professional | 1,499 PLN (~€350) | up to 15 | 3 | 3 | 1,000/month |
+| Enterprise | from 2,999 PLN | unlimited | unlimited | 6 | 5,000+/month |
 
-**Add-ons:**
-- AI Pack — from 499 PLN/month (sales agent, content agent, Wind Alert, up to 6 channels, AI reports)
+**Add-ons:** Extra AI channel 199 PLN/month, 500 extra AI conversations 149 PLN, Custom AI agent from 3,000 PLN.
+Enterprise includes dedicated onboarding (8h+). Essential and Professional — self-service setup, free.
 - KiteSafari — custom pricing
 
 **14 days free trial. No credit card. No commitment.**

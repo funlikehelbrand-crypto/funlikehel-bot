@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 Disallow: /.vercel/
 
 Sitemap: https://surfiq.eu/sitemap.xml

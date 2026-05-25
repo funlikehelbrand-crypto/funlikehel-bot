@@ -4,6 +4,18 @@
 const GA_MEASUREMENT_ID = "G-T4HT1DG5RW";
 const GA_API_SECRET = process.env.GA_API_SECRET || "";
 
+// Bot user agents to exclude from tracking (false opens)
+const BOT_PATTERNS = [
+  /googlebot/i, /bingbot/i, /yahoo.*slurp/i, /baiduspider/i,
+  /outlook.*safelinks/i, /microsoft.*office/i,
+  /mozilla\/4\.0.*msie/i, // old IE preview
+  /wget/i, /curl/i, /python-requests/i,
+  /barracuda/i, /proofpoint/i, /mimecast/i, // email security scanners
+];
+function isBot(ua) {
+  return BOT_PATTERNS.some(p => p.test(ua));
+}
+
 // 1x1 transparent GIF
 const PIXEL = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
@@ -23,8 +35,11 @@ export default async function handler(req, res) {
   const region = req.headers["x-vercel-ip-country-region"] || "";
   const ts = Date.now();
 
-  // Fire GA4 event with country/city
-  if (GA_API_SECRET) {
+  // Skip bots — return pixel but don't track
+  const botDetected = isBot(ua);
+
+  // Fire GA4 event with country/city (skip bots)
+  if (GA_API_SECRET && !botDetected) {
     fetch(
       `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`,
       {
@@ -50,19 +65,20 @@ export default async function handler(req, res) {
     ).catch(() => {});
   }
 
-  // Structured JSON log (Vercel stdout)
-  console.log(
-    JSON.stringify({
-      event: "email_open",
-      email,
-      campaign: campaignName,
-      country,
-      city,
-      region,
-      ip,
-      ts: new Date().toISOString(),
-    })
-  );
+  // Structured JSON log (Vercel stdout) — skip bots
+  if (!botDetected) {
+    console.log(
+      JSON.stringify({
+        event: "email_open",
+        email: email ? email.replace(/@.*/, "@***") : "", // mask PII
+        campaign: campaignName,
+        country,
+        city,
+        region,
+        ts: new Date().toISOString(),
+      })
+    );
+  }
 
   // Return 1x1 transparent GIF
   res.setHeader("Content-Type", "image/gif");
