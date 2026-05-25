@@ -1,0 +1,2 @@
+# SurfIQ unsubscribed emails — one per line
+# Added automatically when someone clicks unsubscribe link

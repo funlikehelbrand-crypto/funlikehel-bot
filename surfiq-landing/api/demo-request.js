@@ -7,13 +7,34 @@ const SMTP_PASS = process.env.SMTP_PASS || '';
 const NOTIFY_EMAIL = 'lukasz.michalina@gmail.com';
 const CC_EMAIL = 'office@surfiq.eu';
 
+// Rate limit: max 5 demo requests per IP per hour
+const demoRateMap = new Map();
+function checkDemoRate(ip) {
+  const now = Date.now();
+  const entry = demoRateMap.get(ip) || { count: 0, reset: now + 3600000 };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + 3600000; }
+  entry.count++;
+  demoRateMap.set(ip, entry);
+  return entry.count <= 5;
+}
+
+// Escape HTML to prevent XSS in notification emails
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS — only surfiq.eu
+  const origin = req.headers.origin || "";
+  const allowed = origin.includes("surfiq.eu") ? origin : "https://surfiq.eu";
+  res.setHeader('Access-Control-Allow-Origin', allowed);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const ip = (req.headers['x-forwarded-for'] || '127.0.0.1').split(',')[0].trim();
+  if (!checkDemoRate(ip)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+  }
 
   const d = req.body;
   if (!d.first_name || !d.last_name || !d.email || !d.phone || !d.company) {
@@ -95,19 +116,19 @@ function buildEmailHTML(d) {
     </div>
     <div style="padding:24px 32px">
       <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <tr><td style="padding:8px 0;color:#8EA4BF;width:140px">Imie i nazwisko</td><td style="padding:8px 0;font-weight:600">${d.first_name} ${d.last_name}</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Email</td><td style="padding:8px 0"><a href="mailto:${d.email}" style="color:#14D1C9">${d.email}</a></td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Telefon</td><td style="padding:8px 0"><a href="tel:${d.phone}" style="color:#14D1C9">${d.phone}</a></td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Firma</td><td style="padding:8px 0;font-weight:600">${d.company}</td></tr>
-        ${d.website ? `<tr><td style="padding:8px 0;color:#8EA4BF">Strona www</td><td style="padding:8px 0"><a href="${d.website}" style="color:#14D1C9">${d.website}</a></td></tr>` : ''}
-        <tr><td style="padding:8px 0;color:#8EA4BF">Typ</td><td style="padding:8px 0">${d.business_type || '-'}</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Kraj / Miasto</td><td style="padding:8px 0">${d.country || '-'} / ${d.city || '-'}</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Skala</td><td style="padding:8px 0">${d.scale || '-'}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF;width:140px">Imie i nazwisko</td><td style="padding:8px 0;font-weight:600">${esc(d.first_name)} ${esc(d.last_name)}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Email</td><td style="padding:8px 0"><a href="mailto:${esc(d.email)}" style="color:#14D1C9">${esc(d.email)}</a></td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Telefon</td><td style="padding:8px 0"><a href="tel:${esc(d.phone)}" style="color:#14D1C9">${esc(d.phone)}</a></td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Firma</td><td style="padding:8px 0;font-weight:600">${esc(d.company)}</td></tr>
+        ${d.website ? `<tr><td style="padding:8px 0;color:#8EA4BF">Strona www</td><td style="padding:8px 0">${esc(d.website)}</td></tr>` : ''}
+        <tr><td style="padding:8px 0;color:#8EA4BF">Typ</td><td style="padding:8px 0">${esc(d.business_type)}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Kraj / Miasto</td><td style="padding:8px 0">${esc(d.country)} / ${esc(d.city)}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Skala</td><td style="padding:8px 0">${esc(d.scale)}</td></tr>
         <tr style="border-top:1px solid rgba(255,255,255,.1)"><td style="padding:12px 0 8px;color:#14D1C9;font-weight:600" colspan="2">Sporty i zainteresowania</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Sporty w ofercie</td><td style="padding:8px 0;font-weight:600">${d.sports || '-'}</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Zainteresowania</td><td style="padding:8px 0">${d.interests || '-'}</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Aktualny software</td><td style="padding:8px 0;font-weight:600">${d.current_software || '-'}</td></tr>
-        <tr><td style="padding:8px 0;color:#8EA4BF">Problem z obecnym</td><td style="padding:8px 0;font-style:italic">${d.software_pain || '-'}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Sporty w ofercie</td><td style="padding:8px 0;font-weight:600">${esc(d.sports)}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Zainteresowania</td><td style="padding:8px 0">${esc(d.interests)}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Aktualny software</td><td style="padding:8px 0;font-weight:600">${esc(d.current_software)}</td></tr>
+        <tr><td style="padding:8px 0;color:#8EA4BF">Problem z obecnym</td><td style="padding:8px 0;font-style:italic">${esc(d.software_pain)}</td></tr>
         <tr style="border-top:1px solid rgba(255,255,255,.1)"><td style="padding:12px 0 8px;color:#8EA4BF" colspan="2"></td></tr>
         <tr><td style="padding:8px 0;color:#8EA4BF">Zrodlo</td><td style="padding:8px 0">${d.source || '-'}</td></tr>
         <tr><td style="padding:8px 0;color:#8EA4BF">Jezyk</td><td style="padding:8px 0">${(d.language || 'pl').toUpperCase()}</td></tr>

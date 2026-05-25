@@ -1,7 +1,22 @@
 // SurfIQ AI Chat — Claude-powered sales bot
 // POST /api/chat { message: "...", history: [...] }
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "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";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
+
+// Rate limit: max 20 requests per IP per minute
+const rateLimitMap = new Map();
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip) || { count: 0, reset: now + 60000 };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
+  entry.count++;
+  rateLimitMap.set(ip, entry);
+  // Cleanup old entries every 100 requests
+  if (rateLimitMap.size > 1000) {
+    for (const [k, v] of rateLimitMap) { if (now > v.reset) rateLimitMap.delete(k); }
+  }
+  return entry.count <= 20;
+}
 
 const SYSTEM_PROMPT = `You are SurfIQ's AI sales assistant on surfiq.eu. You speak the user's language — if they write in English, reply in English. If Polish, reply in Polish. If German, reply in German. Keep answers concise (max 3-4 short paragraphs), friendly, and professional.
 
@@ -118,21 +133,33 @@ This is what makes SurfIQ different from Excel, SurfCloud, or any generic bookin
 - Demo link: surfiq.eu/demo/ (NOT demo.surfiq.eu)`;
 
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // CORS — only surfiq.eu
+  const origin = req.headers.origin || "";
+  const allowed = origin.includes("surfiq.eu") ? origin : "https://surfiq.eu";
+  res.setHeader("Access-Control-Allow-Origin", allowed);
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: "API key not configured" });
+
+  // Rate limit check
+  const ip = (req.headers["x-forwarded-for"] || "127.0.0.1").split(",")[0].trim();
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: "Too many requests. Please wait a minute.", reply: "I'm getting a lot of questions right now. Please try again in a minute!" });
+  }
+
   const { message, history } = req.body || {};
-  if (!message) return res.status(400).json({ error: "message required" });
+  if (!message || typeof message !== "string" || message.length > 2000) {
+    return res.status(400).json({ error: "message required (max 2000 chars)" });
+  }
 
   // Build messages array
   const messages = [];
   if (history && Array.isArray(history)) {
-    for (const h of history.slice(-10)) { // last 10 messages for context
-      messages.push({ role: h.role, content: h.content });
+    for (const h of history.slice(-10)) {
+      messages.push({ role: h.role, content: String(h.content).substring(0, 1000) });
     }
   }
   messages.push({ role: "user", content: message });
