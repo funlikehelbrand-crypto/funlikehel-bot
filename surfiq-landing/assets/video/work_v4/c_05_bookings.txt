@@ -1,0 +1,15 @@
+file 'services.png'
+duration 4.59
+file 'calendar.png'
+duration 4.59
+file 'calendar2.png'
+duration 4.59
+file 'services.png'
+duration 4.59
+file 'shop.png'
+duration 4.59
+file 'calendar.png'
+duration 4.59
+file 'services.png'
+duration 4.59
+file 'services.png'

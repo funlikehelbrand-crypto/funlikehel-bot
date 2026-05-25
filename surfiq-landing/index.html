@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SurfIQ — System operacyjny dla szkół sportów wodnych</title>
+  <meta name="description" content="SurfIQ to system zarządzania dla szkół kite, wind, wing i SUP. Rezerwacje, pogoda, finanse, AI agenci — w jednym panelu. 14 dni za darmo.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://surfiq.eu/">
+  <link rel="alternate" hreflang="pl" href="https://surfiq.eu/">
+  <link rel="alternate" hreflang="en" href="https://surfiq.eu/en/">
+  <link rel="alternate" hreflang="de" href="https://surfiq.eu/de/">
+  <link rel="alternate" hreflang="x-default" href="https://surfiq.eu/en/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://surfiq.eu/">
+  <meta property="og:title" content="SurfIQ — System operacyjny dla szkół sportów wodnych">
+  <meta property="og:description" content="Rezerwacje, pogoda, finanse i AI agenci w jednym panelu. 14 dni za darmo.">
+  <meta property="og:image" content="https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png">
+  <meta property="og:locale" content="pl_PL">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SurfIQ — System operacyjny dla szkół sportów wodnych">
+  <meta name="twitter:image" content="https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png">
+  <link rel="icon" type="image/png" href="/assets/generated/logo_final/final_icon.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"SurfIQ","url":"https://surfiq.eu","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":[{"@type":"Offer","name":"Core","price":"599","priceCurrency":"PLN"},{"@type":"Offer","name":"Growth","price":"1499","priceCurrency":"PLN"},{"@type":"Offer","name":"Scale","price":"2999","priceCurrency":"PLN"}]}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{navy:'#081D3A',ocean:'#0D47A1',turquoise:'#14D1C9',aqua:'#64F1E6',muted:'#8EA4BF'},fontFamily:{sans:['Poppins','system-ui','sans-serif']}}}}</script>
+  <style>
+    *{font-family:'Poppins',system-ui,sans-serif}html{scroll-behavior:smooth}
+    select option{background:#0a1e3a;color:#fff}select:focus{outline:1px solid #14D1C9}
+    .fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.fade-in.visible{opacity:1;transform:translateY(0)}
+    .btn-p{background:linear-gradient(135deg,#1565E0,#0D47A1);border-radius:14px;box-shadow:0 4px 20px rgba(21,101,224,.3);transition:all .3s}
+    .btn-p:hover{box-shadow:0 8px 40px rgba(21,101,224,.5);transform:translateY(-2px)}
+    .btn-o{border:1.5px solid rgba(20,209,201,.5);border-radius:14px;transition:all .3s}
+    .btn-o:hover{background:rgba(20,209,201,.08);border-color:#14D1C9;transform:translateY(-2px)}
+    .stat{background:linear-gradient(135deg,#14D1C9,#64F1E6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .glass{background:rgba(255,255,255,.04);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:16px}
+    .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;transition:all .3s}
+    .card:hover{border-color:rgba(20,209,201,.4);transform:translateY(-4px)}
+    .pop{border-color:rgba(20,209,201,.5);background:rgba(20,209,201,.04)}
+    .scr{border-radius:16px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .glow-t{box-shadow:0 0 40px rgba(20,209,201,.15)}
+    .glow-b{box-shadow:0 0 30px rgba(21,101,224,.2)}
+    .float{animation:float 4s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    .pulse-dot{animation:pulseDot 2s ease-in-out infinite}
+    @keyframes pulseDot{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
+    .slide-in-left{opacity:0;transform:translateX(-40px);transition:opacity .8s,transform .8s}
+    .slide-in-right{opacity:0;transform:translateX(40px);transition:opacity .8s,transform .8s}
+    .slide-in-left.visible,.slide-in-right.visible{opacity:1;transform:translateX(0)}
+    .gradient-border{position:relative}
+    .gradient-border::before{content:'';position:absolute;inset:-1px;border-radius:20px;padding:1px;background:linear-gradient(135deg,#14D1C9,#1565E0,#14D1C9);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+    .hotspot{position:relative;cursor:pointer}
+    .hotspot::after{content:'';position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#14D1C9;border-radius:50%;animation:pulseDot 2s infinite}
+    .channel-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .3s}
+    .channel-icon:hover{transform:scale(1.15);box-shadow:0 0 20px rgba(20,209,201,.3)}
+    /* Lightbox */
+    .scr{cursor:zoom-in;transition:transform .3s,box-shadow .3s}.scr:hover{transform:scale(1.02);box-shadow:0 25px 70px rgba(0,0,0,.4)}
+    .lightbox-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);justify-content:center;align-items:center;cursor:zoom-out;opacity:0;transition:opacity .3s}
+    .lightbox-overlay.active{display:flex;opacity:1}
+    .lightbox-overlay img{max-width:94vw;max-height:92vh;border-radius:12px;box-shadow:0 20px 80px rgba(0,0,0,.6);object-fit:contain}
+    .lightbox-close{position:absolute;top:20px;right:28px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;z-index:10000}
+    .lightbox-close:hover{background:rgba(255,255,255,.2);transform:scale(1.1)}
+    /* Chat widget */
+    .chat-fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#14D1C9,#0D47A1);box-shadow:0 4px 20px rgba(20,209,201,.4);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9990;transition:all .3s;border:none;color:#fff;font-size:26px}
+    .chat-fab:hover{transform:scale(1.1);box-shadow:0 8px 30px rgba(20,209,201,.6)}
+    .chat-fab .dot{position:absolute;top:4px;right:4px;width:12px;height:12px;background:#22c55e;border-radius:50%;border:2px solid #081D3A}
+    .chat-window{display:none;position:fixed;bottom:96px;right:24px;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 120px);border-radius:20px;overflow:hidden;z-index:9990;flex-direction:column;background:#0a1e3a;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+    .chat-window.open{display:flex}
+    .chat-header{padding:16px 20px;background:linear-gradient(135deg,#0D47A1,#081D3A);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .chat-header .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#14D1C9,#0D47A1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .chat-header .info{flex:1}.chat-header .name{color:#fff;font-weight:600;font-size:14px}.chat-header .status{color:#14D1C9;font-size:11px}
+    .chat-header .close-chat{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:4px}
+    .chat-header .close-chat:hover{color:#fff}
+    .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+    .chat-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word}
+    .chat-msg.bot{background:rgba(255,255,255,.06);color:#e2e8f0;border-bottom-left-radius:4px;align-self:flex-start}
+    .chat-msg.user{background:linear-gradient(135deg,#1565E0,#0D47A1);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+    .chat-input-area{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px;background:rgba(8,29,58,.8)}
+    .chat-input-area input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;color:#fff;font-size:13px;outline:none;font-family:inherit}
+    .chat-input-area input::placeholder{color:rgba(255,255,255,.3)}
+    .chat-input-area input:focus{border-color:rgba(20,209,201,.5)}
+    .chat-input-area button{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#14D1C9,#0D47A1);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+    .chat-input-area button:hover{transform:scale(1.05)}
+    .chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
+    .chat-quick button{background:rgba(20,209,201,.1);border:1px solid rgba(20,209,201,.3);border-radius:20px;color:#14D1C9;font-size:11px;padding:6px 12px;cursor:pointer;transition:all .2s;font-family:inherit}
+    .chat-quick button:hover{background:rgba(20,209,201,.2);border-color:#14D1C9}
+    /* Mobile menu */
+    .mobile-menu{display:none;position:fixed;inset:0;z-index:9998;background:rgba(8,29,58,.98);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:32px}
+    .mobile-menu.open{display:flex}
+    .mobile-menu a{color:#fff;font-size:1.25rem;font-weight:600;transition:color .2s}
+    .mobile-menu a:hover{color:#14D1C9}
+    .hamburger{display:none;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:8px}
+    @media(max-width:767px){.hamburger{display:flex;align-items:center;justify-content:center}}
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4HT1DG5RW"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-T4HT1DG5RW")</script>
+<!-- Facebook Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1639337547278346');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1639337547278346&ev=PageView&noscript=1"/></noscript>
+</head>
+<body class="bg-navy text-white antialiased overflow-x-hidden">
+
+  <!-- NAV -->
+  <nav class="fixed top-0 w-full z-50 bg-navy/85 backdrop-blur-xl border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/"><img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-12"></a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm text-muted hover:text-white transition-colors">Funkcje</a>
+        <a href="#kitesafari" class="text-sm text-muted hover:text-white transition-colors">KiteSafari</a>
+        <a href="#ai" class="text-sm text-muted hover:text-white transition-colors">AI Agenci</a>
+        <a href="#pricing" class="text-sm text-muted hover:text-white transition-colors">Cennik</a>
+        <a href="#faq" class="text-sm text-muted hover:text-white transition-colors">FAQ</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-1 text-xs text-muted">
+          <a href="/" class="px-2 py-1 rounded bg-white/10 text-white font-semibold">PL</a>
+          <a href="/en/" class="px-2 py-1 rounded hover:bg-white/5">EN</a>
+          <a href="/de/" class="px-2 py-1 rounded hover:bg-white/5">DE</a>
+        </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">&#9776;</button>
+        <a href="#demo" class="btn-p px-5 py-2 text-sm font-semibold text-white">Umów demo</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <button id="mobileMenuClose" style="position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer">&times;</button>
+    <a href="#features" class="mobile-nav-link">Funkcje</a>
+    <a href="#kitesafari" class="mobile-nav-link">KiteSafari</a>
+    <a href="#ai" class="mobile-nav-link">AI Agenci</a>
+    <a href="#pricing" class="mobile-nav-link">Cennik</a>
+    <a href="#faq" class="mobile-nav-link">FAQ</a>
+    <a href="#demo" class="mobile-nav-link text-turquoise">Umów demo</a>
+    <div class="flex items-center gap-3 mt-4">
+      <a href="/" class="px-3 py-1.5 rounded bg-white/10 text-white font-semibold text-sm">PL</a>
+      <a href="/en/" class="px-3 py-1.5 rounded text-muted text-sm hover:bg-white/5">EN</a>
+      <a href="/de/" class="px-3 py-1.5 rounded text-muted text-sm hover:bg-white/5">DE</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="min-h-screen flex items-center pt-20" style="background:radial-gradient(ellipse at 20% 50%,rgba(13,71,161,.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 30%,rgba(20,209,201,.1) 0%,transparent 50%),#081D3A">
+    <div class="max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
+      <div class="fade-in">
+        <img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-32 md:h-44 mb-8">
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-8">System operacyjny dla szkół <span class="bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent">sportów wodnych</span></h1>
+        <div class="space-y-3 mb-8">
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">Pogoda z 3 źródeł, kalendarz i rezerwacje w jednym panelu</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">AI agenci obsługują klientów 24/7 na 6 kanałach</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">Finanse, raporty i ranking instruktorów na żywo</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">KiteSafari — od WhatsAppa do pokładu łodzi</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">Przetestowany na 1000+ kursantach. 2 sezony. 2 lokalizacje.</p></div>
+        </div>
+        <div class="flex flex-wrap gap-4 mb-10">
+          <a href="/demo/" class="btn-p px-8 py-4 text-white font-semibold text-base">Umów demo</a>
+          <a href="#features" class="btn-o px-8 py-4 text-turquoise font-semibold text-base">Zobacz funkcje</a>
+        </div>
+        <div class="flex gap-10">
+          <div><p class="stat text-2xl font-bold">10 000+</p><p class="text-muted text-xs">kursantów</p></div>
+          <div><p class="stat text-2xl font-bold">25 000+</p><p class="text-muted text-xs">rezerwacji</p></div>
+          <div><p class="stat text-2xl font-bold">2</p><p class="text-muted text-xs">sezony testów</p></div>
+        </div>
+      </div>
+      <div class="fade-in relative">
+        <img src="/assets/screenshots/final/dashboard_dark.png" alt="SurfIQ — dashboard z pogodą, Transfer 2nd Spot i różą wiatrów" class="w-full scr">
+        <!-- Floating badges -->
+        <div class="absolute -top-3 -right-3 glass px-4 py-2 float glow-t hidden lg:flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></div>
+          <span class="text-xs text-white/90 font-medium">Transfer 2nd Spot</span>
+        </div>
+        <div class="absolute -bottom-3 -left-3 glass px-4 py-2 float hidden lg:flex items-center gap-2" style="animation-delay:-2s">
+          <span class="text-turquoise text-sm">&#9889;</span>
+          <span class="text-xs text-white/90 font-medium">AI: 24/7</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTEGRATIONS STRIP -->
+  <section class="py-10 border-y border-white/5 bg-navy/50">
+    <div class="max-w-5xl mx-auto px-6">
+      <p class="text-center text-muted text-xs uppercase tracking-widest mb-6">Zintegrowany z narzędziami które już znasz</p>
+      <div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 text-muted/60">
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#127754;</span>
+          <span class="text-[10px]">Windguru</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#127744;</span>
+          <span class="text-[10px]">Windy</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#128172;</span>
+          <span class="text-[10px]">WhatsApp</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#128247;</span>
+          <span class="text-[10px]">Instagram</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#128077;</span>
+          <span class="text-[10px]">Facebook</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#129302;</span>
+          <span class="text-[10px]">Claude AI</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#9993;</span>
+          <span class="text-[10px]">Gmail</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#127925;</span>
+          <span class="text-[10px]">TikTok</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-20 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Funkcje</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Wszystko czego potrzebuje Twoja szkoła</h2>
+      </div>
+
+      <!-- 1. Kalendarz -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Kalendarz</p>
+          <h3 class="text-2xl font-bold mb-4">Grafik jak prognoza Windguru — godziny, wiatr i instruktorzy</h3>
+          <p class="text-muted mb-6">Intuicyjny widok z godzinami w pionie i instruktorami w kolumnach — dokładnie jak znasz z prognozy Windguru. Widzisz kierunek i siłę wiatru, alert Transfer 2nd Spot nad kalendarzem, filtry sportów (Kite, Wind, Wing, Carver, SUP, Bosman). Kliknij slot i dodaj rezerwację. Przełączaj między widokiem godzinowym a klasycznym.</p>
+          <div class="flex gap-8">
+            <div><p class="stat text-xl font-bold">10+</p><p class="text-muted text-xs">instruktorów</p></div>
+            <div><p class="stat text-xl font-bold">6</p><p class="text-muted text-xs">dyscyplin</p></div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <img src="/assets/screenshots/final/calendar_light_transpose.png" alt="Kalendarz SurfIQ — widok godzinowy jak Windguru z wiatrem i instruktorami" class="scr" loading="lazy">
+          <img src="/assets/screenshots/final/calendar_light.png" alt="Kalendarz — widok klasyczny tygodniowy" class="scr" loading="lazy">
+        </div>
+      </div>
+
+      <!-- 2. Pogoda -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <img src="/assets/screenshots/final/weather_dark.png" alt="3 źródła pogody — Windy, Windguru, Windfinder + róża wiatrów" loading="lazy" class="scr order-2 lg:order-1">
+        <div class="order-1 lg:order-2">
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Pogoda</p>
+          <h3 class="text-2xl font-bold mb-4">3 prognozy obok siebie</h3>
+          <p class="text-muted mb-6">Windy z mapą wiatru, Windguru z kolorową tabelą, Windfinder z prognozą godzinową. Pod spodem róża wiatrów z aktualnym kierunkiem i siłą. Decyzja w 10 sekund.</p>
+          <div class="flex gap-8">
+            <div><p class="stat text-xl font-bold">3</p><p class="text-muted text-xs">źródła pogody</p></div>
+            <div><p class="stat text-xl font-bold">Live</p><p class="text-muted text-xs">dane w czasie rzeczywistym</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Raporty -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Raporty</p>
+          <h3 class="text-2xl font-bold mb-4">Przychód, koszty i marża — na jedno spojrzenie</h3>
+          <p class="text-muted mb-6">Przychód opłacony vs wszystkie. Rezerwacje, godziny instruktorów, no-show. Koszt stały na godzinę, zysk netto. Marża sportu — który kurs przynosi najwięcej. Filtruj po Kite, Wind, Wing, Carver, SUP.</p>
+        </div>
+        <img src="/assets/screenshots/final/reports_dark.png" alt="Raporty — przychód, koszty, godziny, marża sportu" class="scr" loading="lazy">
+      </div>
+
+      <!-- 4. KiteSafari -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div class="space-y-4 order-2 lg:order-1">
+          <img src="/assets/screenshots/final/kitesafari_dark.png" alt="KiteSafari — dashboard wyjazdu Orange Bay" class="scr" loading="lazy">
+          <img src="/assets/screenshots/final/kitesafari_boats_dark.png" alt="KiteSafari — lista wyjazdów z cenami" class="scr" loading="lazy">
+        </div>
+        <div class="order-1 lg:order-2">
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">KiteSafari</p>
+          <h3 class="text-2xl font-bold mb-4">Wyjazdy kite od A do Z</h3>
+          <p class="text-muted mb-6">Planuj safari: uczestnicy, płatności, transfery, pogoda, sprzęt — wszystko w jednym widoku. Checklista przygotowań pilnuje, żeby nic nie umknęło. Manifest uczestników z poziomami, dokumentami i sprzętem. Wiele wyjazdów równolegle — Hel, Hurghada, Orange Bay.</p>
+          <div class="flex gap-8">
+            <div><p class="stat text-xl font-bold">18</p><p class="text-muted text-xs">uczestników/trip</p></div>
+            <div><p class="stat text-xl font-bold">2</p><p class="text-muted text-xs">lokalizacje</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4b. KiteSafari szczegóły -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Szczegóły wyjazdu</p>
+          <h3 class="text-2xl font-bold mb-4">Manifest, transfery i finanse</h3>
+          <p class="text-muted mb-6">Pełny widok wyjazdu: manifest uczestników z avatarami i poziomami, transfery z lokalizacjami, budżet z kosztami na osobę. Dodaj nowe safari jednym formularzem — lokalizacja, marina, skipper, koordynator, godziny, cena.</p>
+        </div>
+        <img src="/assets/screenshots/final/kitesafari_details_dark.png" alt="KiteSafari — manifest uczestników, transfery, finanse" class="scr" loading="lazy">
+      </div>
+
+      <!-- 5. Usługi -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Usługi</p>
+          <h3 class="text-2xl font-bold mb-4">Katalog kursów z cennikiem</h3>
+          <p class="text-muted mb-6">Kitesurfing Poziom I-IV, Windsurfing, Wing Foil, Surfing, Deskorolka, SUP. Każda usługa z czasem trwania, ceną, lokalizacją. Edytuj i dezaktywuj jednym kliknięciem.</p>
+        </div>
+        <img src="/assets/screenshots/final/services_dark.png" alt="Katalog usług — Kite, Wind, Wing z cenami" class="scr" loading="lazy">
+      </div>
+
+      <!-- 6. Sklep -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center fade-in">
+        <img src="/assets/screenshots/final/shop_dark_full.png" alt="Sklep — Cabrinha 2026 produkty" loading="lazy" class="scr order-2 lg:order-1">
+        <div class="order-1 lg:order-2">
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Sklep</p>
+          <h3 class="text-2xl font-bold mb-4">Sprzęt i katalog produktów</h3>
+          <p class="text-muted mb-6">Cabrinha 2026 — latawce, deski, wing foile. Zdjęcia, ceny, stany magazynowe. Prowizje i polecenia. Filtry: Latawce, Deski, Foile, Akcesoria.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INBOX — Centrum komunikacji -->
+  <section class="py-28 relative overflow-hidden" style="background:radial-gradient(ellipse at 30% 40%,rgba(20,209,201,.08) 0%,transparent 50%),radial-gradient(ellipse at 70% 60%,rgba(21,101,224,.08) 0%,transparent 50%),linear-gradient(180deg,#081D3A,#0a1e3a,#081D3A)">
+    <div class="max-w-6xl mx-auto px-6">
+      <!-- Header -->
+      <div class="text-center mb-6 fade-in">
+        <div class="inline-block bg-turquoise/10 border border-turquoise/20 rounded-full px-4 py-1.5 mb-5">
+          <span class="text-turquoise text-xs font-bold uppercase tracking-widest">Nowość</span>
+        </div>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Wszystkie wiadomości.<br><span class="bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent">Jeden system. Zero chaosu.</span></h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">WhatsApp, Instagram, Messenger, email, SMS i formularze ze strony — wszystko w jednym miejscu. Od pierwszego DM-a do gotowej rezerwacji.</p>
+      </div>
+
+      <!-- Inbox screenshot -->
+      <div class="max-w-5xl mx-auto mt-14 fade-in">
+        <div class="grid md:grid-cols-2 gap-6 items-center">
+          <div>
+            <img src="/assets/screenshots/final/inbox_dark.png" alt="SurfIQ Inbox — dark theme, WhatsApp, IG, Messenger w jednym" loading="lazy" class="scr w-full">
+            <p class="text-muted text-xs text-center mt-3">Dark mode — pełna lista konwersacji</p>
+          </div>
+          <div>
+            <img src="/assets/screenshots/final/inbox_light.png" alt="SurfIQ Inbox — light theme, rozmówa z klientem" loading="lazy" class="scr w-full">
+            <p class="text-muted text-xs text-center mt-3">Light mode — aktywna rozmówa z profilem klienta</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inbox features -->
+      <div class="grid md:grid-cols-3 gap-5 mt-12 fade-in">
+        <div class="glass p-5 text-center">
+          <p class="text-2xl mb-2">&#128172;</p>
+          <p class="text-white font-semibold text-sm mb-1">6 kanałów w jednym</p>
+          <p class="text-muted text-xs">WhatsApp, Instagram, Messenger, email, SMS, formularze</p>
+        </div>
+        <div class="glass p-5 text-center">
+          <p class="text-2xl mb-2">&#129302;</p>
+          <p class="text-white font-semibold text-sm mb-1">AI odpowiada i rezerwuje</p>
+          <p class="text-muted text-xs">Automatyczna odpowiedź, tworzenie rezerwacji, przypisanie instruktora</p>
+        </div>
+        <div class="glass p-5 text-center">
+          <p class="text-2xl mb-2">&#128176;</p>
+          <p class="text-white font-semibold text-sm mb-1">Komunikacja która sprzedaje</p>
+          <p class="text-muted text-xs">Od DM do rezerwacji w 60 sekund. Mniej chaosu, więcej kursów.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <section class="py-20 bg-navy">
+    <div class="max-w-5xl mx-auto px-6 fade-in">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">10 000+</p><p class="text-muted text-sm mt-1">kursantów</p></div>
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">25 000+</p><p class="text-muted text-sm mt-1">rezerwacji</p></div>
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">12</p><p class="text-muted text-sm mt-1">agentów AI</p></div>
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">2</p><p class="text-muted text-sm mt-1">sezony testów</p></div>
+      </div>
+
+      <!-- Reviews -->
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Pogoda z 3 źródeł w jednym dashboardzie to game-changer. Zamiast rano otwierać 3 strony, mam wszystko na jednym ekranie. Prognoza staffingu oszczędza mi 30 minut dziennie."</p>
+          <p class="text-turquoise font-semibold text-sm">Marco R.</p>
+          <p class="text-muted text-xs">Head Instructor, El Gouna</p>
+        </div>
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Agent WhatsApp odpisuje klientom w 10 sekund — o każdej porze. Przed SurfIQ traciłam klientów bo nie odpisywałam na nocne wiadomości. Teraz AI robi to za mnie."</p>
+          <p class="text-turquoise font-semibold text-sm">Anna L.</p>
+          <p class="text-muted text-xs">School Manager, Hel Peninsula</p>
+        </div>
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Kalendarz z drag-and-drop i kolorami sportów zmienił nasze życie. Zero podwójnych rezerwacji od kiedy używamy SurfIQ. Instruktorzy widzą swój grafik na telefonie — bez telefonów rano."</p>
+          <p class="text-turquoise font-semibold text-sm">Konrad W.</p>
+          <p class="text-muted text-xs">Operations Director, 2 locations</p>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6 mt-6 max-w-3xl mx-auto">
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Moduł finansowy pokazuje marżę na każdy sport i każdego instruktora. Wreszcie wiem ile naprawdę zarabiam i gdzie traci szkoła. Raporty generuję jednym kliknięciem."</p>
+          <p class="text-turquoise font-semibold text-sm">Sophie D.</p>
+          <p class="text-muted text-xs">School Owner, Soma Bay</p>
+        </div>
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"KiteSafari moduł to coś czego szukaliśmy od lat. Manifest uczestników, status płatności, przypisanie sprzętu — wszystko w jednym widoku. Nasz pierwszy rejs z SurfIQ był perfekcyjny."</p>
+          <p class="text-turquoise font-semibold text-sm">Jan S.</p>
+          <p class="text-muted text-xs">Safari Operations, Red Sea</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY SURFIQ — comparison -->
+  <section class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Porównanie</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Dlaczego SurfIQ?</h2>
+      </div>
+      <div class="overflow-x-auto fade-in">
+        <table class="w-full text-sm text-left">
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="py-4 px-4 text-muted font-normal w-1/4"></th>
+              <th class="py-4 px-4 text-muted font-normal text-center">Excel / papier</th>
+              <th class="py-4 px-4 text-muted font-normal text-center">Inny soft</th>
+              <th class="py-4 px-4 text-center"><span class="bg-turquoise/10 text-turquoise px-3 py-1 rounded-full font-semibold">SurfIQ</span></th>
+            </tr>
+          </thead>
+          <tbody class="text-white/70">
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Rezerwacje online</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Częściowo</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Pogoda z 3 źródeł</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">AI agenci 24/7</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; 6 kanałów</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Finanse i marża sportu</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Ręcznie</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Podstawowe</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; Na żywo</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">KiteSafari / wyjazdy</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Transfery na spot</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Inbox (6 kanałów)</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-yellow-400">1-2 kanały</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; 6 kanałów</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 font-medium text-white">Dedykowane dla sportów wodnych</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Ogólne</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; 100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Zespół</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Ludzie za SurfIQ</h2>
+      </div>
+      <div class="max-w-md mx-auto fade-in">
+        <!-- Magda -->
+        <div class="glass overflow-hidden group flex flex-col">
+          <div class="h-80 overflow-hidden">
+            <img src="/assets/team_magda.jpg" alt="Magdalena" class="w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition-transform duration-500">
+          </div>
+          <div class="p-6 flex-1">
+            <h3 class="text-white text-xl font-bold">Magdalena</h3>
+            <p class="text-turquoise text-sm font-semibold mb-3">Kontakt, wdrożenia i customizacja</p>
+            <p class="text-muted text-sm leading-relaxed">Pierwszy punkt kontaktu dla nowych szkół. Prowadzi wdrożenia, konfiguruje system pod potrzeby klienta i odpowiada za indywidualne dostosowania. Miłośniczka gór, snowboardu, snowkite i fotografii. Założycielka brandu SLOWHOP.WEAR.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI AGENTS + UNIQUE FEATURES -->
+  <section id="ai" class="py-24 relative overflow-hidden" style="background:linear-gradient(180deg,#081D3A,#0e3670,#081D3A)">
+    <!-- Background glow effects -->
+    <div class="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-turquoise/5 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-ocean/10 rounded-full blur-[100px]"></div>
+
+    <div class="max-w-6xl mx-auto px-6 relative z-10">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">AI-First</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Jedyny system z AI agentami wbudowanymi</h2>
+        <p class="text-muted max-w-2xl mx-auto">Klient pisze o 23:00 — AI odpowiada w mniej niż 2 minuty. Na 6 kanałach. 24/7. Ty jesteś na wodzie.</p>
+      </div>
+
+      <!-- AI Channels grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-16 fade-in">
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-purple-500 to-pink-500 mx-auto mb-2">&#128247;</div>
+          <p class="text-white text-sm font-semibold">Instagram</p>
+          <p class="text-muted text-xs">DM + komentarze</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-green-500 to-green-600 mx-auto mb-2">&#128172;</div>
+          <p class="text-white text-sm font-semibold">WhatsApp</p>
+          <p class="text-muted text-xs">Cloud API</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-blue-500 to-blue-700 mx-auto mb-2">&#128077;</div>
+          <p class="text-white text-sm font-semibold">Facebook</p>
+          <p class="text-muted text-xs">Strona + Messenger</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-red-400 to-orange-500 mx-auto mb-2">&#9993;</div>
+          <p class="text-white text-sm font-semibold">Email</p>
+          <p class="text-muted text-xs">Auto-odpowiedzi</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-yellow-400 to-yellow-600 mx-auto mb-2">&#128241;</div>
+          <p class="text-white text-sm font-semibold">SMS</p>
+          <p class="text-muted text-xs">Przypomnienia</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-gray-800 to-black mx-auto mb-2">&#127925;</div>
+          <p class="text-white text-sm font-semibold">TikTok</p>
+          <p class="text-muted text-xs">Komentarze</p>
+        </div>
+      </div>
+
+      <!-- AI Stats -->
+      <div class="grid md:grid-cols-3 gap-6 mb-16 fade-in">
+        <div class="glass p-6 text-center glow-t">
+          <p class="stat text-3xl font-bold">&lt;2 min</p>
+          <p class="text-muted text-sm mt-1">średni czas odpowiedzi</p>
+        </div>
+        <div class="glass p-6 text-center">
+          <p class="stat text-3xl font-bold">24/7</p>
+          <p class="text-muted text-sm mt-1">bez przerw, bez urlopów</p>
+        </div>
+        <div class="glass p-6 text-center">
+          <p class="stat text-3xl font-bold">3-4h</p>
+          <p class="text-muted text-sm mt-1">oszczędności dziennie</p>
+        </div>
+      </div>
+
+      <!-- Unique features hotspots -->
+      <div class="text-center mb-12 fade-in">
+        <h3 class="text-2xl font-bold mb-2">Co nas wyróżnia</h3>
+        <p class="text-muted">Funkcje których nie znajdziesz w żadnym innym systemie</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5 fade-in">
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#127754;</div>
+          <h4 class="text-white font-semibold mb-2">3 źródła pogody</h4>
+          <p class="text-muted text-sm">Windguru + Windy + Windfinder obok siebie. Żaden konkurent tego nie ma.</p>
+        </div>
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#128674;</div>
+          <h4 class="text-white font-semibold mb-2">Transfer</h4>
+          <p class="text-muted text-sm">Łódź, auto, bus — planuj transfery kursantów na inny spot. Koszty, pojemność, powiadomienia SMS.</p>
+        </div>
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#127758;</div>
+          <h4 class="text-white font-semibold mb-2">KiteSafari</h4>
+          <p class="text-muted text-sm">Wyjazdy kite z pełną logistyką: transport, nocleg, lekcje, plan dnia, budżet. Hel → El Gouna i dalej.</p>
+        </div>
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#129302;</div>
+          <h4 class="text-white font-semibold mb-2">AI-first</h4>
+          <p class="text-muted text-sm">12 agentów AI przetestowanych 6 miesięcy na prawdziwym biznesie. Anti-spam, anti-loop, fallback.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KITESAFARI -->
+  <section id="kitesafari" class="py-28 relative overflow-hidden" style="background:radial-gradient(ellipse at 50% 30%,rgba(20,209,201,.06) 0%,transparent 50%),#081D3A">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-6 fade-in">
+        <div class="inline-block bg-ocean/20 border border-ocean/30 rounded-full px-4 py-1.5 mb-5">
+          <span class="text-blue-300 text-xs font-bold uppercase tracking-widest">Premium Moduł</span>
+        </div>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">KiteSafari</h2>
+        <p class="text-turquoise text-lg font-medium mb-2">Od WhatsAppa do pokładu — wszystko w SurfIQ.</p>
+        <p class="text-muted max-w-2xl mx-auto">Organizujesz kite safari, campy albo wyjazdy łodzią? Cała operacja w jednym panelu — od zapytańia klienta po rozliczenie po powrocie.</p>
+      </div>
+
+      <!-- Safari mockup -->
+      <div class="max-w-5xl mx-auto mt-14 fade-in">
+        <div class="rounded-2xl border border-white/10 overflow-hidden shadow-2xl" style="background:rgba(8,29,58,.95)">
+          <!-- Top bar -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-red-400"></div>
+              <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+              <div class="w-3 h-3 rounded-full bg-green-400"></div>
+              <span class="text-white/30 text-xs ml-3 font-mono">panel.surfiq.eu/safari</span>
+            </div>
+            <span class="text-xs text-orange-400 font-semibold bg-orange-400/10 px-3 py-1 rounded-full">&#128676; KiteSafari</span>
+          </div>
+          <!-- Safari content -->
+          <div class="p-5">
+            <!-- Safari header -->
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="text-white text-lg font-bold">Kite Safari — El Gouna</h3>
+                <p class="text-muted text-xs">22-28 maja 2026 &bull; Łódź: Sea Explorer &bull; Marina: El Gouna Bay</p>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded-lg font-semibold">8/12 miejsc</span>
+                <span class="text-[10px] bg-turquoise/20 text-turquoise px-2 py-1 rounded-lg font-semibold">Otwarty</span>
+              </div>
+            </div>
+
+            <!-- Participant manifest -->
+            <div class="rounded-xl border border-white/5 overflow-hidden mb-5">
+              <div class="bg-white/3 px-4 py-2 border-b border-white/5 flex items-center justify-between">
+                <span class="text-white text-xs font-semibold">Manifest uczestników</span>
+                <span class="text-muted text-[10px]">8 uczestników</span>
+              </div>
+              <div class="divide-y divide-white/5 text-[11px]">
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span class="text-white font-medium w-28">Anna K.</span>
+                  <span class="text-muted w-16">Kite L2</span>
+                  <span class="text-green-400 w-14">Opłacona</span>
+                  <span class="text-turquoise w-20">Kite 12m</span>
+                  <span class="text-muted w-20">Hotel → bus</span>
+                  <span class="text-green-400 w-16">&#10003; Check-in</span>
+                  <span class="text-green-400 ml-auto">&#9875; Na pokładzie</span>
+                </div>
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span class="text-white font-medium w-28">Max M.</span>
+                  <span class="text-muted w-16">Kite L3</span>
+                  <span class="text-green-400 w-14">Opłacony</span>
+                  <span class="text-turquoise w-20">Kite 9m</span>
+                  <span class="text-muted w-20">Własny</span>
+                  <span class="text-green-400 w-16">&#10003; Check-in</span>
+                  <span class="text-green-400 ml-auto">&#9875; Na pokładzie</span>
+                </div>
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                  <span class="text-white font-medium w-28">Erik H.</span>
+                  <span class="text-muted w-16">Wing L1</span>
+                  <span class="text-yellow-400 w-14">Zaliczka</span>
+                  <span class="text-orange-400 w-20">Brak!</span>
+                  <span class="text-muted w-20">Hotel → bus</span>
+                  <span class="text-yellow-400 w-16">&#9888; Brak sprzętu</span>
+                  <span class="text-yellow-400 ml-auto">Oczekuje</span>
+                </div>
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span class="text-white font-medium w-28">Julia B.</span>
+                  <span class="text-muted w-16">Kite L2</span>
+                  <span class="text-green-400 w-14">Opłacona</span>
+                  <span class="text-turquoise w-20">Kite 10m</span>
+                  <span class="text-muted w-20">Marina</span>
+                  <span class="text-green-400 w-16">&#10003; Check-in</span>
+                  <span class="text-blue-400 ml-auto">&#127754; W wodzie</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom stats -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="stat text-lg font-bold">8/12</p>
+                <p class="text-muted text-[9px]">Uczestnicy</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-green-400 text-lg font-bold">6</p>
+                <p class="text-muted text-[9px]">Opłaconych</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-turquoise text-lg font-bold">7</p>
+                <p class="text-muted text-[9px]">Sprzęt OK</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-orange-400 text-lg font-bold">1</p>
+                <p class="text-muted text-[9px]">Brakuje</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-white text-lg font-bold">3/8</p>
+                <p class="text-muted text-[9px]">W wodzie</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process flow -->
+      <div class="max-w-4xl mx-auto mt-14 fade-in">
+        <div class="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Lead</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Klient</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Płatność</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Transfer</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Sprzęt</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-turquoise/20 text-turquoise px-3 py-1.5 rounded-lg font-semibold">Check-in</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-turquoise/20 text-turquoise px-3 py-1.5 rounded-lg font-semibold">Na wodzie</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Rozliczenie</span>
+        </div>
+      </div>
+
+      <!-- Safari features grid -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-12 fade-in">
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#128466;</p>
+          <p class="text-white font-semibold text-sm">Safari Planner</p>
+          <p class="text-muted text-xs mt-1">Daty, łódź, marina, limity, cena, instruktorzy, skipper</p>
+        </div>
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#128221;</p>
+          <p class="text-white font-semibold text-sm">Manifest uczestników</p>
+          <p class="text-muted text-xs mt-1">Poziom, płatność, zgody, sprzęt, check-in, boarding</p>
+        </div>
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#128674;</p>
+          <p class="text-white font-semibold text-sm">Transfer & Pickup</p>
+          <p class="text-muted text-xs mt-1">Odbiory z hoteli, busy, kierowcy, status dojazdu</p>
+        </div>
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#127754;</p>
+          <p class="text-white font-semibold text-sm">Live Boat View</p>
+          <p class="text-muted text-xs mt-1">Kto na pokładzie, kto w wodzie, kto potrzebuje pomocy</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PRICING — Modular System                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="pricing" class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <!-- Hero pricing -->
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Cennik</p>
+        <h2 class="text-3xl md:text-5xl font-bold leading-tight">Jeden system.<br><span class="stat">Tyle modułów, ile naprawdę potrzebujesz.</span></h2>
+        <p class="text-muted text-base mt-4 max-w-2xl mx-auto">Każda szkoła działa inaczej. Dlatego SurfIQ nie jest sztywnym pakietem — to modułówy system operacyjny szkoły, który można rozbudować dokładnie o te funkcje, których potrzebujesz.</p>
+        <div class="flex gap-4 justify-center mt-8">
+          <a href="/demo/" class="btn-p px-8 py-3.5 text-white font-semibold text-sm">Umów demo</a>
+          <a href="#configurator" class="btn-o px-8 py-3.5 text-turquoise font-semibold text-sm">Zbuduj własny pakiet</a>
+        </div>
+      </div>
+
+      <!-- ── SURFIQ CORE ─────────────────────────────────────────── -->
+      <div class="card p-8 md:p-10 mb-10 fade-in glow-t" style="background:linear-gradient(135deg,rgba(20,209,201,0.06),rgba(13,71,161,0.06))">
+        <div class="md:flex items-start gap-10">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#14D1C9,#0D47A1)">
+                <span class="text-2xl">🏄</span>
+              </div>
+              <div>
+                <p class="text-turquoise text-xs font-semibold uppercase tracking-widest">Fundament systemu</p>
+                <h3 class="text-2xl font-bold text-white">SurfIQ Core</h3>
+              </div>
+            </div>
+            <p class="text-white/80 text-sm mb-6 max-w-lg">Podstawowy system operacyjny dla szkoły sportowej. Wszystko, czego potrzebujesz, aby zarządzać rezerwacjami, klientami, instruktorami, pogodą, finansami i podstawową sprzedażą.</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Kalendarz rezerwacji</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> CRM do 200 kursantów</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Do 3 instruktorów</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> 1 lokalizacja</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Prognoza pogody</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Dashboard finansowy</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Sklep podstawowy</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> 1 kanał AI (100 rozmów)</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Alerty pogodowe</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> 14-dniowy trial</div>
+              <div class="flex items-center gap-2 text-sm text-white/70"><span class="text-turquoise">✓</span> Email support (48h)</div>
+            </div>
+            <p class="text-muted text-xs">Core to fundament SurfIQ. Korzystaj z podstawowego systemu albo rozbuduj go o moduły dopasowane do Twojej szkoły.</p>
+          </div>
+          <div class="text-center md:text-right mt-8 md:mt-0 md:min-w-[200px]">
+            <p class="text-muted text-sm">od</p>
+            <p class="stat text-5xl font-bold">599</p>
+            <p class="text-muted text-sm">PLN / miesiąc</p>
+            <a href="/demo/" class="btn-p px-6 py-3 text-white font-semibold text-sm mt-6 inline-block">Zacznij od Core</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DLACZEGO MODULOWY ───────────────────────────────────── -->
+      <div class="text-center mb-12 fade-in">
+        <h3 class="text-2xl font-bold mb-3">Dlaczego modułówy pricing?</h3>
+        <p class="text-muted text-sm max-w-2xl mx-auto">Jedna szkoła potrzebuje głównie kalendarza i CRM, druga automatyzacji sprzedaży przez WhatsApp, a trzecia zarządza wieloma lokalizacjami, obozami i wypożyczkami. Płacisz tylko za funkcje, których naprawdę używasz.</p>
+      </div>
+
+      <!-- ── MODULY DODATKOWE ────────────────────────────────────── -->
+      <div class="mb-16 fade-in">
+        <div class="text-center mb-8">
+          <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-2">Moduły dodatkowe</p>
+          <h3 class="text-2xl font-bold">Rozbuduj system pod swoją szkołę</h3>
+        </div>
+
+        <!-- AI & Automatyzacja -->
+        <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-4 mt-8">🤖 AI & automatyzacja sprzedaży</p>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Dodatkowy kanał AI</p><p class="stat text-lg font-bold">199 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">WhatsApp, Instagram, Messenger, SMS, email lub chat www.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Pakiet rozmów AI</p><p class="stat text-lg font-bold">149 PLN<span class="text-muted text-xs"> / 500 rozmów</span></p><p class="text-muted text-xs mt-2">Doładowanie gdy przekroczysz limit. Automatyczne lub ręczne.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Lead scoring</p><p class="stat text-lg font-bold">99 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Automatyczna ocena zapytań 1-100 pkt. Hot leady = natychmiastowe powiadomienie.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Semi-auto AI</p><p class="stat text-lg font-bold">199 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">AI odpowiada samo na proste pytania, złożone przekazuje do Ciebie.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Full-auto AI + eskalacja</p><p class="stat text-lg font-bold">399 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Pełna autonomia AI z eskalacja do człowieka gdy potrzebna.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Raporty AI</p><p class="stat text-lg font-bold">79 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Tygodniowe podsumowania: ile rozmów, konwersje, tematy, czas odpowiedzi.</p></div>
+        </div>
+
+        <!-- Operacje szkoły -->
+        <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-4">🏫 Operacje szkoły</p>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Dodatkowa lokalizacja</p><p class="stat text-lg font-bold">199 PLN<span class="text-muted text-xs">/mies./spot</span></p><p class="text-muted text-xs mt-2">Zarządzaj kilkoma spotami z jednego panelu.</p><span class="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-ocean/30 text-turquoise">Multi-spot</span></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Dodatkowi instruktorzy</p><p class="stat text-lg font-bold">49 PLN<span class="text-muted text-xs">/mies./os.</span></p><p class="text-muted text-xs mt-2">Każdy instruktor ponad 3 w Core. Grafik, statystyki, rozliczenia.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">CRM rozszerzony</p><p class="stat text-lg font-bold">99 PLN<span class="text-muted text-xs">/mies./1000</span></p><p class="text-muted text-xs mt-2">Każdy pakiet 1000 kursantów ponad limit Core.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Wypożyczki</p><p class="stat text-lg font-bold">149 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Zarządzanie sprzętem, stawki godzinowe/dzienne, historia klienta.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Transfery (MEWIA)</p><p class="stat text-lg font-bold">99 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Logistyka łodzi, pojemność, harmonogram rejsów, rozliczenia.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Obozy / półkolonie</p><p class="stat text-lg font-bold">199 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Uczestnicy, rodzice, płatności, grupy, plan dnia, dokumenty.</p><span class="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-ocean/30 text-turquoise">Sezonowe</span></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">KiteSafari</p><p class="stat text-lg font-bold">Indywidualnie</p><p class="text-muted text-xs mt-2">Logistyka wyjazdów, AI concierge, rezerwacje uczestników, transfery.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Zaawansowany grafik</p><p class="stat text-lg font-bold">99 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Optymalizacja przypisania instruktorów, rekomendacje obsady.</p></div>
+        </div>
+
+        <!-- Pogoda -->
+        <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-4">🌊 Pogoda i planowanie</p>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Windguru integration</p><p class="stat text-lg font-bold">79 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Widgety Windguru w panelu + alerty z prognozy fachowej.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Multi-źródła pogody</p><p class="stat text-lg font-bold">149 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Open-Meteo + Windguru + ICM. Porównanie prognoz, rekomendacje.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Prognoza obłożenia</p><p class="stat text-lg font-bold">99 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Ile lekcji jutro na podstawie wiatru? Rekomendacja obsady.</p></div>
+        </div>
+
+        <!-- Finanse -->
+        <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-4">📊 Finanse i analityka</p>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Zaawansowane finanse</p><p class="stat text-lg font-bold">149 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Eksport XLS/CSV, raporty per instruktor, per dyscyplinę, rentowność.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Koszty operacyjne</p><p class="stat text-lg font-bold">79 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Średnia cena godziny, P&L, koszty stałe vs. przychód z lekcji.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Płatności online</p><p class="stat text-lg font-bold">99 PLN<span class="text-muted text-xs">/mies. + prowizja</span></p><p class="text-muted text-xs mt-2">Przelewy24 / Stripe. Klient płaci online, Ty dostajesz przelew.</p></div>
+        </div>
+
+        <!-- Enterprise -->
+        <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-4">🔧 Enterprise / custom</p>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Custom branding</p><p class="stat text-lg font-bold">499 PLN<span class="text-muted text-xs"> jednorazowo</span></p><p class="text-muted text-xs mt-2">Twoje logo, kolory, domena — system wygląda jak Twój.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">API + webhooks</p><p class="stat text-lg font-bold">299 PLN<span class="text-muted text-xs">/mies.</span></p><p class="text-muted text-xs mt-2">Integracja z Twoimi systemami: CRM, ERP, zewn. kalendarz.</p></div>
+          <div class="card p-5"><p class="text-white font-semibold text-sm mb-1">Dedykowane wdrożenie</p><p class="stat text-lg font-bold">od 2 000 PLN</p><p class="text-muted text-xs mt-2">Import danych, konfiguracja, szkolenie live, migrację z innego systemu.</p></div>
+        </div>
+      </div>
+
+      <!-- ── GOTOWE KONFIGURACJE ─────────────────────────────────── -->
+      <div class="mb-16 fade-in">
+        <div class="text-center mb-8">
+          <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-2">Gotowe konfiguracje</p>
+          <h3 class="text-2xl font-bold">Nie wiesz od czego zacząć? Wybierz gotowy zestaw.</h3>
+          <p class="text-muted text-sm mt-2">Każdą konfigurację można dostosować. SurfIQ dziala modułówo.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+          <!-- Starter -->
+          <div class="card p-7 flex flex-col">
+            <p class="text-turquoise text-sm font-semibold uppercase mb-2">Starter Setup</p>
+            <div class="mb-3"><span class="text-muted text-sm">od </span><span class="stat text-3xl font-bold">599</span><span class="text-muted text-sm"> PLN/mies.</span></div>
+            <p class="text-white font-medium text-sm mb-1">Zarządzaj szkołą.</p>
+            <p class="text-muted text-xs mb-4">Dla małych szkół — kalendarz, klienci, instruktorzy, pogoda, finanse.</p>
+            <ul class="space-y-1.5 text-sm text-white/70 mb-6 flex-1">
+              <li><span class="text-turquoise mr-1">✓</span> SurfIQ Core</li>
+              <li><span class="text-turquoise mr-1">✓</span> CRM do 200 kursantów</li>
+              <li><span class="text-turquoise mr-1">✓</span> Do 3 instruktorów</li>
+              <li><span class="text-turquoise mr-1">✓</span> 1 lokalizacja</li>
+              <li><span class="text-turquoise mr-1">✓</span> 1 kanał AI (100 rozmów)</li>
+              <li><span class="text-turquoise mr-1">✓</span> Alerty pogodowe</li>
+            </ul>
+            <a href="/demo/" class="btn-o px-6 py-3 text-turquoise font-semibold text-center block text-sm">Zacznij od Starter</a>
+          </div>
+          <!-- Growth -->
+          <div class="card pop p-7 flex flex-col relative">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-turquoise text-navy text-xs font-bold px-4 py-1 rounded-full">Najpopularniejszy</div>
+            <p class="text-turquoise text-sm font-semibold uppercase mb-2">Growth Setup</p>
+            <div class="mb-3"><span class="text-muted text-sm">od </span><span class="stat text-3xl font-bold">1 499</span><span class="text-muted text-sm"> PLN/mies.</span></div>
+            <p class="text-white font-medium text-sm mb-1">Automatyzuj sprzedaż.</p>
+            <p class="text-muted text-xs mb-4">Dla szkół rozwijających sprzedaż AI, z większym zespołem i wieloma spotami.</p>
+            <ul class="space-y-1.5 text-sm text-white/70 mb-6 flex-1">
+              <li><span class="text-turquoise mr-1">✓</span> Wszystko z Core</li>
+              <li><span class="text-turquoise mr-1">✓</span> CRM do 2 000 kursantów</li>
+              <li><span class="text-turquoise mr-1">✓</span> Do 15 instruktorów</li>
+              <li><span class="text-turquoise mr-1">✓</span> 3 lokalizacje</li>
+              <li><span class="text-turquoise mr-1">✓</span> Windguru + 3 źródła pogody</li>
+              <li><span class="text-turquoise mr-1">✓</span> Zaawansowane finanse</li>
+              <li><span class="text-turquoise mr-1">✓</span> 3 kanały AI (1 000 rozmów)</li>
+              <li><span class="text-turquoise mr-1">✓</span> Semi-auto AI + lead scoring</li>
+              <li><span class="text-turquoise mr-1">✓</span> KiteSafari</li>
+              <li><span class="text-turquoise mr-1">✓</span> 1 live szkolenie</li>
+            </ul>
+            <a href="/demo/" class="btn-p px-6 py-3 text-white font-semibold text-center block text-sm">Umów demo Growth</a>
+          </div>
+          <!-- Scale -->
+          <div class="card p-7 flex flex-col">
+            <p class="text-turquoise text-sm font-semibold uppercase mb-2">Scale Setup</p>
+            <div class="mb-3"><span class="text-muted text-sm">od </span><span class="stat text-3xl font-bold">2 999</span><span class="text-muted text-sm"> PLN/mies.</span></div>
+            <p class="text-white font-medium text-sm mb-1">Skaluj operację.</p>
+            <p class="text-muted text-xs mb-4">Dla dużych szkół, sieci i multi-spotów. Pełna automatyzacja i integracja.</p>
+            <ul class="space-y-1.5 text-sm text-white/70 mb-6 flex-1">
+              <li><span class="text-turquoise mr-1">✓</span> Wszystko z Growth</li>
+              <li><span class="text-turquoise mr-1">✓</span> Bez limitu kursantów</li>
+              <li><span class="text-turquoise mr-1">✓</span> Bez limitu lokalizacji</li>
+              <li><span class="text-turquoise mr-1">✓</span> 6 kanałów AI (5 000+ rozmów)</li>
+              <li><span class="text-turquoise mr-1">✓</span> Full-auto AI + eskalacja</li>
+              <li><span class="text-turquoise mr-1">✓</span> Custom branding + API</li>
+              <li><span class="text-turquoise mr-1">✓</span> Dedykowane wdrożenie (8h+)</li>
+              <li><span class="text-turquoise mr-1">✓</span> SLA 99.9% + support 4h</li>
+            </ul>
+            <a href="mailto:office@surfiq.eu" class="btn-o px-6 py-3 text-turquoise font-semibold text-center block text-sm">Porozmawiajmy o Scale</a>
+          </div>
+        </div>
+        <p class="text-center text-muted text-xs mt-6">Każdą konfigurację można dostosować. Płacisz tylko za funkcje, których naprawdę potrzebujesz.</p>
+      </div>
+
+      <!-- ── KONFIGURATOR ────────────────────────────────────────── -->
+      <div id="configurator" class="card p-8 md:p-10 mb-16 fade-in" style="background:linear-gradient(135deg,rgba(20,209,201,0.04),rgba(13,71,161,0.04))">
+        <div class="text-center mb-8">
+          <h3 class="text-2xl font-bold mb-2">Zbuduj własny pakiet SurfIQ</h3>
+          <p class="text-muted text-sm">Odpowiedz na kilka pytań, a przygotujemy konfiguracje dopasowana do Twojej szkoły.</p>
+        </div>
+        <form action="https://formspree.io/f/xeogqvgr" method="POST" class="max-w-2xl mx-auto">
+          <input type="hidden" name="_subject" value="SurfIQ — konfiguracja pakietu">
+          <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <div><label class="text-white/70 text-xs font-semibold block mb-1">Nazwa szkoły</label><input name="school" type="text" class="w-full glass px-4 py-2.5 text-white text-sm" placeholder="Moja szkoła kite"></div>
+            <div><label class="text-white/70 text-xs font-semibold block mb-1">Email</label><input name="email" type="email" class="w-full glass px-4 py-2.5 text-white text-sm" placeholder="you@school.com" required></div>
+            <div><label class="text-white/70 text-xs font-semibold block mb-1">Ilu instruktorów?</label><select name="instructors" class="w-full glass px-4 py-2.5 text-white text-sm bg-transparent"><option>1-3</option><option>4-10</option><option>11-20</option><option>20+</option></select></div>
+            <div><label class="text-white/70 text-xs font-semibold block mb-1">Ile lokalizacji?</label><select name="locations" class="w-full glass px-4 py-2.5 text-white text-sm bg-transparent"><option>1</option><option>2-3</option><option>4+</option></select></div>
+            <div><label class="text-white/70 text-xs font-semibold block mb-1">Klientów w sezonie?</label><select name="clients" class="w-full glass px-4 py-2.5 text-white text-sm bg-transparent"><option>do 200</option><option>200-1000</option><option>1000-5000</option><option>5000+</option></select></div>
+            <div><label class="text-white/70 text-xs font-semibold block mb-1">Kanały AI?</label><select name="ai_channels" class="w-full glass px-4 py-2.5 text-white text-sm bg-transparent"><option>1 (WhatsApp lub IG)</option><option>2-3</option><option>4+</option><option>Nie potrzebuję AI</option></select></div>
+          </div>
+          <p class="text-white/70 text-xs font-semibold mb-3">Jakie moduły Cię interesują?</p>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="rental" class="accent-turquoise"> Wypożyczki</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="camps" class="accent-turquoise"> Obozy / półkolonie</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="transfers" class="accent-turquoise"> Transfery łodzia</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="windguru" class="accent-turquoise"> Windguru</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="finances" class="accent-turquoise"> Zaawansowane finanse</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="safari" class="accent-turquoise"> KiteSafari</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="payments" class="accent-turquoise"> Płatności online</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="api" class="accent-turquoise"> API / integracje</label>
+            <label class="flex items-center gap-2 text-white/70 text-xs"><input type="checkbox" name="modules" value="branding" class="accent-turquoise"> Custom branding</label>
+          </div>
+          <div class="text-center">
+            <button type="submit" class="btn-p px-10 py-3.5 text-white font-semibold text-sm">Wyślij i otrzymaj ofertę</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ROI argument -->
+      <div class="card p-8 mb-10 fade-in" style="background:linear-gradient(135deg,rgba(14,165,233,0.1),rgba(124,58,237,0.1))">
+        <div class="grid md:grid-cols-3 gap-6 text-center">
+          <div>
+            <p class="stat text-3xl font-bold text-turquoise">3x</p>
+            <p class="text-muted text-sm mt-1">rezerwacje wiecej miesiecznie z AI agentem = system sie splacil</p>
+          </div>
+          <div>
+            <p class="stat text-3xl font-bold text-turquoise">&lt; 2 min</p>
+            <p class="text-muted text-sm mt-1">czas odpowiedzi AI na WhatsApp, Instagram, email — 24/7</p>
+          </div>
+          <div>
+            <p class="stat text-3xl font-bold text-turquoise">5 000 PLN</p>
+            <p class="text-muted text-sm mt-1">tyle kosztuje pracownik obslugujacy WA 24/7. AI robi to za 1 499 PLN.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stopka cennika -->
+      <div class="text-center fade-in">
+        <h3 class="text-xl font-bold text-white mb-3">Zacznij prosto. Skaluj wtedy, kiedy rośniesz.</h3>
+        <p class="text-muted text-sm max-w-2xl mx-auto mb-4">Testuj SurfIQ Core przez 14 dni bez karty kredytowej. Pelny system + AI agent — od pierwszego dnia. Dodawaj moduły wtedy, kiedy ich potrzebujesz.</p>
+        <p class="text-muted text-xs max-w-2xl mx-auto">Dodatkowe rozmówy AI: 1,00-2,50 PLN/rozmówa. WhatsApp: wg stawek Meta (~0,25 PLN). SMS: 0,25 PLN. Email: unlimited.</p>
+        <a href="/demo/" class="btn-p px-10 py-4 text-white font-semibold text-sm mt-8 inline-block">Zbudujmy SurfIQ pod Twoją szkołę</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Start</p>
+        <h2 class="text-3xl md:text-4xl font-bold">3 kroki do działającego systemu</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8 fade-in">
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-turquoise/10 border border-turquoise/30 flex items-center justify-center mx-auto mb-5">
+            <span class="stat text-2xl font-bold">1</span>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">Umów demo</h3>
+          <p class="text-muted text-sm">Wypełnij formularz — pokażemy Ci panel na żywo i odpowiemy na pytania. Bez zobowiązań.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-turquoise/10 border border-turquoise/30 flex items-center justify-center mx-auto mb-5">
+            <span class="stat text-2xl font-bold">2</span>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">Konfigurujemy panel</h3>
+          <p class="text-muted text-sm">Importujemy Twoje dane, ustawiamy usługi, instruktorów i kanały komunikacji. 1-2 dni.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-turquoise/10 border border-turquoise/30 flex items-center justify-center mx-auto mb-5">
+            <span class="stat text-2xl font-bold">3</span>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">Działasz!</h3>
+          <p class="text-muted text-sm">Rezerwacje, pogoda, AI i finanse w jednym miejscu. 14 dni za darmo, bez karty kredytowej.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-24 bg-navy">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">FAQ</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Najczęściej zadawane pytania</h2>
+      </div>
+      <div class="space-y-4 fade-in">
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Czy mogę przetestować SurfIQ za darmo?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Tak! Oferujemy 14 dni darmowego dostępu bez karty kredytowej. Wystarczy wypełnić formularz demo — skonfigurujemy Twoje konto w ciągu 24h.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Jak długo trwa wdrożenie?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Podstawowa konfiguracja zajmuje 1-2 dni. Pełne wdrożenie z migracją danych i szkoleniem zespołu — zwykle tydzień. Pomagamy na każdym etapie.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Czy mogę zaimportować dane z innego systemu?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Tak. Importujemy dane z Excelа, Google Sheets, SurfCloud i innych systemów. W pakiecie Enterprise migracja jest w cenie.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Jak działają agenci AI?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">AI agenci automatycznie odpowiadają na wiadomości klientów na 6 kanałach (Instagram, WhatsApp, Facebook, email, SMS, TikTok). Znają Twoją ofertę, cennik i dostępność. Odpowiadają w &lt;2 minuty, 24/7.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Czy SurfIQ działa na telefonie?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Tak — panel jest w pełni responsywny. Instruktorzy sprawdzają grafik na telefonie, a Ty zarządzasz szkołą z dowolnego urządzenia.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Jakie sporty obsługuje SurfIQ?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Kitesurfing, Windsurfing, Wing Foil, SUP, Surfing, Wakeboarding, Pumpfoil i więcej. System jest elastyczny — możesz dodawać własne dyscypliny i kursy.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Czy mogę zarządzać wieloma lokalizacjami?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Tak! SurfIQ obsługuje wiele lokalizacji w jednym panelu. Przetestowaliśmy na 2 lokalizacjach (Polska + Egipt) przez 2 pełne sezony.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Ile kosztuje po okresie próbnym?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Plany zaczynają się od 499 PLN/mies. (Starter) do 1499 PLN/mies. (Enterprise). Moduły AI i KiteSafari wyceniamy indywidualnie. Brak ukrytych kosztów, możesz zrezygnować w dowolnym momencie.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="demo" class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-ocean to-turquoise opacity-90"></div>
+    <div class="max-w-3xl mx-auto px-6 text-center relative z-10 fade-in">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">Gotowy zamienić chaos w system?</h2>
+      <p class="text-white/80 text-lg mb-10">Umów prezentację. Bez zobowiązań.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="/demo/" class="bg-white text-navy font-bold px-10 py-4 rounded-2xl hover:bg-white/90 transition-all hover:-translate-y-1">Umów demo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-navy border-t border-white/5 py-12">
+    <div class="max-w-6xl mx-auto px-6 flex flex-wrap justify-between gap-8">
+      <div>
+        <img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-12 mb-3">
+        <p class="text-muted text-sm">Smarter schools. Better waves.</p>
+      </div>
+      <div>
+        <p class="text-white font-semibold text-sm mb-3">Produkt</p>
+        <ul class="space-y-1.5 text-muted text-sm">
+          <li><a href="#features" class="hover:text-white">Funkcje</a></li>
+          <li><a href="#pricing" class="hover:text-white">Cennik</a></li>
+          <li><a href="/demo/" class="hover:text-white">Umów demo</a></li>
+          <li><a href="/blog/" class="hover:text-white">Blog</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-white font-semibold text-sm mb-3">Kontakt</p>
+        <ul class="space-y-1.5 text-muted text-sm">
+          <li>office@surfiq.eu</li>
+          <li>+48 690 270 032</li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-6 mt-8 pt-6 border-t border-white/5 text-muted/50 text-xs">&copy; 2026 SurfIQ. Wszystkie prawa zastrzeżone.</div>
+  </footer>
+
+  <!-- Lightbox overlay -->
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" aria-label="Zamknij">&times;</button>
+    <img src="" alt="Podgląd screenshotu">
+  </div>
+
+  <!-- Chat widget -->
+  <button class="chat-fab" id="chatFab" aria-label="Czat z SurfIQ" style="padding:0;overflow:hidden;">
+    <img src="/assets/generated/logo_final/final_icon.png" alt="SurfIQ" style="width:36px;height:36px;border-radius:50%;">
+    <span class="dot"></span>
+  </button>
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="avatar">&#128676;</div>
+      <div class="info">
+        <div class="name">SurfIQ Bot</div>
+        <div class="status">Online — odpowiadam natychmiast</div>
+      </div>
+      <button class="close-chat" id="chatClose" aria-label="Zamknij czat">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg bot">Cześć! Jestem botem SurfIQ. Zapytaj mnie o funkcje, cennik, demo lub cokolwiek innego. Chętnie pomogę!</div>
+    </div>
+    <div class="chat-quick" id="chatQuick">
+      <button data-q="Jakie są plany cenowe?">Cennik</button>
+      <button data-q="Jakie funkcje ma SurfIQ?">Funkcje</button>
+      <button data-q="Czy mogę wypróbować demo?">Demo</button>
+      <button data-q="Jak skontaktować się z zespołem?">Kontakt</button>
+      <button data-q="Czym jest KiteSafari?">KiteSafari</button>
+      <button data-q="Jak działają agenci AI?">AI Agenci</button>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Napisz wiadomość..." autocomplete="off">
+      <button id="chatSend" aria-label="Wyślij">&#10148;</button>
+    </div>
+  </div>
+
+  <script>
+    // Intersection observer for fade-in
+    const o=new IntersectionObserver(e=>{e.forEach(e=>{e.isIntersecting&&e.target.classList.add('visible')})},{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+    document.querySelectorAll('.fade-in,.slide-in-left,.slide-in-right').forEach(e=>o.observe(e));
+    // Counter animation for stats
+    document.querySelectorAll('.stat').forEach(el=>{
+      const orig=el.textContent;
+      const num=parseInt(orig.replace(/[^\d]/g,''));
+      if(num>0&&num<100000){
+        let start=0;const end=num;const dur=1500;const step=Math.ceil(end/60);
+        const obs2=new IntersectionObserver(entries=>{
+          if(entries[0].isIntersecting){
+            const timer=setInterval(()=>{start+=step;if(start>=end){el.textContent=orig;clearInterval(timer)}else{el.textContent=start.toLocaleString('pl')}},dur/60);
+            obs2.disconnect()
+          }
+        },{threshold:.5});
+        obs2.observe(el)
+      }
+    });
+
+    // --- LIGHTBOX ---
+    (function(){
+      const overlay=document.getElementById('lightbox');
+      const lbImg=overlay.querySelector('img');
+      const closeBtn=overlay.querySelector('.lightbox-close');
+      document.querySelectorAll('img.scr').forEach(img=>{
+        img.addEventListener('click',function(){
+          lbImg.src=this.src;
+          lbImg.alt=this.alt;
+          overlay.classList.add('active');
+          document.body.style.overflow='hidden';
+        });
+      });
+      function closeLB(){overlay.classList.remove('active');document.body.style.overflow=''}
+      closeBtn.addEventListener('click',closeLB);
+      overlay.addEventListener('click',function(e){if(e.target===overlay)closeLB()});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('active'))closeLB()});
+    })();
+
+    // --- MOBILE MENU ---
+    (function(){
+      const btn=document.getElementById('hamburgerBtn');
+      const menu=document.getElementById('mobileMenu');
+      const closeBtn=document.getElementById('mobileMenuClose');
+      btn.addEventListener('click',()=>menu.classList.add('open'));
+      closeBtn.addEventListener('click',()=>menu.classList.remove('open'));
+      menu.querySelectorAll('a').forEach(a=>{
+        a.addEventListener('click',()=>menu.classList.remove('open'));
+      });
+    })();
+
+    // --- CHAT WIDGET ---
+    (function(){
+      const fab=document.getElementById('chatFab');
+      const win=document.getElementById('chatWindow');
+      const closeBtn=document.getElementById('chatClose');
+      const msgs=document.getElementById('chatMessages');
+      const input=document.getElementById('chatInput');
+      const sendBtn=document.getElementById('chatSend');
+      const quickBtns=document.getElementById('chatQuick');
+
+      let welcomed=false;
+      fab.addEventListener('click',()=>{win.classList.toggle('open');if(win.classList.contains('open')){input.focus();fab.querySelector('.dot').style.display='none';if(!welcomed){welcomed=true;setTimeout(()=>botReply('hi'),400)}}});
+      closeBtn.addEventListener('click',()=>win.classList.remove('open'));
+
+      function addMsg(text,type){
+        const d=document.createElement('div');
+        d.className='chat-msg '+type;
+        d.textContent=text;
+        msgs.appendChild(d);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      // Chat history for context
+      const chatHistory=[];
+
+      async function botReply(q){
+        chatHistory.push({role:'user',content:q});
+        // Show typing indicator
+        const typing=document.createElement('div');
+        typing.className='chat-msg bot';
+        typing.textContent='...';
+        typing.id='typing';
+        msgs.appendChild(typing);
+        msgs.scrollTop=msgs.scrollHeight;
+
+        try{
+          const resp=await fetch('/api/surfiq-chat',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({message:q,history:chatHistory.slice(-10)})
+          });
+          const data=await resp.json();
+          const reply=data.reply||'Przepraszam, coś poszło nie tak. Napisz do nas: office@surfiq.eu!';
+          typing.remove();
+          addMsg(reply,'bot');
+          chatHistory.push({role:'assistant',content:reply});
+        }catch(err){
+          typing.remove();
+          addMsg('Błąd połączenia. Spróbuj ponownie lub napisz na office@surfiq.eu!','bot');
+        }
+      }
+
+      function handleSend(){
+        const q=input.value.trim();
+        if(!q)return;
+        addMsg(q,'user');
+        input.value='';
+        botReply(q);
+        if(quickBtns.style.display!=='none'){quickBtns.style.display='none'}
+      }
+
+      sendBtn.addEventListener('click',handleSend);
+      input.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
+      quickBtns.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click',function(){
+          const q=this.dataset.q;
+          addMsg(q,'user');
+          botReply(q);
+          quickBtns.style.display='none';
+        });
+      });
+    })();
+  </script>
+<!-- Cookie consent -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(8,29,58,.97);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);padding:16px 24px;font-size:13px">
+  <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
+    <p class="text-white/70 flex-1 min-w-[200px]">Używamy plików cookie i narzędzi analitycznych (Google Analytics, Facebook Pixel), żeby ulepszać stronę. Korzystając z niej, zgadzasz się na ich użycie. <a href="mailto:office@surfiq.eu" class="text-turquoise hover:underline">Polityka prywatności</a></p>
+    <div class="flex gap-3">
+      <button onclick="acceptCookies()" class="btn-p px-5 py-2 text-white text-sm font-semibold">Akceptuję</button>
+      <button onclick="rejectCookies()" class="btn-o px-5 py-2 text-turquoise text-sm font-semibold">Tylko niezbędne</button>
+    </div>
+  </div>
+</div>
+<script>
+function acceptCookies(){localStorage.setItem('cookie_consent','all');document.getElementById('cookieBanner').style.display='none'}
+function rejectCookies(){localStorage.setItem('cookie_consent','essential');document.getElementById('cookieBanner').style.display='none';
+  // Keep GA4 for basic analytics (legitimate interest) but disable FB Pixel
+  if(window.fbq)window.fbq=function(){};
+}
+if(!localStorage.getItem('cookie_consent')){document.getElementById('cookieBanner').style.display='block'}
+else if(localStorage.getItem('cookie_consent')==='essential'){if(window.fbq)window.fbq=function(){}}
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

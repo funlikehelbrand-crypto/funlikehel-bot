@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SurfIQ Demo — Spersonalizowany dostep do systemu</title>
+  <meta name="description" content="Wypelnij formularz i otrzymaj 14 dni dostepu do SurfIQ — systemu zarzadzania szkola sportow wodnych.">
+  <link rel="icon" type="image/png" href="/assets/generated/logo_final/final_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{navy:'#081D3A',ocean:'#0D47A1',turquoise:'#14D1C9',aqua:'#64F1E6',muted:'#8EA4BF'},fontFamily:{sans:['Poppins','system-ui','sans-serif']}}}}</script>
+  <style>
+    *{font-family:'Poppins',system-ui,sans-serif}
+    html{scroll-behavior:smooth}
+    .glass{background:rgba(255,255,255,.04);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);border-radius:20px}
+    input,select,textarea{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:12px!important;color:#fff!important;padding:12px 16px!important;font-size:14px!important;font-family:inherit!important;outline:none!important;transition:border-color .2s!important;width:100%}
+    input:focus,select:focus,textarea:focus{border-color:rgba(20,209,201,.6)!important;box-shadow:0 0 0 3px rgba(20,209,201,.1)!important}
+    input::placeholder,textarea::placeholder{color:rgba(255,255,255,.3)!important}
+    select option{background:#081D3A;color:#fff}
+    label{font-size:13px;font-weight:500;color:rgba(255,255,255,.7);margin-bottom:6px;display:block}
+    label .req{color:#14D1C9}
+    .btn-p{background:linear-gradient(135deg,#1565E0,#0D47A1);border-radius:14px;box-shadow:0 4px 20px rgba(21,101,224,.3);transition:all .3s;border:none;color:#fff;cursor:pointer;font-family:inherit}
+    .btn-p:hover{box-shadow:0 8px 40px rgba(21,101,224,.5);transform:translateY(-2px)}
+    .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+    .lang-btn{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5)}
+    .lang-btn.active{background:rgba(20,209,201,.15);border-color:#14D1C9;color:#14D1C9}
+    .lang-btn:hover{border-color:rgba(20,209,201,.4);color:#14D1C9}
+    .check-box{width:18px;height:18px;accent-color:#14D1C9;cursor:pointer}
+    .fade-in{opacity:1;transform:none}
+    .success-check{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#14D1C9,#0D47A1);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:36px}
+    /* Tailwind CDN fallback */
+    body{background:#081D3A;color:#fff;font-family:'Poppins',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+    .hidden{display:none!important}
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4HT1DG5RW"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-T4HT1DG5RW")</script>
+  <!-- Facebook Pixel -->
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1639337547278346');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1639337547278346&ev=PageView&noscript=1"/></noscript>
+</head>
+<body class="bg-navy text-white antialiased min-h-screen">
+
+  <!-- Background effects -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full" style="background:radial-gradient(circle,rgba(20,209,201,.08) 0%,transparent 70%)"></div>
+    <div class="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full" style="background:radial-gradient(circle,rgba(13,71,161,.1) 0%,transparent 70%)"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="relative z-10 pt-8 pb-4">
+    <div class="max-w-xl mx-auto px-6 flex items-center justify-between">
+      <a href="/"><img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-10"></a>
+      <div class="flex gap-2" id="lang-switcher">
+        <button class="lang-btn" data-lang="pl">PL</button>
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Form Section -->
+  <main class="relative z-10 max-w-xl mx-auto px-6 py-8" id="form-section">
+    <div class="text-center mb-10 fade-in">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-6" style="background:rgba(20,209,201,.1);border:1px solid rgba(20,209,201,.3);color:#14D1C9">
+        <span class="w-2 h-2 rounded-full bg-turquoise inline-block" style="animation:pulse 2s infinite"></span>
+        <span data-i18n="badge">14 dni za darmo</span>
+      </div>
+      <h1 class="text-3xl md:text-4xl font-bold mb-4" data-i18n="title">Dostep do demo SurfIQ</h1>
+      <p class="text-muted text-base" data-i18n="subtitle">Wypelnij formularz, aby otrzymac spersonalizowany dostep do wersji demo.</p>
+    </div>
+
+    <form id="demo-form" class="glass p-8 space-y-6 fade-in" onsubmit="return submitForm(event)">
+
+      <!-- Contact -->
+      <div>
+        <h3 class="text-sm font-semibold text-turquoise uppercase tracking-wider mb-4" data-i18n="section_contact">Dane kontaktowe</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label data-i18n="label_first_name">Imie <span class="req">*</span></label>
+            <input type="text" name="first_name" required placeholder="Jan">
+          </div>
+          <div>
+            <label data-i18n="label_last_name">Nazwisko <span class="req">*</span></label>
+            <input type="text" name="last_name" required placeholder="Kowalski">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label data-i18n="label_email">Email firmowy <span class="req">*</span></label>
+          <input type="email" name="email" required placeholder="jan@kiteschool.pl">
+        </div>
+        <div class="mt-4">
+          <label data-i18n="label_phone">Telefon <span class="req">*</span></label>
+          <input type="tel" name="phone" required placeholder="+48 600 123 456">
+        </div>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <h3 class="text-sm font-semibold text-turquoise uppercase tracking-wider mb-4" data-i18n="section_company">Dane firmy</h3>
+        <div>
+          <label data-i18n="label_company">Nazwa firmy <span class="req">*</span></label>
+          <input type="text" name="company" required placeholder="Kite School Sp. z o.o.">
+        </div>
+        <div class="mt-4">
+          <label data-i18n="label_website">Strona www firmy</label>
+          <input type="url" name="website" placeholder="https://www.kiteschool.pl">
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label data-i18n="label_type">Typ dzialalnosci <span class="req">*</span></label>
+            <select name="business_type" required>
+              <option value="" data-i18n="opt_select">— Wybierz —</option>
+              <option value="kite" data-i18n="opt_kite">Kitesurfing</option>
+              <option value="wind" data-i18n="opt_wind">Windsurfing</option>
+              <option value="wing" data-i18n="opt_wing">Wingfoil</option>
+              <option value="surf" data-i18n="opt_surf">Surfing</option>
+              <option value="sup" data-i18n="opt_sup">SUP</option>
+              <option value="multi" data-i18n="opt_multi">Multi-sport</option>
+              <option value="other" data-i18n="opt_other">Inne</option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="label_country">Kraj <span class="req">*</span></label>
+            <input type="text" name="country" required placeholder="Polska">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label data-i18n="label_city">Miasto</label>
+            <input type="text" name="city" placeholder="Jastarnia">
+          </div>
+          <div>
+            <label data-i18n="label_scale">Skala dzialalnosci</label>
+            <input type="text" name="scale" placeholder="10 instruktorow, 300 kursantow" data-i18n-placeholder="ph_scale">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sports & Interests -->
+      <div>
+        <h3 class="text-sm font-semibold text-turquoise uppercase tracking-wider mb-4" data-i18n="section_sports">Sporty i zainteresowania</h3>
+        <div>
+          <label data-i18n="label_sports">Jakie sporty macie w ofercie? <span class="req">*</span></label>
+          <div class="grid grid-cols-2 gap-3 mt-2" id="sports-grid">
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="kite" class="check-box"> <span data-i18n="sp_kite">Kitesurfing</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="wind" class="check-box"> <span data-i18n="sp_wind">Windsurfing</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="wing" class="check-box"> <span data-i18n="sp_wing">Wingfoil</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="surf" class="check-box"> <span data-i18n="sp_surf">Surfing</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="sup" class="check-box"> <span data-i18n="sp_sup">SUP</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="wake" class="check-box"> <span data-i18n="sp_wake">Wakeboard</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="foil" class="check-box"> <span data-i18n="sp_foil">Foil / Pumpfoil</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="sports" value="other_sport" class="check-box"> <span data-i18n="sp_other">Inne</span></label>
+          </div>
+        </div>
+        <div class="mt-4">
+          <label data-i18n="label_interests">Czym jestescie najbardziej zainteresowani?</label>
+          <div class="grid grid-cols-2 gap-3 mt-2" id="interests-grid">
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="bookings" class="check-box"> <span data-i18n="int_bookings">Rezerwacje online</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="weather" class="check-box"> <span data-i18n="int_weather">Pogoda w panelu</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="finance" class="check-box"> <span data-i18n="int_finance">Finanse / raporty</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="instructors" class="check-box"> <span data-i18n="int_instructors">Grafik instruktorow</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="ai" class="check-box"> <span data-i18n="int_ai">AI agenci (chatbot)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="crm" class="check-box"> <span data-i18n="int_crm">CRM kursantow</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="equipment" class="check-box"> <span data-i18n="int_equipment">Zarzadzanie sprzetem</span></label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-white/70 hover:text-white"><input type="checkbox" name="interests" value="trips" class="check-box"> <span data-i18n="int_trips">Wyjazdy / KiteSafari</span></label>
+          </div>
+        </div>
+        <div class="mt-4">
+          <label data-i18n="label_current_sw">Z jakiego oprogramowania aktualnie korzystacie?</label>
+          <select name="current_software">
+            <option value="" data-i18n="opt_select">— Wybierz —</option>
+            <option value="excel" data-i18n="sw_excel">Excel / Google Sheets</option>
+            <option value="paper" data-i18n="sw_paper">Zeszyt / papier</option>
+            <option value="surfcloud" data-i18n="sw_surfcloud">SurfCloud</option>
+            <option value="bookinglayer" data-i18n="sw_bookinglayer">BookingLayer</option>
+            <option value="bsport" data-i18n="sw_bsport">Bsport</option>
+            <option value="planyo" data-i18n="sw_planyo">Planyo</option>
+            <option value="custom" data-i18n="sw_custom">Wlasny system</option>
+            <option value="none" data-i18n="sw_none">Brak — nie uzywam zadnego</option>
+            <option value="other_sw" data-i18n="sw_other">Inny</option>
+          </select>
+        </div>
+        <div class="mt-4">
+          <label data-i18n="label_sw_pain">Co najbardziej Wam przeszkadza w obecnym rozwiazaniu?</label>
+          <textarea name="software_pain" rows="2" placeholder="np. podwojne rezerwacje, brak integracji z pogoda..." data-i18n-placeholder="ph_pain" style="resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <!-- Source -->
+      <div>
+        <label data-i18n="label_source">Skad o nas wiesz?</label>
+        <select name="source">
+          <option value="" data-i18n="opt_select">— Wybierz —</option>
+          <option value="facebook" data-i18n="opt_facebook">Facebook</option>
+          <option value="google" data-i18n="opt_google">Google</option>
+          <option value="email" data-i18n="opt_email_src">Email od SurfIQ</option>
+          <option value="referral" data-i18n="opt_referral">Polecenie</option>
+          <option value="other" data-i18n="opt_other">Inne</option>
+        </select>
+      </div>
+
+      <!-- Terms -->
+      <div class="flex items-start gap-3 pt-2">
+        <input type="checkbox" class="check-box mt-0.5" name="terms" required>
+        <p class="text-xs text-white/50 leading-relaxed" data-i18n="terms">Uzyskujac dostep do wersji demo, uzytkownik zobowiazuje sie nie kopiowac, nie odtwarzac, nie analizowac w celu stworzenia konkurencyjnego produktu oraz nie udostepniac dostepu osobom trzecim. Akceptuje <a href="/privacy" class="text-turquoise hover:underline">polityle prywatnosci</a>.</p>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" id="submit-btn" class="btn-p w-full py-4 text-base font-semibold tracking-wide">
+        <span id="btn-text" data-i18n="btn_submit">Wyslij wniosek o demo</span>
+        <span id="btn-loading" class="hidden">...</span>
+      </button>
+
+      <p class="text-center text-xs text-white/30 mt-2" data-i18n="note">Odpowiadamy w ciagu 24h. Dostep jest indywidualny i spersonalizowany.</p>
+    </form>
+  </main>
+
+  <!-- Success Section (hidden) -->
+  <main class="relative z-10 max-w-xl mx-auto px-6 py-20 hidden" id="success-section">
+    <div class="glass p-12 text-center">
+      <div class="success-check">&#10003;</div>
+      <h2 class="text-2xl font-bold mb-3" data-i18n="success_title">Wniosek wyslany!</h2>
+      <p class="text-muted text-base mb-6" data-i18n="success_text">Dziekujemy za zainteresowanie SurfIQ. Przygotujemy Twoje indywidualne demo i skontaktujemy sie w ciagu 24 godzin.</p>
+      <a href="/" class="inline-block px-6 py-3 rounded-xl text-sm font-medium text-turquoise border border-turquoise/30 hover:bg-turquoise/10 transition" data-i18n="success_back">Wroc na strone glowna</a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 text-center py-8 text-xs text-white/30">
+    <p>&copy; 2026 SurfIQ &mdash; <a href="/" class="text-turquoise/60 hover:text-turquoise">surfiq.eu</a></p>
+  </footer>
+
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script>
+  // i18n translations
+  const T = {
+    pl: {
+      badge: '14 dni za darmo',
+      title: 'Dostep do demo SurfIQ',
+      subtitle: 'Wypelnij formularz, aby otrzymac spersonalizowany dostep do wersji demo.',
+      section_contact: 'Dane kontaktowe',
+      label_first_name: 'Imie <span class="req">*</span>',
+      label_last_name: 'Nazwisko <span class="req">*</span>',
+      label_email: 'Email firmowy <span class="req">*</span>',
+      label_phone: 'Telefon <span class="req">*</span>',
+      section_company: 'Dane firmy',
+      label_company: 'Nazwa firmy <span class="req">*</span>',
+      label_website: 'Strona www firmy',
+      label_type: 'Typ dzialalnosci <span class="req">*</span>',
+      label_country: 'Kraj <span class="req">*</span>',
+      label_city: 'Miasto',
+      label_scale: 'Skala dzialalnosci',
+      label_source: 'Skad o nas wiesz?',
+      terms: 'Uzyskujac dostep do wersji demo, uzytkownik zobowiazuje sie nie kopiowac, nie odtwarzac, nie analizowac w celu stworzenia konkurencyjnego produktu oraz nie udostepniac dostepu osobom trzecim.',
+      btn_submit: 'Wyslij wniosek o demo',
+      note: 'Odpowiadamy w ciagu 24h. Dostep jest indywidualny i spersonalizowany.',
+      success_title: 'Wniosek wyslany!',
+      success_text: 'Dziekujemy za zainteresowanie SurfIQ. Przygotujemy Twoje indywidualne demo i skontaktujemy sie w ciagu 24 godzin.',
+      success_back: 'Wroc na strone glowna',
+      opt_select: '\u2014 Wybierz \u2014',
+      opt_kite: 'Kitesurfing', opt_wind: 'Windsurfing', opt_wing: 'Wingfoil', opt_surf: 'Surfing', opt_sup: 'SUP', opt_multi: 'Multi-sport', opt_other: 'Inne',
+      opt_facebook: 'Facebook', opt_google: 'Google', opt_email_src: 'Email od SurfIQ', opt_referral: 'Polecenie',
+      ph_scale: '10 instruktorow, 300 kursantow',
+      section_sports: 'Sporty i zainteresowania',
+      label_sports: 'Jakie sporty macie w ofercie? <span class="req">*</span>',
+      sp_kite: 'Kitesurfing', sp_wind: 'Windsurfing', sp_wing: 'Wingfoil', sp_surf: 'Surfing', sp_sup: 'SUP', sp_wake: 'Wakeboard', sp_foil: 'Foil / Pumpfoil', sp_other: 'Inne',
+      label_interests: 'Czym jestescie najbardziej zainteresowani?',
+      int_bookings: 'Rezerwacje online', int_weather: 'Pogoda w panelu', int_finance: 'Finanse / raporty', int_instructors: 'Grafik instruktorow',
+      int_ai: 'AI agenci (chatbot)', int_crm: 'CRM kursantow', int_equipment: 'Zarzadzanie sprzetem', int_trips: 'Wyjazdy / KiteSafari',
+      label_current_sw: 'Z jakiego oprogramowania aktualnie korzystacie?',
+      sw_excel: 'Excel / Google Sheets', sw_paper: 'Zeszyt / papier', sw_surfcloud: 'SurfCloud', sw_bookinglayer: 'BookingLayer',
+      sw_bsport: 'Bsport', sw_planyo: 'Planyo', sw_custom: 'Wlasny system', sw_none: 'Brak \u2014 nie uzywam zadnego', sw_other: 'Inny',
+      label_sw_pain: 'Co najbardziej Wam przeszkadza w obecnym rozwiazaniu?',
+      ph_pain: 'np. podwojne rezerwacje, brak integracji z pogoda...'
+    },
+    en: {
+      badge: '14 days free trial',
+      title: 'Get access to SurfIQ demo',
+      subtitle: 'Fill in the form to receive personalized access to the demo version.',
+      section_contact: 'Contact details',
+      label_first_name: 'First name <span class="req">*</span>',
+      label_last_name: 'Last name <span class="req">*</span>',
+      label_email: 'Business email <span class="req">*</span>',
+      label_phone: 'Phone <span class="req">*</span>',
+      section_company: 'Company details',
+      label_company: 'Company name <span class="req">*</span>',
+      label_website: 'Company website',
+      label_type: 'Business type <span class="req">*</span>',
+      label_country: 'Country <span class="req">*</span>',
+      label_city: 'City',
+      label_scale: 'Scale of operations',
+      label_source: 'How did you hear about us?',
+      terms: 'By accessing the demo version, the user agrees not to copy, reverse-engineer, analyze for the purpose of creating a competing product, or share access with third parties.',
+      btn_submit: 'Request demo access',
+      note: 'We respond within 24h. Access is individual and personalized.',
+      success_title: 'Request sent!',
+      success_text: 'Thank you for your interest in SurfIQ. We will prepare your individual demo and contact you within 24 hours.',
+      success_back: 'Back to homepage',
+      opt_select: '\u2014 Select \u2014',
+      opt_kite: 'Kitesurfing', opt_wind: 'Windsurfing', opt_wing: 'Wingfoil', opt_surf: 'Surfing', opt_sup: 'SUP', opt_multi: 'Multi-sport', opt_other: 'Other',
+      opt_facebook: 'Facebook', opt_google: 'Google', opt_email_src: 'Email from SurfIQ', opt_referral: 'Referral',
+      ph_scale: '10 instructors, 300 students/season',
+      section_sports: 'Sports & interests',
+      label_sports: 'What sports do you offer? <span class="req">*</span>',
+      sp_kite: 'Kitesurfing', sp_wind: 'Windsurfing', sp_wing: 'Wingfoil', sp_surf: 'Surfing', sp_sup: 'SUP', sp_wake: 'Wakeboarding', sp_foil: 'Foil / Pumpfoil', sp_other: 'Other',
+      label_interests: 'What are you most interested in?',
+      int_bookings: 'Online bookings', int_weather: 'Weather in panel', int_finance: 'Finance / reports', int_instructors: 'Instructor scheduling',
+      int_ai: 'AI agents (chatbot)', int_crm: 'Student CRM', int_equipment: 'Equipment management', int_trips: 'Trips / KiteSafari',
+      label_current_sw: 'What software do you currently use?',
+      sw_excel: 'Excel / Google Sheets', sw_paper: 'Notebook / paper', sw_surfcloud: 'SurfCloud', sw_bookinglayer: 'BookingLayer',
+      sw_bsport: 'Bsport', sw_planyo: 'Planyo', sw_custom: 'Custom system', sw_none: 'None \u2014 I don\'t use any', sw_other: 'Other',
+      label_sw_pain: 'What bothers you most about your current solution?',
+      ph_pain: 'e.g. double bookings, no weather integration...'
+    },
+    de: {
+      badge: '14 Tage kostenlos',
+      title: 'Zugang zur SurfIQ Demo',
+      subtitle: 'Fullen Sie das Formular aus, um personalisierten Zugang zur Demo-Version zu erhalten.',
+      section_contact: 'Kontaktdaten',
+      label_first_name: 'Vorname <span class="req">*</span>',
+      label_last_name: 'Nachname <span class="req">*</span>',
+      label_email: 'Geschaftliche E-Mail <span class="req">*</span>',
+      label_phone: 'Telefon <span class="req">*</span>',
+      section_company: 'Unternehmensdaten',
+      label_company: 'Firmenname <span class="req">*</span>',
+      label_website: 'Firmenwebsite',
+      label_type: 'Geschaftsart <span class="req">*</span>',
+      label_country: 'Land <span class="req">*</span>',
+      label_city: 'Stadt',
+      label_scale: 'Betriebsumfang',
+      label_source: 'Wie haben Sie von uns erfahren?',
+      terms: 'Mit dem Zugang zur Demoversion verpflichtet sich der Nutzer, diese nicht zu kopieren, nachzubauen, zum Zweck der Erstellung eines Konkurrenzprodukts zu analysieren oder den Zugang an Dritte weiterzugeben.',
+      btn_submit: 'Demo-Zugang anfordern',
+      note: 'Wir antworten innerhalb von 24 Stunden. Der Zugang ist individuell und personalisiert.',
+      success_title: 'Anfrage gesendet!',
+      success_text: 'Vielen Dank fur Ihr Interesse an SurfIQ. Wir bereiten Ihre individuelle Demo vor und melden uns innerhalb von 24 Stunden.',
+      success_back: 'Zuruck zur Startseite',
+      opt_select: '\u2014 Wahlen \u2014',
+      opt_kite: 'Kitesurfing', opt_wind: 'Windsurfing', opt_wing: 'Wingfoil', opt_surf: 'Surfing', opt_sup: 'SUP', opt_multi: 'Multi-Sport', opt_other: 'Sonstiges',
+      opt_facebook: 'Facebook', opt_google: 'Google', opt_email_src: 'E-Mail von SurfIQ', opt_referral: 'Empfehlung',
+      ph_scale: '10 Instruktoren, 300 Schuler/Saison',
+      section_sports: 'Sportarten & Interessen',
+      label_sports: 'Welche Sportarten bieten Sie an? <span class="req">*</span>',
+      sp_kite: 'Kitesurfen', sp_wind: 'Windsurfen', sp_wing: 'Wingfoil', sp_surf: 'Surfen', sp_sup: 'SUP', sp_wake: 'Wakeboard', sp_foil: 'Foil / Pumpfoil', sp_other: 'Sonstiges',
+      label_interests: 'Was interessiert Sie am meisten?',
+      int_bookings: 'Online-Buchungen', int_weather: 'Wetter im Panel', int_finance: 'Finanzen / Berichte', int_instructors: 'Instruktor-Planung',
+      int_ai: 'KI-Agenten (Chatbot)', int_crm: 'Schuler-CRM', int_equipment: 'Ausrustungsverwaltung', int_trips: 'Reisen / KiteSafari',
+      label_current_sw: 'Welche Software nutzen Sie derzeit?',
+      sw_excel: 'Excel / Google Sheets', sw_paper: 'Notizbuch / Papier', sw_surfcloud: 'SurfCloud', sw_bookinglayer: 'BookingLayer',
+      sw_bsport: 'Bsport', sw_planyo: 'Planyo', sw_custom: 'Eigenes System', sw_none: 'Keines \u2014 ich nutze nichts', sw_other: 'Anderes',
+      label_sw_pain: 'Was stoert Sie am meisten an Ihrer aktuellen Loesung?',
+      ph_pain: 'z.B. Doppelbuchungen, keine Wetterintegration...'
+    }
+  };
+
+  let currentLang = 'en';
+
+  function setLang(lang) {
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+    document.documentElement.lang = lang;
+    const t = T[lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if (t[key]) el.innerHTML = t[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.dataset.i18nPlaceholder;
+      if (t[key]) el.placeholder = t[key];
+    });
+    // GA4 event
+    if (typeof gtag === 'function') gtag('event', 'language_switch', { language: lang, page: 'demo' });
+  }
+
+  document.getElementById('lang-switcher').addEventListener('click', e => {
+    if (e.target.dataset.lang) setLang(e.target.dataset.lang);
+  });
+
+  // URL param > browser language > default EN
+  const urlLang = new URLSearchParams(window.location.search).get('lang');
+  const bl = (navigator.language || '').slice(0, 2);
+  if (urlLang && T[urlLang]) setLang(urlLang);
+  else if (T[bl]) setLang(bl);
+  else setLang('en');
+
+  // Fade-in animation
+  const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') }), { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+  // Form submission
+  async function submitForm(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnLoad = document.getElementById('btn-loading');
+    btn.disabled = true;
+    btnText.classList.add('hidden');
+    btnLoad.classList.remove('hidden');
+
+    const fd = new FormData(e.target);
+    const data = Object.fromEntries(fd);
+    // Collect checkbox groups as arrays
+    data.sports = [...document.querySelectorAll('input[name="sports"]:checked')].map(c => c.value).join(', ');
+    data.interests = [...document.querySelectorAll('input[name="interests"]:checked')].map(c => c.value).join(', ');
+    data.language = currentLang;
+    data.submitted_at = new Date().toISOString();
+    data.referrer = document.referrer || '';
+    data.user_agent = navigator.userAgent;
+
+    try {
+      const res = await fetch('/api/demo-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Server error');
+
+      // GA4 + FB Pixel events
+      if (typeof gtag === 'function') gtag('event', 'demo_request', { method: 'form', language: currentLang });
+      if (typeof fbq === 'function') fbq('track', 'Lead', { content_name: 'SurfIQ Demo Request' });
+
+      document.getElementById('form-section').classList.add('hidden');
+      document.getElementById('success-section').classList.remove('hidden');
+    } catch (err) {
+      alert(currentLang === 'pl' ? 'Blad wysylki. Sprobuj ponownie lub napisz na office@surfiq.eu' :
+            currentLang === 'de' ? 'Sendefehler. Versuchen Sie es erneut oder schreiben Sie an office@surfiq.eu' :
+            'Submission error. Please try again or email office@surfiq.eu');
+      btn.disabled = false;
+      btnText.classList.remove('hidden');
+      btnLoad.classList.add('hidden');
+    }
+  }
+  </script>
+</body>
+</html>

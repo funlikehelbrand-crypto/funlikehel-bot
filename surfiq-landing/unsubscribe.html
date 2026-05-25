@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unsubscribe — SurfIQ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+      background: #081D3A;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+    }
+    .logo { width: 160px; margin-bottom: 24px; }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 14px;
+      color: #8EA4BF;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    input[type="email"] {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border 0.2s;
+    }
+    input[type="email"]:focus {
+      border-color: #14D1C9;
+    }
+    input[type="email"]::placeholder {
+      color: #5a7a9a;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #0D47A1, #14D1C9);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      width: 100%;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .success {
+      display: none;
+      padding: 20px;
+      background: rgba(20, 209, 201, 0.1);
+      border: 1px solid #14D1C9;
+      border-radius: 12px;
+      margin-top: 16px;
+    }
+    .success h2 {
+      font-size: 18px;
+      color: #14D1C9;
+      margin-bottom: 8px;
+    }
+    .success p {
+      color: #8EA4BF;
+      margin-bottom: 0;
+    }
+    .footer {
+      margin-top: 32px;
+      font-size: 11px;
+      color: #5a7a9a;
+    }
+    .footer a { color: #14D1C9; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="/assets/generated/logo_final/logo_for_dark_bg.png" alt="SurfIQ" class="logo">
+
+    <div id="form-section">
+      <h1>Unsubscribe</h1>
+      <p>We're sorry to see you go. Enter your email below and we'll remove you from all future communications.</p>
+
+      <form id="unsub-form" onsubmit="handleSubmit(event)">
+        <input type="email" id="email" placeholder="your@email.com" required>
+        <button type="submit" class="btn" id="submit-btn">Unsubscribe</button>
+      </form>
+    </div>
+
+    <div class="success" id="success-section">
+      <h2>You've been unsubscribed</h2>
+      <p>Your email has been removed. You won't receive any further messages from us.</p>
+    </div>
+
+    <div class="footer">
+      <p>LM GreenWaves sp. z o.o. &bull; Warsaw, Poland</p>
+      <p style="margin-top:6px;">Changed your mind? Visit <a href="https://surfiq.eu">surfiq.eu</a></p>
+    </div>
+  </div>
+
+  <script>
+    // Read email from URL param (pre-fill from email link)
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('email') || params.get('e') || '';
+    if (emailParam) {
+      document.getElementById('email').value = emailParam;
+    }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      // Log to GA4
+      if (typeof gtag === 'function') {
+        gtag('event', 'unsubscribe', { email_domain: email.split('@')[1] });
+      }
+
+      // Send to serverless function
+      try {
+        await fetch('/api/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, ts: new Date().toISOString() })
+        });
+      } catch (err) {
+        // Best effort — show success anyway
+      }
+
+      // Show success
+      document.getElementById('form-section').style.display = 'none';
+      document.getElementById('success-section').style.display = 'block';
+    }
+  </script>
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4HT1DG5RW"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-T4HT1DG5RW")</script>
+<!-- Facebook Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1639337547278346');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1639337547278346&ev=PageView&noscript=1"/></noscript>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

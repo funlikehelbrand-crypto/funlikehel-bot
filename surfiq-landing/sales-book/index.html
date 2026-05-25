@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SurfIQ — Sales Book 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy: #081D3A;
+    --dark: #0a2444;
+    --turq: #0ea5e9;
+    --turq-dark: #0284c7;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --surface: #0f2d50;
+    --border: #1e3a5f;
+    --green: #4ade80;
+    --orange: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+
+  @media print {
+    body { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { padding: 30px 20px; }
+    .no-print { display: none; }
+  }
+
+  /* Typography */
+  h1 { font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.8rem; font-weight: 700; color: white; margin-bottom: 0.5rem; }
+  h3 { font-size: 1.2rem; font-weight: 700; color: var(--turq); margin-bottom: 0.4rem; margin-top: 1.2rem; }
+  h4 { font-size: 1rem; font-weight: 600; color: white; margin-bottom: 0.3rem; margin-top: 0.8rem; }
+  p { margin-bottom: 0.6rem; }
+  .subtitle { color: var(--turq); font-size: 1.1rem; font-weight: 500; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.85rem; color: var(--muted); }
+  .turq { color: var(--turq); }
+  .green { color: var(--green); }
+  .orange { color: var(--orange); }
+  .bold { font-weight: 700; }
+  .center { text-align: center; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Stats */
+  .stat-row { display: flex; gap: 20px; justify-content: center; margin: 30px 0; flex-wrap: wrap; }
+  .stat-box { text-align: center; padding: 20px 30px; background: var(--dark); border-radius: 12px; border: 1px solid var(--border); min-width: 140px; }
+  .stat-num { font-size: 2.2rem; font-weight: 800; color: var(--turq); }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  /* Lists */
+  ul { list-style: none; padding: 0; }
+  ul li { padding: 6px 0 6px 24px; position: relative; }
+  ul li::before { content: ""; position: absolute; left: 0; top: 14px; width: 8px; height: 8px; background: var(--turq); border-radius: 50%; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  th { background: var(--dark); color: var(--turq); text-align: left; padding: 10px 12px; font-weight: 600; border-bottom: 2px solid var(--turq); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: rgba(14,165,233,0.03); }
+
+  /* Tags */
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .tag-turq { background: rgba(14,165,233,0.15); color: var(--turq); }
+  .tag-green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .tag-orange { background: rgba(251,191,36,0.15); color: var(--orange); }
+  .tag-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .tag-red { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* Dividers */
+  hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+
+  /* Sales tip */
+  .sales-tip {
+    background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(167,139,250,0.1));
+    border-left: 4px solid var(--turq);
+    padding: 16px 20px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+  }
+  .sales-tip::before { content: "ARGUMENT SPRZEDAŻOWY"; display: block; font-size: 0.7rem; font-weight: 700; color: var(--turq); letter-spacing: 2px; margin-bottom: 6px; }
+
+  /* Price highlight */
+  .price-card {
+    text-align: center;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  .price-card.featured { border-color: var(--turq); background: linear-gradient(180deg, var(--surface), var(--dark)); }
+  .price-amount { font-size: 2rem; font-weight: 800; color: white; }
+  .price-period { font-size: 0.85rem; color: var(--muted); }
+
+  /* Footer */
+  .page-footer { text-align: center; color: var(--muted); font-size: 0.75rem; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* Print button */
+  .print-bar { position: fixed; top: 0; left: 0; right: 0; background: var(--dark); padding: 12px 20px; text-align: center; z-index: 100; border-bottom: 1px solid var(--border); }
+  .print-btn { background: var(--turq); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+  .print-btn:hover { background: var(--turq-dark); }
+  body { padding-top: 60px; }
+  @media print { body { padding-top: 0; } }
+</style>
+</head>
+<body>
+
+<!-- Print bar -->
+<div class="print-bar no-print">
+  <button class="print-btn" onclick="window.print()">Drukuj / Zapisz jako PDF</button>
+  <span class="muted" style="margin-left:16px; font-size:0.8rem;">Ctrl+P &rarr; Zapisz jako PDF &rarr; wyślij do klienta</span>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 1: COVER -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div style="text-align:center; padding-top: 20px;">
+    <!-- Logo -->
+    <img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" style="height: 70px; margin-bottom: 20px;">
+    <p class="subtitle" style="letter-spacing: 4px; font-size: 0.85rem;">SALES BOOK 2026</p>
+    <h1 style="font-size: 2.8rem; margin: 10px 0;">System operacyjny<br>dla szkół sportów wodnych</h1>
+    <p class="muted" style="margin-top: 8px;">Kompletny przewodnik produktowy i sprzedażowy</p>
+    <p style="margin-top: 12px;"><span class="tag tag-turq" style="font-size: 0.85rem; padding: 5px 14px;">AI-FIRST PLATFORM</span></p>
+  </div>
+
+  <!-- Email banner — Smarter schools. Better waves. -->
+  <div style="text-align:center; margin-top: 30px;">
+    <img src="/assets/email_banner.png" alt="SurfIQ — Smarter schools. Better waves." style="width: 100%; max-width: 820px; border-radius: 12px;">
+  </div>
+
+  <div class="stat-row" style="margin-top: 30px;">
+    <div class="stat-box"><div class="stat-num">&lt; 2 min</div><div class="stat-label">czas odpowiedzi AI</div></div>
+    <div class="stat-box"><div class="stat-num">24/7</div><div class="stat-label">sprzedaż non-stop</div></div>
+    <div class="stat-box"><div class="stat-num">6</div><div class="stat-label">kanałów komunikacji</div></div>
+    <div class="stat-box"><div class="stat-num">3</div><div class="stat-label">języki: PL EN DE</div></div>
+  </div>
+
+  <div style="text-align:center; margin-top: 60px;">
+    <p class="bold" style="font-size: 1.1rem;">Przetestowany 6 miesięcy na prawdziwej szkole kite</p>
+    <p class="muted">FUN like HEL — Jastarnia &amp; Hurghada | 1 271 leadów | 347 rozmów AI</p>
+  </div>
+
+  <div class="page-footer">
+    <p>SurfIQ by LM Greenwaves sp. z o.o. | surfiq.eu | office@surfiq.eu | +48 690 270 032</p>
+    <p style="margin-top:4px;">Dokument wewnętrzny — do użytku zespołu sprzedażowego</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 2: SPIS TRESCI + POZYCJONOWANIE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>Spis treści</h2>
+  <div class="card" style="margin-top:16px;">
+    <table>
+      <tr><td><strong>1.</strong> Czym jest SurfIQ</td><td class="muted">Pozycjonowanie i przewaga</td></tr>
+      <tr><td><strong>2.</strong> Funkcjonalności systemu</td><td class="muted">Kazda funkcja w menu — co robi i jak sprzedawac</td></tr>
+      <tr><td><strong>3.</strong> Agenci AI</td><td class="muted">10 agentow — co robia, jak działają, ile kosztuja</td></tr>
+      <tr><td><strong>4.</strong> Cennik</td><td class="muted">Essential / Professional / Enterprise + dodatki</td></tr>
+      <tr><td><strong>5.</strong> ROI i argumenty sprzedażowe</td><td class="muted">Dlaczego warto, obliczenia, one-linery</td></tr>
+      <tr><td><strong>6.</strong> Obiekcje klientów</td><td class="muted">FAQ + odpowiedzi na typowe wątpliwości</td></tr>
+      <tr><td><strong>7.</strong> Bezpieczeństwo i ochrona danych</td><td class="muted">Izolacja, szyfrowanie, logi, anti-scraping, RODO</td></tr>
+      <tr><td><strong>8.</strong> Proces sprzedaży</td><td class="muted">Od demo do podpisania umowy — krok po kroku</td></tr>
+    </table>
+  </div>
+
+  <hr>
+
+  <h2>1. Czym jest SurfIQ</h2>
+
+  <div class="card">
+    <h3>Definicja w jednym zdaniu</h3>
+    <p style="font-size: 1.15rem; color: white; font-weight: 600;">
+      SurfIQ to system operacyjny dla szkół sportów wodnych — laczy rezerwacje, CRM, grafik instruktorów, prognozowanie pogody, finanse i agentów AI sprzedażowych w jeden system.
+    </p>
+  </div>
+
+  <h3>SurfIQ to NIE jest:</h3>
+  <ul>
+    <li>Kolejny kalendarz rezerwacji (Bookeo, Calendly)</li>
+    <li>Chatbot (Tidio, ManyChat)</li>
+    <li>CRM (HubSpot, Pipedrive)</li>
+    <li>Arkusz Excel z rezerwacjami</li>
+  </ul>
+
+  <h3>SurfIQ to JEST:</h3>
+  <ul>
+    <li><strong>Jeden system</strong> który zastepuje 5-6 oddzielnych narzedzi</li>
+    <li><strong>Zbudowany specjalnie</strong> dla szkol kite, wind, surf, eFoil, SUP, wing</li>
+    <li><strong>Z agentami AI</strong> którzy odpowiadają klientom 24/7 na WhatsApp, Instagram, email</li>
+    <li><strong>Przetestowany</strong> na prawdziwej szkole (FUN like HEL — Jastarnia + Hurghada)</li>
+  </ul>
+
+  <div class="sales-tip">
+    <p><strong>"To nie jest kalendarz z chatbotem. To system operacyjny dla Twojej szkoły — jak jeden panel do zarządzania całym biznesem."</strong></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 3: FUNKCJONALNOSCI — KALENDARZ + CRM -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>2. Funkcjonalności systemu</h2>
+  <p class="muted">Każda funkcja dostępna w menu panelu. Opis + jak sprzedawać.</p>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">📅</span>
+      <div><h3 style="margin:0;">Kalendarz rezerwacji</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <img src="/assets/screenshots/final/calendar_dark.png" alt="Kalendarz" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Centralny kalendarz z widokiem dziennym/tygodniowym. Pokazuje wszystkie lekcje, przypisanych instruktorów, klientów i sprzęt. Kliknięcie na slot = nowa rezerwacja.</p>
+    <p><strong>Dla klienta:</strong> Koniec z Excelem. Jeden widok — kto, kiedy, gdzie, z kim. Instruktorzy widzą tylko swoje lekcje.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li>Widok dzienny i tygodniowy z kolorowymi kartami per dyscyplina</li>
+      <li>Drag &amp; drop do przenoszenia lekcji</li>
+      <li>Filtr po instruktorze, dyscyplinie, lokalizacji</li>
+      <li>Statusy: oczekujaca / potwierdzona / w trakcie / zakonczona / odwołana</li>
+      <li>Automatyczne przypisanie instruktora na podstawie specjalizacji i dostępności</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Pokaz klientowi kalendarz z przykładowymi rezerwacjami. Zapytaj: ile czasu spędzasz na układaniu grafiku? Z SurfIQ widzisz cały tydzień w 3 sekundy."</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">👥</span>
+      <div><h3 style="margin:0;">CRM kursantów</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <img src="/assets/screenshots/final/people_dark.png" alt="CRM" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Pełna baza klientów z historią lekcji, poziomem umiejętności, językiem, źródłem pozyskania i notatkami instruktorów.</p>
+    <p><strong>Dla klienta:</strong> Wiesz kto wrócił, kto jest nowy, kto jest VIP. Instruktor widzi notatki z ostatniej lekcji i wie od czego zacząć.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li>Profil klienta: imię, email, telefon, narodowość, język, Instagram</li>
+      <li>Poziom: beginner / basic / intermediate / advanced / professional</li>
+      <li>Historia rezerwacji i płatności</li>
+      <li>Źródło: Instagram, WhatsApp, Viator, walk-in, email, telefon</li>
+      <li>Notatki instruktorów po każdej lekcji</li>
+      <li>Tagowanie: VIP, powtórny klient, grupa</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Zapytaj klienta: czy wiesz ilu kursantów miałeś w zeszłym sezonie? Ilu wróciło? SurfIQ liczy to automatycznie."</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 4: GRAFIK + POGODA + FINANSE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">👨‍🏫</span>
+      <div><h3 style="margin:0;">Grafik instruktorów</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <img src="/assets/screenshots/final/services_dark.png" alt="Grafik" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Pokazuje dostępność każdego instruktora, jego specjalizacje (kite/wind/wing/SUP), języki i przypisane lekcje.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li>Specjalizacje: kite, wind, wing, SUP, eFoil, deska, surf</li>
+      <li>Certyfikaty: IKO, VDWS, inne</li>
+      <li>Dostępność per dzień z blokowaniem urlopów</li>
+      <li>Widok "Tylko moje lekcje" dla instruktora (mobilnie)</li>
+      <li>Automatyczne przypisanie na podstawie umiejętności i języka klienta</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Ilu instruktorów masz? 3? 5? 10? Im więcej, tym większy chaos. SurfIQ robi grafik za Ciebie."</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">🌊</span>
+      <div><h3 style="margin:0;">Prognoza pogody</h3><span class="tag tag-turq">Unikalna funkcja</span></div>
+    </div>
+    <img src="/assets/screenshots/final/weather_dark.png" alt="Pogoda" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Integruje Open-Meteo, Windguru i Windy w jednym dashboardzie. Pokazuje siłę i kierunek wiatru, temperaturę, opady. Automatyczne alerty przy złych warunkach.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li>Prędkość wiatru w węzłach + kierunek (kompas WindRose)</li>
+      <li>Prognoza 7-dniowa z aktualizacją 4x dziennie</li>
+      <li>Alerty: wiatr &gt;25 kn, burza, deszcz = push do instruktorów</li>
+      <li>Sugestia przeniesienia lekcji na 2nd spot (np. MEWIA transfer w Jastarni)</li>
+      <li>Osobne progi dla Hel i Hurghada</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Żadna inna platforma rezerwacyjna nie ma wbudowanej pogody. Klient sprawdza Windguru osobno — z SurfIQ ma to w tym samym panelu co rezerwacje."</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">💰</span>
+      <div><h3 style="margin:0;">Dashboard finansowy</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <img src="/assets/screenshots/final/finances_dark.png" alt="Finanse" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Przychody, płatności, obroty — dzienne, tygodniowe, miesięczne, sezonowe. Eksport do CSV/PDF. Statusy płatności per rezerwacja.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li>Przychód dzienny / tygodniowy / miesięczny / sezonowy</li>
+      <li>Metody płatności: gotówka, karta, przelew, Przelewy24, Viator, Klook</li>
+      <li>Statusy: nieopłacone / zaliczka / opłacone / zwrot</li>
+      <li>Top usługi wg przychodu</li>
+      <li>Obłożeność instruktorów (ile godzin, ile zarobili)</li>
+      <li>Eksport CSV i PDF do księgowej</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Ile zarobiłeś w zeszłym tygodniu? Nie wiesz? Z SurfIQ masz raport jednym kliknięciem."</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 5: SKLEP + WIADOMOSCI + SAFARI -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">🛒</span>
+      <div><h3 style="margin:0;">Sklep i wypożyczalnia</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <img src="/assets/screenshots/final/shop_dark.png" alt="Sklep" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Zarządzanie sprzętem — latawce, deski, trapezy, kaski. Stany magazynowe, rezerwacja sprzętu do lekcji, historia serwisowa.</p>
+    <ul>
+      <li>Katalog sprzętu z cenami detalicznymi i zakupowymi</li>
+      <li>Statusy: dostępny / wypożyczony / serwis / wycofany</li>
+      <li>Automatyczne przypisanie sprzętu do rezerwacji</li>
+      <li>Zdjęcia i opisy produktów</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">💬</span>
+      <div><h3 style="margin:0;">Centrum wiadomości</h3><span class="tag tag-turq">Unikalna funkcja</span></div>
+    </div>
+    <img src="/assets/screenshots/final/bookings_dark.png" alt="Wiadomości" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Wszystkie wiadomości z 6 kanałów w jednym inboxie: WhatsApp, Instagram, Messenger, email, SMS, czat na stronie. Każda rozmowa powiązana z profilem klienta w CRM.</p>
+    <ul>
+      <li>Unified inbox — nie przeskakujesz między aplikacjami</li>
+      <li>Automatyczna klasyfikacja: nowy lead / pytanie / reklamacja / spam</li>
+      <li>AI draft odpowiedzi — zatwierdzasz jednym kliknięciem</li>
+      <li>Historia rozmów powiązana z rezerwacjami</li>
+      <li>Przypisanie rozmowy do instruktora/managera</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Ile razy dziennie przeskakujesz między WhatsApp, Instagram i mailem? Z SurfIQ masz wszystko w jednym oknie."</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">⛵</span>
+      <div><h3 style="margin:0;">Moduł KiteSafari</h3><span class="tag tag-purple">Moduł premium</span></div>
+    </div>
+    <p><strong>Co robi:</strong> Zarządzanie wyjazdami kitesafari — rezerwacje uczestników, transfery, harmonogram, logistyka lodzi, komunikacja z uczestnikami.</p>
+    <ul>
+      <li>Lista uczestników z detalami (poziom, własny sprzęt, język)</li>
+      <li>Harmonogram wyjazdu dzień po dniu</li>
+      <li>Transfery i logistyka (marina, łódź, skipper)</li>
+      <li>AI concierge dla uczestników</li>
+      <li>Rozliczenie płatności i kaucji</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">🚐</span>
+      <div><h3 style="margin:0;">MEWIA Transfer</h3><span class="tag tag-turq">Unikalna funkcja</span></div>
+    </div>
+    <img src="/assets/screenshots/final/mewia_dark.png" alt="MEWIA" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Alert i zarządzanie transferem na 2nd spot przy niekorzystnym wietrze. System wie kiedy wieje z północy (sektor N/NE/NW = MEWIA) i automatycznie informuje instruktorów i klientów.</p>
+    <ul>
+      <li>WindRose kompas z oznaczeniem sektora północnego</li>
+      <li>Automatyczne powiadomienie klientów z dotkniętą rezerwacją</li>
+      <li>Kalkulacja kosztu transferu (50 PLN/osoba)</li>
+      <li>Status: wymagany / potwierdzony / opłacony / anulowany</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 5b: ZASOBY + STAFFING + CUSTOMIZACJA -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">📊</span>
+      <div><h3 style="margin:0;">Zasoby i zapotrzebowanie kadrowe</h3><span class="tag tag-turq">Unikalna funkcja</span></div>
+    </div>
+    <img src="/assets/screenshots/final/reports_dark.png" alt="Zasoby" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Analizuje zapotrzebowanie na instruktorów na podstawie prognozy pogody, rezerwacji i historii. Pokazuje ile osób potrzebujesz na każdy dzień — zanim sezon się zacznie.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li><strong>Prognoza zapotrzebowania</strong> — ile instruktorów potrzebujesz w danym dniu na podstawie pogody i rezerwacji</li>
+      <li><strong>Analiza obłożenia</strong> — kto ma za dużo lekcji, kto za mało, kto nie pracował od 3 dni</li>
+      <li><strong>Sezonowe planowanie</strong> — ile osób zatrudnić na sezon na podstawie danych z poprzednich lat</li>
+      <li><strong>Dostępność vs zapotrzebowanie</strong> — czerwony alert gdy brakuje instruktorów na dany dzień</li>
+      <li><strong>Pogoda → staffing</strong> — wiatr 15-20 kn = pełne obłożenie kite, brak wiatru = mniej instruktorów kite, więcej SUP/wing</li>
+      <li><strong>Koszty pracy</strong> — ile wydajesz na instruktorów per tydzień / miesiąc / sezon</li>
+      <li><strong>Raporty HR</strong> — godziny, przychód na instruktora, efektywność</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Wiesz ile instruktorów potrzebujesz w przyszłym tygodniu? SurfIQ patrzy na prognozę pogody i rezerwacje — i mówi Ci: na środę potrzebujesz 4 instruktorów kite i 2 wind. Na czwartek deszcz — wystarczy 1."</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">🎨</span>
+      <div><h3 style="margin:0;">Pełna customizacja widoków</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <img src="/assets/screenshots/final/equipment_dark.png" alt="Customizacja" style="width:100%; border-radius:10px; margin-bottom:12px; border:1px solid var(--border);">
+    <p><strong>Co robi:</strong> Każdy użytkownik może dostosować panel do swoich potrzeb. Włączanie i wyłączanie modułów, zmiana kolejności menu, przełączanie między widokami.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li><strong>Moduły on/off</strong> — nie potrzebujesz KiteSafari? Wyłączasz jednym kliknięciem. Menu się upraszcza</li>
+      <li><strong>Przestawianie widoków</strong> — przenieś moduł z sekcji "Operacje" do "Zarządzanie" lub na główny ekran</li>
+      <li><strong>Ciemny / jasny motyw</strong> — przełącznik dark/light mode</li>
+      <li><strong>Lokalizacja</strong> — przełączaj się między Hel a Hurghada jednym kliknięciem</li>
+      <li><strong>Język interfejsu</strong> — polski, angielski, niemiecki</li>
+      <li><strong>Role i widoczność</strong> — instruktor widzi tylko swoje lekcje i pogodę. Admin widzi wszystko. Właściciel widzi finanse.</li>
+      <li><strong>Zoom / skala czcionek</strong> — 110%, 120%, 130%, 140% — dostosuj do swojego ekranu</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Nie chcesz żeby instruktorzy widzieli finanse? Nie zobaczą. Chcesz żeby Magda miała dostęp do raportów ale nie do ustawień? Ustawiasz w 10 sekund."</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <span style="font-size:1.5rem;">📋</span>
+      <div><h3 style="margin:0;">Raporty i analityka</h3><span class="tag tag-green">Funkcja podstawowa</span></div>
+    </div>
+    <p><strong>Co robi:</strong> Automatyczne raporty dzienne, tygodniowe i miesięczne. Analityka biznesowa — co działa, co nie, gdzie tracisz pieniądze.</p>
+    <p><strong>Szczegóły:</strong></p>
+    <ul>
+      <li><strong>Raport dzienny</strong> — ile lekcji, ile przychodu, ile nowych klientów, pogoda</li>
+      <li><strong>Raport tygodniowy</strong> — porównanie z poprzednim tygodniem, top instruktorzy, top usługi</li>
+      <li><strong>Raport miesięczny</strong> — pełne podsumowanie z wykresami i trendami</li>
+      <li><strong>Analityka źródeł</strong> — skąd przychodzą klienci (Instagram, WhatsApp, Viator, walk-in)</li>
+      <li><strong>Konwersja leadów</strong> — ile zapytań → ile rezerwacji → ile pieniędzy</li>
+      <li><strong>Eksport</strong> — CSV, PDF, email do księgowej</li>
+    </ul>
+    <div class="sales-tip">
+      <p><strong>"Wiesz który kanał przynosi Ci najwięcej klientów? Instagram czy WhatsApp? SurfIQ liczy to za Ciebie. Może okaże się że Viator daje 40% rezerwacji — a Ty tam nie inwestujesz."</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 6: AGENCI AI — OVERVIEW -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>3. Agenci AI — Twój zespół sprzedażowy 24/7</h2>
+  <p>Każdy plan SurfIQ zawiera agentów AI. To nie chatboty — to inteligentni asystenci, którzy znają Twój cennik, grafik, dostępność i odpowiadają klientom w ich języku.</p>
+
+  <div class="card" style="background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(167,139,250,0.1));">
+    <h3>Jak działają agenci?</h3>
+    <ol style="padding-left: 20px; list-style: decimal;">
+      <li style="padding: 6px 0;"><strong>Klient pisze</strong> — na WhatsApp, Instagram, email, Messenger, SMS lub czat na stronie</li>
+      <li style="padding: 6px 0;"><strong>Agent AI czyta</strong> — rozumie jezyk, intencje, kontekst (cennik, grafik, dostępność)</li>
+      <li style="padding: 6px 0;"><strong>Agent pisze draft</strong> — odpowiedź w języku klienta, z konkretnymi terminami i cenami</li>
+      <li style="padding: 6px 0;"><strong>Tryb draft:</strong> Ty zatwierdzasz i klikasz "Wyslij"</li>
+      <li style="padding: 6px 0;"><strong>Tryb semi-auto:</strong> proste pytania (cena, godziny) — AI wysyla sam. Zlozone — draft do Ciebie</li>
+      <li style="padding: 6px 0;"><strong>Tryb full-auto:</strong> AI wysyła wszystko sam, eskaluje tylko reklamacje</li>
+    </ol>
+  </div>
+
+  <h3>10 agentów w systemie</h3>
+
+  <table>
+    <tr><th>Agent</th><th>Co robi</th><th>Tier</th><th>Cena osobno</th></tr>
+    <tr>
+      <td><strong>WhatsApp Copilot</strong></td>
+      <td>Odpowiada na WhatsApp 24/7 w PL/EN/DE. Kwalifikuje leady, proponuje rezerwacje.</td>
+      <td><span class="tag tag-orange">Premium</span></td>
+      <td><strong>199 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Asystent Rezerwacji</strong></td>
+      <td>Przetwarza zapytania rezerwacyjne. Sprawdza dostępność, kalkuluje cene, proponuje alternatywy.</td>
+      <td><span class="tag tag-orange">Premium</span></td>
+      <td><strong>199 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Email Agent</strong></td>
+      <td>Skanuje skrzynkę co 5 min. Klasyfikuje maile, pisze drafty. Eskaluje reklamacje.</td>
+      <td><span class="tag tag-purple">Standard</span></td>
+      <td><strong>149 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Facebook Scout</strong></td>
+      <td>Skanuje 18 grup FB. Znajduje leady "szukam kursu". Komentuje z oferta (max 5/dzien).</td>
+      <td><span class="tag tag-purple">Standard</span></td>
+      <td><strong>149 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Instagram Agent</strong></td>
+      <td>Odpowiada na DM w ciagu 2 min. Reaguje na komentarze. Obsługuje 2 konta.</td>
+      <td><span class="tag tag-turq">Basic</span></td>
+      <td><strong>99 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Lead Scoring</strong></td>
+      <td>Ocenia zapytania 1-100 pkt. Hot lead (&gt;70) = natychmiastowe powiadomienie.</td>
+      <td><span class="tag tag-turq">Basic</span></td>
+      <td><strong>99 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Optymalizacja Grafiku</strong></td>
+      <td>Sugeruje przypisanie instruktorów. Uwzglednia specjalizacje, jezyki, lokalizacje.</td>
+      <td><span class="tag tag-turq">Basic</span></td>
+      <td><strong>99 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Raporty Finansowe</strong></td>
+      <td>Raport dzienny o 7:00 + tygodniowy w poniedzialek. PDF na maila.</td>
+      <td><span class="tag tag-green">Utility</span></td>
+      <td><strong>79 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Recenzje</strong></td>
+      <td>Monitoruje Google Maps + TripAdvisor. Pisze drafty odpowiedzi. Nigdy nie wysyla sam.</td>
+      <td><span class="tag tag-green">Utility</span></td>
+      <td><strong>79 PLN</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Alerty Pogodowe</strong></td>
+      <td>Sprawdza prognozę 4x/dzien. Push do instruktorów przy złych warunkach.</td>
+      <td><span class="tag tag-green">Free</span></td>
+      <td><strong>0 PLN</strong></td>
+    </tr>
+  </table>
+
+  <div class="sales-tip">
+    <p><strong>"Ile kosztuje Cię pracownik który odpowiada na WhatsApp 24/7? 5 000 PLN miesięcznie? Nasz AI robi to samo za 1 499 PLN — i nie bierze urlopu."</strong></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 7: CENNIK -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>4. Cennik</h2>
+  <p>Kazdy plan zawiera pełny system zarządzania szkołą. Różnica? Ile AI pracuje za Ciebie.</p>
+
+  <div class="card-grid-3" style="margin-top: 20px;">
+    <div class="price-card" style="background: var(--surface);">
+      <p class="turq bold" style="letter-spacing: 2px; font-size: 0.8rem;">ESSENTIAL</p>
+      <div class="price-amount" style="margin: 10px 0;">599 <span style="font-size:0.9rem; color: var(--muted);">PLN</span></div>
+      <p class="price-period">miesięcznie</p>
+      <p class="muted" style="margin-top:8px; font-size:0.85rem;">Zarządzaj szkołą</p>
+      <hr style="margin: 16px 0;">
+      <div style="text-align:left; font-size: 0.85rem;">
+        <p>✓ Pełny system</p>
+        <p>✓ 3 instruktorów</p>
+        <p>✓ 1 lokalizacja</p>
+        <p>✓ <strong class="turq">1 kanał AI</strong> (100 rozm.)</p>
+        <p>✓ Alerty pogodowe</p>
+        <p>✓ Email support 48h</p>
+      </div>
+    </div>
+
+    <div class="price-card featured">
+      <p style="background: var(--turq); color: var(--navy); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; display: inline-block; margin-bottom: 8px;">NAJPOPULARNIEJSZY</p>
+      <p class="turq bold" style="letter-spacing: 2px; font-size: 0.8rem;">PROFESSIONAL</p>
+      <div class="price-amount" style="margin: 10px 0;">1 499 <span style="font-size:0.9rem; color: var(--muted);">PLN</span></div>
+      <p class="price-period">miesięcznie</p>
+      <p class="muted" style="margin-top:8px; font-size:0.85rem;">Automatyzuj sprzedaż</p>
+      <hr style="margin: 16px 0;">
+      <div style="text-align:left; font-size: 0.85rem;">
+        <p>✓ Wszystko z Essential</p>
+        <p>✓ 15 instruktorów</p>
+        <p>✓ 3 lokalizacje</p>
+        <p>✓ <strong class="turq">3 kanały AI</strong> (1 000 rozm.)</p>
+        <p>✓ KiteSafari modul</p>
+        <p>✓ Lead scoring</p>
+        <p>✓ Finanse zaawansowane</p>
+        <p>✓ Chat+email 24h</p>
+        <p>✓ 1 live szkolenie</p>
+      </div>
+    </div>
+
+    <div class="price-card" style="background: var(--surface);">
+      <p class="turq bold" style="letter-spacing: 2px; font-size: 0.8rem;">ENTERPRISE</p>
+      <div style="margin: 10px 0;"><span class="muted" style="font-size:0.9rem;">od </span><span class="price-amount">2 999 <span style="font-size:0.9rem; color: var(--muted);">PLN</span></span></div>
+      <p class="price-period">miesięcznie</p>
+      <p class="muted" style="margin-top:8px; font-size:0.85rem;">Skaluj operacje</p>
+      <hr style="margin: 16px 0;">
+      <div style="text-align:left; font-size: 0.85rem;">
+        <p>✓ Wszystko z Professional</p>
+        <p>✓ Bez limitu instruktorów</p>
+        <p>✓ Bez limitu lokalizacji</p>
+        <p>✓ <strong class="turq">6 kanałów AI</strong> (5 000+ rozm.)</p>
+        <p>✓ API + webhooks</p>
+        <p>✓ Dedykowane wdrożenie 8h+</p>
+        <p>✓ SLA 99.9%</p>
+        <p>✓ Priorytet support 4h</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 24px;">Dodatki</h3>
+  <table>
+    <tr><td>Dodatkowy kanał AI</td><td><strong>199 PLN/mies.</strong></td></tr>
+    <tr><td>Pakiet 500 rozmów AI</td><td><strong>149 PLN</strong> (jednorazowe)</td></tr>
+    <tr><td>Custom AI agent</td><td><strong>od 3 000 PLN</strong> (build + 3 mies. wsparcia)</td></tr>
+    <tr><td>WhatsApp (Meta)</td><td>~0,25 PLN/rozmowa (pass-through)</td></tr>
+    <tr><td>SMS</td><td>0,25 PLN/wiadomość</td></tr>
+    <tr><td>Email</td><td>Unlimited we wszystkich planach</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 8: ROI + ARGUMENTY -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>5. ROI i argumenty sprzedażowe</h2>
+
+  <div class="card" style="background: linear-gradient(135deg, rgba(74,222,128,0.08), rgba(14,165,233,0.08));">
+    <h3>Obliczenie ROI dla planu Professional (1 499 PLN/mies.)</h3>
+    <table>
+      <tr><th></th><th>Bez SurfIQ</th><th>Z SurfIQ Professional</th></tr>
+      <tr><td><strong>Koszt obsługi komunikacji</strong></td><td>Pracownik: ~5 000 PLN/mies.</td><td class="green"><strong>AI: 1 499 PLN/mies.</strong></td></tr>
+      <tr><td><strong>Czas odpowiedzi</strong></td><td>2-24 godziny</td><td class="green"><strong>&lt; 2 minuty</strong></td></tr>
+      <tr><td><strong>Stracone leady (brak odp.)</strong></td><td>~30%</td><td class="green"><strong>&lt; 5%</strong></td></tr>
+      <tr><td><strong>Dostępność</strong></td><td>Urlop = brak obslugi</td><td class="green"><strong>365 dni, 24/7</strong></td></tr>
+      <tr><td><strong>Języki</strong></td><td>1-2 (zalezy od pracownika)</td><td class="green"><strong>PL + EN + DE automatycznie</strong></td></tr>
+      <tr><td><strong>Skalowanie</strong></td><td>+pracownik = +5 000 PLN</td><td class="green"><strong>+kanał AI = +199 PLN</strong></td></tr>
+    </table>
+    <p class="green bold center" style="font-size: 1.1rem; margin-top: 16px;">3 dodatkowe rezerwacje po 350 PLN = 1 050 PLN. System spłacił się w pierwszym tygodniu.</p>
+  </div>
+
+  <h3>Argumenty sprzedażowe — one-linery</h3>
+  <div class="card">
+    <ul>
+      <li><strong>"Jeden agent AI który zamknie 3 rezerwacje więcej miesięcznie — system sie spłacił."</strong></li>
+      <li><strong>"Pracownik obsługujący WhatsApp 24/7 kosztuje 5 000 PLN. Nasz AI robi to za 1 499 PLN."</strong></li>
+      <li><strong>"Nie sprzedajemy kalendarza. Sprzedajemy system operacyjny dla Twojej szkoły."</strong></li>
+      <li><strong>"Klient pisze po niemiecku o 23:00 w sobotę? AI odpowiada w 2 minuty."</strong></li>
+      <li><strong>"Testowalismy to 6 miesięcy na prawdziwej szkole kite. 1 271 leadow, 347 rozmow AI."</strong></li>
+      <li><strong>"Bookeo + Tidio + CRM + Excel + Windguru = ~800 PLN i chaos. SurfIQ = wszystko od 599 PLN."</strong></li>
+    </ul>
+  </div>
+
+  <h3>Porównanie z alternatywami</h3>
+  <table>
+    <tr><th>Alternatywa</th><th>Koszt</th><th>AI agenci?</th><th>Pogoda?</th><th>Vertical?</th></tr>
+    <tr><td>Bookeo</td><td>~200 PLN/mies.</td><td>Nie</td><td>Nie</td><td>Nie</td></tr>
+    <tr><td>Tidio (chatbot)</td><td>~250 PLN/mies.</td><td>Prosty bot</td><td>Nie</td><td>Nie</td></tr>
+    <tr><td>Intercom (AI)</td><td>~1 500+ PLN/mies.</td><td>Tak (drogi)</td><td>Nie</td><td>Nie</td></tr>
+    <tr><td>Bookeo + Tidio + CRM</td><td>~800 PLN/mies.</td><td>Czesciowo</td><td>Nie</td><td>Nie</td></tr>
+    <tr><td class="turq"><strong>SurfIQ Professional</strong></td><td class="turq"><strong>1 499 PLN/mies.</strong></td><td class="green"><strong>Tak (3 kanaly)</strong></td><td class="green"><strong>Tak</strong></td><td class="green"><strong>Tak</strong></td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 9: OBIEKCJE -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>6. Obiekcje klientów — jak odpowiadac</h2>
+
+  <div class="card">
+    <h4>"Za drogo."</h4>
+    <p><strong>Odpowiedź:</strong> "Ile kosztuje Cię pracownik który odpowiada na wiadomośći? 5 000 PLN/mies.? Z SurfIQ masz AI który robi to 24/7 za 1 499 PLN. A ile tracisz na leadach którym nie odpisujesz po godzinach? Jedna rezerwacja za 350 PLN tygodniowo i system sie spłacił."</p>
+  </div>
+
+  <div class="card">
+    <h4>"Mam już Excela i WhatsApp — działa."</h4>
+    <p><strong>Odpowiedź:</strong> "Ile czasu dziennie spedzasz na przepisywaniu danych? Ile razy instruktor zadzwonił bo nie wiedzial co ma w grafiku? Ile leadow straciłeś bo nie odpisałeś w 2 minuty? Excel działa — ale nie skaluje sie. SurfIQ daje Ci 14 dni za darmo — sprawdz i porównaj."</p>
+  </div>
+
+  <div class="card">
+    <h4>"AI nie zna mojej szkoły."</h4>
+    <p><strong>Odpowiedź:</strong> "Właśnie po to jest konfiguracja. Podajesz cennik, FAQ, godziny pracy, specjalne zasady — AI się tego uczy. Testowalismy to 6 miesięcy na prawdziwej szkole kite — AI znal różnicę między 2nd spotem a Maszoperia i wiedział ile kosztuje IKO Level 1."</p>
+  </div>
+
+  <div class="card">
+    <h4>"Nie potrzebuję AI — odpowiadam sam."</h4>
+    <p><strong>Odpowiedź:</strong> "Plan Essential za 599 PLN daje Ci system bez AI — kalendarz, CRM, grafik, pogodę, finanse. AI możesz włączyć pozniej. Ale pytanie: co sie dzieje o 23:00 gdy klient z Niemiec pisze po niemiecku? Rano mu odpisujesz — ale on już zarezerwował u konkurencji."</p>
+  </div>
+
+  <div class="card">
+    <h4>"Poczekam do następnego sezonu."</h4>
+    <p><strong>Odpowiedź:</strong> "Sezon trwa 4 miesiące. Kazdy tydzien bez systemu to stracone leady i chaos. Za 14 dni trial sprawdzisz czy to dla Ciebie — zero ryzyka. A jesli zaczniemy teraz, jestes gotowy od pierwszego dnia sezonu."</p>
+  </div>
+
+  <div class="card">
+    <h4>"Czy dane są bezpieczne?"</h4>
+    <p><strong>Odpowiedź:</strong> "System hostowany w UE (Frankfurt), szyfrowanie AES-256, RODO-compliant. Każdy klient ma izolowane dane — nikt inny nie widzi Twoich kursantów. Backupy codziennie. Umowa SaaS + DPA w zestawie."</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 9b: BEZPIECZENSTWO I LOGI -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>7. Bezpieczeństwo, logi i ochrona danych</h2>
+  <p>Klienci pytają o bezpieczeństwo — oto co mówimy i co mamy.</p>
+
+  <div class="card">
+    <h3>Izolacja danych klientów</h3>
+    <ul>
+      <li><strong>Row Level Security (RLS)</strong> — każda tabela w bazie ma politykę dostępu. Klient A nie widzi danych klienta B. Nawet jeśli ktoś zna ID rekordu — Supabase blokuje dostęp.</li>
+      <li><strong>Organization ID</strong> — każdy rekord (rezerwacja, klient, wiadomość) jest przypisany do organizacji. Zapytania do bazy automatycznie filtrują po organization_id.</li>
+      <li><strong>Role-based access</strong> — instruktor widzi tylko swoje lekcje. Recepcjonistka nie widzi finansów. Właściciel widzi wszystko.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Szyfrowanie i hosting</h3>
+    <ul>
+      <li><strong>Szyfrowanie AES-256</strong> — dane zaszyfrowane at rest (w bazie) i in transit (TLS 1.3)</li>
+      <li><strong>Hosting w UE</strong> — serwer Supabase w Frankfurt (eu-central-1). Dane nie opuszczają Europy.</li>
+      <li><strong>Backupy</strong> — codziennie automatyczne + tygodniowe pełne kopie</li>
+      <li><strong>RODO / GDPR compliant</strong> — umowa DPA (Data Processing Agreement) w zestawie</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Logi i monitoring</h3>
+    <ul>
+      <li><strong>Audit log</strong> — każda akcja jest logowana: kto, co, kiedy, z jakiego IP</li>
+      <li><strong>Analytics</strong> — widzimy jakie ekrany otwierają użytkownicy, jak długo, jakie funkcje używają</li>
+      <li><strong>Session tracking</strong> — aktywne sesje, ostatnie logowanie, urządzenie</li>
+      <li><strong>Error tracking</strong> — błędy łapane w czasie rzeczywistym z alertami</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Ochrona przed kopiowaniem i scrapingiem</h3>
+    <ul>
+      <li><strong>Security headers</strong> — X-Frame-Options: DENY (blokada iframe/clickjacking), X-Content-Type-Options, XSS Protection</li>
+      <li><strong>Brak source maps w produkcji</strong> — kod JS jest zminifikowany, nie da się go łatwo odczytać</li>
+      <li><strong>API wymaga tokenu</strong> — każde zapytanie do bazy wymaga JWT tokenu sesji. Bez logowania nie ma dostępu do danych.</li>
+      <li><strong>Rate limiting</strong> — Supabase automatycznie limituje liczbę zapytań (ochrona przed brute-force i scrapingiem)</li>
+      <li><strong>Token rotation</strong> — tokeny sesji odświeżają się automatycznie, wygasają po nieaktywności</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Co widzimy jako operator platformy</h3>
+    <ul>
+      <li>Które moduły klient używa najczęściej</li>
+      <li>Ile AI rozmów przeprowadził</li>
+      <li>Czy system działa poprawnie (health checks)</li>
+      <li>Błędy i problemy techniczne</li>
+      <li><strong>NIE widzimy</strong> treści rozmów z klientami ani danych finansowych — chyba że klient poprosi o wsparcie i udzieli dostępu</li>
+    </ul>
+  </div>
+
+  <div class="sales-tip">
+    <p><strong>"Dane Twojej szkoły są izolowane — żaden inny klient nie widzi Twoich kursantów. Hosting w UE, szyfrowanie AES-256, RODO-compliant. Umowa DPA w zestawie z każdym planem."</strong></p>
+  </div>
+</div>
+
+<!-- PAGE 10: PROCES SPRZEDAZY -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <h2>8. Proces sprzedaży — od leada do klienta</h2>
+
+  <div class="card">
+    <h3>Krok 1: Kwalifikacja leada</h3>
+    <p>Zanim umowisz demo, sprawdz:</p>
+    <ul>
+      <li>Ile ma instruktorów? (1-3 = Essential, 4-15 = Professional, 15+ = Enterprise)</li>
+      <li>Ile lokalizacji? (1 = Essential, 2-3 = Professional, więcej = Enterprise)</li>
+      <li>Jakie kanaly komunikacji? (tylko email = Essential, WhatsApp+IG = Professional)</li>
+      <li>Czy ma sezon? (sezonowa = pilniejsza decyzja, caloroczna = więcej czasu)</li>
+      <li>Obecne narzedzia? (Excel = latwa migracja, inny system = pytaj o dane)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Krok 2: Demo (30 min)</h3>
+    <p><strong>Nie pokazuj wszystkiego. Pokaż to co boli klienta.</strong></p>
+    <ul>
+      <li>Klient narzeka na chaos w rezerwacjach → pokaż <strong>Kalendarz</strong></li>
+      <li>Klient traci leady → pokaż <strong>AI agenta</strong> na przykładowej rozmowie</li>
+      <li>Klient nie wie ile zarabia → pokaż <strong>Dashboard finansowy</strong></li>
+      <li>Klient sprawdza 3 strony pogody → pokaż <strong>Windguru w panelu</strong></li>
+      <li>Klient ma 5+ instruktorów → pokaż <strong>Grafik</strong></li>
+    </ul>
+    <p style="margin-top:8px;"><strong>Zawsze kończ demo pytaniem:</strong> "Co z tego było dla Ciebie najbardziej przydatne?"</p>
+  </div>
+
+  <div class="card">
+    <h3>Krok 3: Trial (14 dni)</h3>
+    <ul>
+      <li>Aktywuj konto demo z przykładowymi danymi</li>
+      <li>Wyślij dane logowania na maila</li>
+      <li>Zadzwoń po 3 dniach: "Jak idzie? Potrzebujesz pomocy z konfiguracja?"</li>
+      <li>Zadzwoń po 10 dniach: "Trial kończy sie za 4 dni. Który plan Cię interesuje?"</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Krok 4: Zamknięcie</h3>
+    <ul>
+      <li>Zaproponuj plan na podstawie kwalifikacji z Kroku 1</li>
+      <li>Podkresl ROI: "3 rezerwacje więcej miesięcznie = system sie spłacił"</li>
+      <li>Brak zobowiązań: "Miesięczna subskrypcja, możesz zrezygnowac w dowolnym momencie"</li>
+      <li>Wyslij umowe SaaS + DPA do podpisu elektronicznego</li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <div class="center" style="margin-top: 30px;">
+    <p class="subtitle" style="font-size: 1.2rem; margin-bottom: 8px;">Kontakt wewnętrzny</p>
+    <p><strong>surfiq.eu</strong> | <strong>office@surfiq.eu</strong> | <strong>+48 690 270 032</strong></p>
+    <p class="small" style="margin-top: 16px;">SurfIQ by LM Greenwaves sp. z o.o. | Warszawa | 2026</p>
+    <p class="small">Dokument wewnętrzny — Sales Book v1.0 — 2026-05-23</p>
+  </div>
+</div>
+
+</body>
+</html>

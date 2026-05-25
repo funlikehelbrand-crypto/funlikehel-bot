@@ -1,0 +1,13 @@
+file 'safari1.png'
+duration 4.96
+file 'safari2.png'
+duration 4.96
+file 'safari3.png'
+duration 4.96
+file 'safari1.png'
+duration 4.96
+file 'safari2.png'
+duration 4.96
+file 'safari3.png'
+duration 4.96
+file 'safari3.png'

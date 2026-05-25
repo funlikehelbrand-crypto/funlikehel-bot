@@ -1,0 +1,15 @@
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_04.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_05.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_04.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_05.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_04.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_05.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_04.png'
+duration 5.04
+file 'C:/Users/£ukaszMichalina/Funlikehel/surfiq-landing/assets/video/web_screens/web_04.png'

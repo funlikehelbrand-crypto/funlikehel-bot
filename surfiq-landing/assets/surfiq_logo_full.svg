@@ -1,0 +1,36 @@
+<svg width="1800" height="520" viewBox="0 0 1800 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ocean" x1="80" y1="60" x2="410" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#64F1E6"/>
+      <stop offset="0.45" stop-color="#14D1C9"/>
+      <stop offset="1" stop-color="#1565E0"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="600" y1="80" x2="1300" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B2A55"/>
+      <stop offset="1" stop-color="#081D3A"/>
+    </linearGradient>
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#081D3A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="1800" height="520" rx="0" fill="none"/>
+
+  <g filter="url(#softShadow)">
+    <rect x="72" y="72" width="376" height="376" rx="104" fill="#081D3A"/>
+    <path d="M151 302C187 246 242 222 306 237C341 245 365 263 387 288C374 225 326 177 264 169C194 160 136 200 111 266C97 303 102 342 123 375C131 348 139 322 151 302Z" fill="url(#ocean)"/>
+    <path d="M148 337C193 286 248 271 306 291C339 302 360 325 378 356C334 348 298 356 267 377C235 399 200 407 166 392C146 383 132 369 123 352C130 349 139 344 148 337Z" fill="#64F1E6" fill-opacity="0.96"/>
+    <path d="M236 185C284 141 359 150 398 203C422 236 423 279 404 313C398 266 368 233 323 218C289 207 259 213 236 226V185Z" fill="#1565E0"/>
+    <circle cx="329" cy="192" r="18" fill="#64F1E6"/>
+    <circle cx="376" cy="251" r="10" fill="#14D1C9"/>
+    <circle cx="292" cy="220" r="8" fill="#FFFFFF" fill-opacity="0.88"/>
+    <path d="M329 192L376 251M329 192L292 220" stroke="#FFFFFF" stroke-opacity="0.56" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <text x="535" y="294" font-family="Inter, Montserrat, Arial, sans-serif" font-size="178" font-weight="800" letter-spacing="-8" fill="url(#navy)">Surf</text>
+    <text x="920" y="294" font-family="Inter, Montserrat, Arial, sans-serif" font-size="178" font-weight="900" letter-spacing="-8" fill="#14D1C9">IQ</text>
+    <path d="M535 340H1056" stroke="#14D1C9" stroke-width="10" stroke-linecap="round"/>
+    <text x="537" y="400" font-family="Inter, Montserrat, Arial, sans-serif" font-size="36" font-weight="600" letter-spacing="4" fill="#54708F">SMART WATER SPORTS SCHOOL OS</text>
+  </g>
+</svg>

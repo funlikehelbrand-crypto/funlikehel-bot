@@ -1,0 +1,13 @@
+file 'dashboard.png'
+duration 4.77
+file 'calendar.png'
+duration 4.77
+file 'weather.png'
+duration 4.77
+file 'inbox_dark.png'
+duration 4.77
+file 'safari1.png'
+duration 4.77
+file 'logo.png'
+duration 4.77
+file 'logo.png'

@@ -1,0 +1,2504 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SurfIQ — System operacyjny dla szkol sportow wodnych</title>
+  <meta name="description" content="SurfIQ to kompleksowy system zarządzania dla szkół kite, wind, wing i SUP. Rezerwacje, CRM, kalendarz, finanse, sprzęt, AI agenci — wszystko w jednym panelu. 14 dni za darmo.">
+  <meta name="keywords" content="system zarządzania szkołą kite, software szkoła kitesurfingu, rezerwacje szkoła windsurfing, CRM szkoła sportów wodnych, panel instruktora kite, zarządzanie szkołą SUP, system rezerwacji kite, SurfIQ, szkoła kite oprogramowanie">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="SurfIQ">
+  <link rel="canonical" href="https://surfiq.eu/">
+  <link rel="alternate" hreflang="pl" href="https://surfiq.eu/">
+  <link rel="alternate" hreflang="en" href="https://surfiq.eu/en/">
+  <link rel="alternate" hreflang="de" href="https://surfiq.eu/de/">
+  <link rel="alternate" hreflang="x-default" href="https://surfiq.eu/en/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://surfiq.eu/">
+  <meta property="og:title" content="SurfIQ — System zarządzania szkołą sportów wodnych">
+  <meta property="og:description" content="Rezerwacje, kursanci, pogoda, finanse i AI agenci w jednym panelu. Przetestowany na 1000+ kursantach. 14 dni za darmo.">
+  <meta property="og:image" content="https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:site_name" content="SurfIQ">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SurfIQ — System zarządzania szkołą sportów wodnych">
+  <meta name="twitter:description" content="Rezerwacje, kursanci, pogoda, finanse i AI agenci w jednym panelu. 14 dni za darmo.">
+  <meta name="twitter:image" content="https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/generated/logo_final/final_icon.png">
+  <link rel="apple-touch-icon" href="/assets/generated/logo_final/final_icon.png">
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "SurfIQ",
+    "url": "https://surfiq.eu",
+    "description": "Inteligentny system zarządzania szkołą sportów wodnych — rezerwacje, CRM, kalendarz, pogoda, finanse, AI agenci.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Starter",
+        "price": "1499",
+        "priceCurrency": "PLN",
+        "billingPeriod": "P1M",
+        "description": "Panel + strona WWW, do 100 kursantów, do 3 instruktorów"
+      },
+      {
+        "@type": "Offer",
+        "name": "Pro",
+        "price": "899",
+        "priceCurrency": "PLN",
+        "billingPeriod": "P1M",
+        "description": "Panel + strona + agenci AI (2 kanały), do 500 kursantów"
+      },
+      {
+        "@type": "Offer",
+        "name": "Enterprise",
+        "price": "499",
+        "priceCurrency": "PLN",
+        "billingPeriod": "P1M",
+        "description": "Wszystko + agenci AI (all channels) + API + custom branding"
+      }
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5",
+      "ratingCount": "1",
+      "bestRating": "5"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "SurfIQ",
+      "url": "https://surfiq.eu",
+      "logo": "https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "SurfIQ",
+    "url": "https://surfiq.eu",
+    "logo": "https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png",
+    "description": "System operacyjny dla szkół sportów wodnych",
+    "foundingDate": "2026",
+    "sameAs": [
+      "https://instagram.com/surfiq.eu",
+      "https://facebook.com/surfiq",
+      "https://linkedin.com/company/surfiq"
+    ],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+48-690-270-032",
+      "contactType": "sales",
+      "availableLanguage": ["Polish", "English"]
+    }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#081D3A',
+            ocean: '#0D47A1',
+            cobalt: '#1565E0',
+            turquoise: '#14D1C9',
+            aqua: '#64F1E6',
+            lgray: '#E6EAF2',
+            muted: '#8EA4BF',
+          },
+          fontFamily: {
+            sans: ['Poppins', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'Poppins', system-ui, sans-serif; }
+    html { scroll-behavior: smooth; }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-nav {
+      background: rgba(8, 29, 58, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .glass-red {
+      background: rgba(239, 68, 68, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .glass-turquoise {
+      background: rgba(20, 209, 201, 0.04);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(20, 209, 201, 0.2);
+    }
+
+    .gradient-hero {
+      background: radial-gradient(ellipse at 20% 50%, rgba(13, 71, 161, 0.4) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(21, 101, 224, 0.2) 0%, transparent 50%),
+                  radial-gradient(ellipse at 60% 80%, rgba(20, 209, 201, 0.12) 0%, transparent 40%),
+                  #081D3A;
+    }
+
+    .gradient-ocean {
+      background: linear-gradient(180deg, #081D3A 0%, #0D47A1 50%, #081D3A 100%);
+    }
+
+    .gradient-deep {
+      background: linear-gradient(180deg, #081D3A 0%, #0a2444 50%, #081D3A 100%);
+    }
+
+    .gradient-cobalt {
+      background: linear-gradient(180deg, #081D3A 0%, #0e3670 40%, #0D47A1 60%, #081D3A 100%);
+    }
+
+    .gradient-cta {
+      background: linear-gradient(135deg, #1565E0 0%, #14D1C9 100%);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1565E0 0%, #0D47A1 100%);
+      border-radius: 16px;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 20px rgba(21, 101, 224, 0.3);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 8px 40px rgba(21, 101, 224, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      border: 1.5px solid rgba(20, 209, 201, 0.5);
+      border-radius: 16px;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .btn-outline:hover {
+      background: rgba(20, 209, 201, 0.08);
+      border-color: #14D1C9;
+      box-shadow: 0 4px 20px rgba(20, 209, 201, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .module-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .module-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(20, 209, 201, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 40px rgba(20, 209, 201, 0.1), 0 0 0 1px rgba(20, 209, 201, 0.2);
+    }
+
+    .stat-number {
+      background: linear-gradient(135deg, #14D1C9, #64F1E6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .pricing-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .pricing-card:hover {
+      border-color: rgba(20, 209, 201, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(20, 209, 201, 0.08);
+    }
+    .pricing-popular {
+      border-color: rgba(20, 209, 201, 0.5);
+      background: rgba(20, 209, 201, 0.04);
+      box-shadow: 0 0 60px rgba(20, 209, 201, 0.08);
+    }
+
+    .phone-frame {
+      background: linear-gradient(180deg, #0f2a4d 0%, #081D3A 100%);
+      border-radius: 32px;
+      border: 2px solid rgba(255,255,255,0.12);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .faq-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .faq-content.open {
+      max-height: 300px;
+    }
+
+    .faq-item {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    .faq-item:hover {
+      border-color: rgba(20, 209, 201, 0.3);
+    }
+
+    .glow-badge {
+      box-shadow: 0 0 24px rgba(20, 209, 201, 0.3);
+    }
+
+    .glow-cobalt {
+      box-shadow: 0 0 30px rgba(21, 101, 224, 0.3);
+    }
+
+    .trust-badge {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    .trust-badge:hover {
+      border-color: rgba(20, 209, 201, 0.3);
+      background: rgba(20, 209, 201, 0.04);
+    }
+
+    .product-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .product-card:hover {
+      border-color: rgba(20, 209, 201, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+
+    .inbox-row {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .inbox-row:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .float-badge {
+      animation: floatBadge 4s ease-in-out infinite;
+    }
+    .float-badge:nth-child(2) { animation-delay: -1s; }
+    .float-badge:nth-child(3) { animation-delay: -2s; }
+    .float-badge:nth-child(4) { animation-delay: -3s; }
+
+    @keyframes floatBadge {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(20, 209, 201, 0.2); }
+      50% { box-shadow: 0 0 40px rgba(20, 209, 201, 0.4); }
+    }
+
+    .pulse-glow {
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    .chart-bar {
+      transition: height 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  </style>
+</head>
+<body class="bg-navy text-white antialiased overflow-x-hidden">
+
+  <!-- ===== 1. NAVBAR ===== -->
+  <nav class="glass-nav fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="#"><img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-12 md:h-14"></a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#modules" class="text-sm text-muted hover:text-white transition-colors">Moduly</a>
+        <a href="#calendar" class="text-sm text-muted hover:text-white transition-colors">Kalendarz</a>
+        <a href="#ai-agents" class="text-sm text-muted hover:text-white transition-colors">AI Agenci</a>
+        <a href="#finance" class="text-sm text-muted hover:text-white transition-colors">Finanse</a>
+        <a href="#shop" class="text-sm text-muted hover:text-white transition-colors">Sklep</a>
+        <a href="#pricing" class="text-sm text-muted hover:text-white transition-colors">Cennik</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-1 text-xs text-muted">
+          <a href="/" class="px-2 py-1 rounded bg-white/10 text-white font-semibold">PL</a>
+          <a href="/en/" class="px-2 py-1 rounded hover:bg-white/5 transition-colors">EN</a>
+          <a href="/de/" class="px-2 py-1 rounded hover:bg-white/5 transition-colors">DE</a>
+        </div>
+        <a href="#contact" class="btn-primary px-6 py-2.5 text-sm font-semibold text-white inline-block">Umow demo</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== 2. HERO ===== -->
+  <section class="gradient-hero min-h-screen flex items-center relative overflow-hidden pt-20">
+    <div class="absolute top-1/4 left-1/5 w-[600px] h-[600px] bg-cobalt/30 rounded-full blur-[180px]"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-turquoise/15 rounded-full blur-[140px]"></div>
+    <div class="absolute top-1/2 right-1/5 w-[400px] h-[400px] bg-ocean/20 rounded-full blur-[120px]"></div>
+
+    <div class="max-w-7xl mx-auto px-6 py-20 lg:py-28 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+      <div class="fade-in">
+        <img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-36 md:h-48 mb-6">
+        <h1 class="text-4xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.1] mb-6">System operacyjny dla szkol <span class="bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent">sportow wodnych</span></h1>
+        <p class="text-lg lg:text-xl text-muted mb-4 max-w-xl leading-relaxed">Rezerwacje, klienci, kalendarz, finanse, sprzet, pogoda i AI agenci — wszystko w jednym panelu.</p>
+        <p class="text-turquoise font-medium text-sm uppercase tracking-widest mb-10">Smarter schools. Better waves.</p>
+        <div class="flex flex-wrap gap-4 mb-8">
+          <a href="#contact" class="btn-primary px-8 py-4 text-white font-semibold inline-block text-base">Umow demo</a>
+          <a href="#modules" class="btn-outline px-8 py-4 text-turquoise font-semibold inline-block text-base">Zobacz moduly</a>
+        </div>
+        <!-- Stats row -->
+        <div class="flex flex-wrap gap-8 mt-4">
+          <div>
+            <p class="stat-number text-3xl font-bold">824</p>
+            <p class="text-muted text-xs">kursantow w bazie</p>
+          </div>
+          <div>
+            <p class="stat-number text-3xl font-bold">2 228</p>
+            <p class="text-muted text-xs">rezerwacji</p>
+          </div>
+          <div>
+            <p class="stat-number text-3xl font-bold">6</p>
+            <p class="text-muted text-xs">kanalow AI</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard mockup — realistic app layout with sidebar -->
+      <div class="fade-in relative">
+        <div class="glass rounded-3xl p-4 lg:p-5 relative">
+          <!-- Browser chrome -->
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#FEBC2E]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#28C840]"></div>
+            <span class="text-white/30 text-xs ml-3 font-mono">panel.surfiq.eu/dashboard</span>
+          </div>
+          <!-- App layout: sidebar + main -->
+          <div class="flex gap-3">
+            <!-- Sidebar -->
+            <div class="hidden lg:flex flex-col w-[130px] shrink-0 bg-[#060f1f] rounded-xl p-3 border border-white/5">
+              <div class="flex items-center gap-2 mb-5">
+                <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-turquoise to-aqua"></div>
+                <span class="text-white text-[9px] font-bold">SurfIQ</span>
+              </div>
+              <nav class="space-y-1.5 flex-1">
+                <div class="flex items-center gap-2 bg-turquoise/10 rounded-lg px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-turquoise/30"></div>
+                  <span class="text-turquoise text-[9px] font-medium">Pulpit</span>
+                </div>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-white/10"></div>
+                  <span class="text-muted text-[9px]">Kalendarz</span>
+                </div>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-white/10"></div>
+                  <span class="text-muted text-[9px]">Rezerwacje</span>
+                </div>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-white/10"></div>
+                  <span class="text-muted text-[9px]">Klienci</span>
+                </div>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-white/10"></div>
+                  <span class="text-muted text-[9px]">Finanse</span>
+                </div>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-white/10"></div>
+                  <span class="text-muted text-[9px]">Sprzet</span>
+                </div>
+                <div class="flex items-center gap-2 px-2 py-1.5">
+                  <div class="w-3 h-3 rounded bg-white/10"></div>
+                  <span class="text-muted text-[9px]">Pogoda</span>
+                </div>
+              </nav>
+              <div class="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
+                <div class="w-5 h-5 rounded-full bg-cobalt/40"></div>
+                <span class="text-muted text-[8px]">Admin</span>
+              </div>
+            </div>
+            <!-- Main content area -->
+            <div class="flex-1 min-w-0">
+              <!-- Header bar -->
+              <div class="flex items-center justify-between mb-3 bg-white/3 rounded-xl px-3 py-2 border border-white/5">
+                <div class="flex items-center gap-2">
+                  <p class="text-white text-[11px] font-semibold">Pulpit</p>
+                  <span class="text-muted text-[9px]">21 maja 2026</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-16 h-5 rounded-md bg-white/5 border border-white/10 flex items-center px-1.5">
+                    <svg class="w-2.5 h-2.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="text-muted text-[7px] ml-1">Szukaj...</span>
+                  </div>
+                  <div class="w-5 h-5 rounded-full bg-cobalt/40 border border-white/10"></div>
+                </div>
+              </div>
+              <!-- 8 dashboard cards -->
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">Pogoda — Jastarnia</p>
+                  <p class="stat-number text-lg font-bold">18 kn SW</p>
+                  <p class="text-muted text-[9px]">24C | fala 0.4m</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">Lekcje dzis</p>
+                  <p class="stat-number text-lg font-bold">12</p>
+                  <p class="text-green-400 text-[9px]">+2 vs wczoraj</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">Rezerwacje (tydzien)</p>
+                  <p class="text-white text-lg font-bold">47</p>
+                  <p class="text-muted text-[9px]">89% zaplaconych</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">Przychod dzis</p>
+                  <p class="stat-number text-lg font-bold">4 820 zl</p>
+                  <p class="text-green-400 text-[9px]">+18% vs srednia</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">Instruktorzy aktywni</p>
+                  <p class="text-white text-lg font-bold">8 / 12</p>
+                  <p class="text-yellow-400 text-[9px]">2 na przerwie</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">Sprzet dostepny</p>
+                  <p class="text-white text-lg font-bold">34 szt.</p>
+                  <p class="text-red-400 text-[9px]">2 w serwisie</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1">AI wiadomosci</p>
+                  <p class="stat-number text-lg font-bold">26</p>
+                  <p class="text-muted text-[9px]">wyslanych dzis</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-2.5 border border-white/8">
+                  <p class="text-muted text-[9px] mb-1.5">Kalendarz</p>
+                  <div class="grid grid-cols-7 gap-0.5">
+                    <div class="w-3.5 h-3.5 rounded bg-cobalt/30 text-[6px] flex items-center justify-center text-white/50">P</div>
+                    <div class="w-3.5 h-3.5 rounded bg-cobalt/30 text-[6px] flex items-center justify-center text-white/50">W</div>
+                    <div class="w-3.5 h-3.5 rounded bg-turquoise/40 text-[6px] flex items-center justify-center text-white/70">S</div>
+                    <div class="w-3.5 h-3.5 rounded bg-turquoise/40 text-[6px] flex items-center justify-center text-white/70">C</div>
+                    <div class="w-3.5 h-3.5 rounded bg-turquoise/60 text-[6px] flex items-center justify-center text-white/80">P</div>
+                    <div class="w-3.5 h-3.5 rounded bg-turquoise/80 text-[6px] flex items-center justify-center text-white">S</div>
+                    <div class="w-3.5 h-3.5 rounded bg-turquoise/80 text-[6px] flex items-center justify-center text-white">N</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating badges (4) -->
+        <div class="absolute -top-4 -right-4 glass rounded-2xl px-4 py-2 glow-badge float-badge">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+            <span class="text-xs text-white/90 font-medium">MEWIA aktywna</span>
+          </div>
+        </div>
+        <div class="absolute -bottom-4 -left-4 glass rounded-2xl px-4 py-2 float-badge">
+          <div class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span class="text-xs text-white/90 font-medium">AI: 26 wiadomosci</span>
+          </div>
+        </div>
+        <div class="absolute top-1/2 -right-6 glass rounded-2xl px-3 py-1.5 float-badge hidden lg:block">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-turquoise"></div>
+            <span class="text-[10px] text-white/80 font-medium">Stripe: 4 820 zl</span>
+          </div>
+        </div>
+        <div class="absolute top-1/4 -left-6 glass rounded-2xl px-3 py-1.5 float-badge hidden lg:block">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+            <span class="text-[10px] text-white/80 font-medium">Windguru: 18kn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Premium device showcase -->
+  <div class="py-16 fade-in" style="background: linear-gradient(180deg, #081D3A 0%, #0a2444 50%, #081D3A 100%);">
+    <div class="max-w-5xl mx-auto px-6">
+      <img src="/assets/screenshots/final/dashboard_dark.png" alt="SurfIQ Dashboard" class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-turquoise/5">
+    </div>
+    <p class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent max-w-3xl mx-auto px-6 text-center mt-10">Zamien sezonowy chaos w system</p>
+  </div>
+
+  <!-- ===== 3. PARTNER STRIP ===== -->
+  <section class="bg-navy py-16 border-t border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-6 text-center fade-in">
+      <p class="text-muted text-sm uppercase tracking-widest mb-10">Zbudowane dla szkol wspolpracujacych z najlepszymi markami</p>
+      <div class="flex flex-wrap items-center justify-center gap-10 lg:gap-16">
+        <img src="https://funlikehel.pl/wp-content/uploads/2026/05/cabrinha-logo.png" alt="Cabrinha" class="h-7 lg:h-9 brightness-0 invert opacity-50 hover:opacity-90 transition-opacity">
+        <img src="https://funlikehel.pl/wp-content/uploads/2026/05/pzkite-logo-scaled.png" alt="PZKite" class="h-7 lg:h-9 brightness-0 invert opacity-50 hover:opacity-90 transition-opacity">
+        <span class="text-white text-xl font-bold tracking-wider opacity-50 hover:opacity-90 transition-opacity">IKO</span>
+        <span class="text-white text-xl font-bold tracking-wider opacity-50 hover:opacity-90 transition-opacity">Windguru</span>
+        <span class="text-white text-xl font-bold tracking-wider opacity-50 hover:opacity-90 transition-opacity">ION</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. PROBLEM / SOLUTION ===== -->
+  <section class="gradient-deep py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Zarzadzasz szkola z Excela i Messengera?</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Wiemy jak to wyglada. I wiemy, ze mozna lepiej.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 lg:gap-12 fade-in">
+        <!-- Without system -->
+        <div class="glass-red rounded-3xl p-8 lg:p-10">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
+              <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-red-300">Bez systemu</h3>
+          </div>
+          <div class="space-y-5">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <p class="text-white/70">Rezerwacje w zeszycie — gubia sie w sezonie</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <p class="text-white/70">Brak kontroli platnosci — kto zaplacil?</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <p class="text-white/70">Konflikty instruktorow w grafiku</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <p class="text-white/70">Zero danych finansowych — jaki masz zysk?</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <p class="text-white/70">Chaos w szczycie sezonu — brak skalowania</p>
+            </div>
+          </div>
+          <div class="mt-8 pt-6 border-t border-red-500/10">
+            <p class="text-red-300/70 text-sm font-medium">Srednia strata: 15-20% przychodow przez brak systemu</p>
+          </div>
+        </div>
+
+        <!-- With SurfIQ -->
+        <div class="glass-turquoise rounded-3xl p-8 lg:p-10">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-12 h-12 rounded-2xl bg-turquoise/10 flex items-center justify-center">
+              <svg class="w-6 h-6 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-turquoise">Z SurfIQ</h3>
+          </div>
+          <div class="space-y-5">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <p class="text-white/80">Jedna aplikacja — wlasciciel i instruktorzy</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <p class="text-white/80">Status platnosci widoczny od razu</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <p class="text-white/80">Kalendarz automatycznie wykrywa konflikty</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <p class="text-white/80">Dashboard — wynik dnia, tygodnia, sezonu</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <p class="text-white/80">AI obsługuje klientow — Ty jestes na wodzie</p>
+            </div>
+          </div>
+          <div class="mt-8 pt-6 border-t border-turquoise/10">
+            <p class="text-turquoise/80 text-sm font-medium">ROI po 3 nowych rezerwacjach miesiecznie</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Punch line: after problem/solution -->
+  <div class="text-center py-16 fade-in" style="background: linear-gradient(180deg, #081D3A 0%, #081D3A 100%);">
+    <p class="text-xl md:text-3xl font-semibold max-w-3xl mx-auto px-6 leading-relaxed"><span class="bg-turquoise/10 border border-turquoise/20 rounded-xl px-4 py-2 inline-block text-turquoise">Nie uczysz sie systemu. Piszesz wiadomosc. SurfIQ wykonuje zadanie.</span></p>
+  </div>
+
+  <!-- ===== 5. CORE MODULES ===== -->
+  <section id="modules" class="py-24 lg:py-32 relative gradient-ocean">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Moduly</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Wszystko, czego potrzebuje Twoja szkola</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">9 modulow. Jeden system. Zero chaosu.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 fade-in">
+        <!-- 1. Kalendarz + pogoda -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/calendar_dark.png" alt="Kalendarz SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Kalendarz + pogoda</h3>
+            <p class="text-muted text-sm leading-relaxed">Widok dzienny i tygodniowy z prognoza wiatru, temperatura i fala</p>
+            <p class="stat-number text-2xl font-bold mt-3">3</p>
+            <p class="text-muted text-xs">zrodla pogody live</p>
+          </div>
+        </div>
+
+        <!-- 2. Rezerwacje -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/bookings_dark.png" alt="Rezerwacje SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Rezerwacje</h3>
+            <p class="text-muted text-sm leading-relaxed">Tworzenie, edycja, statusy, przypomnienia SMS, drag & drop</p>
+            <p class="stat-number text-2xl font-bold mt-3">2 228</p>
+            <p class="text-muted text-xs">rezerwacji obsłuzonych</p>
+          </div>
+        </div>
+
+        <!-- 3. Klienci / CRM -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/people_dark.png" alt="CRM SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Klienci / CRM</h3>
+            <p class="text-muted text-sm leading-relaxed">Baza kursantow z historia lekcji, certyfikatami, notatkami</p>
+            <p class="stat-number text-2xl font-bold mt-3">824</p>
+            <p class="text-muted text-xs">kursantow w pilotazu</p>
+          </div>
+        </div>
+
+        <!-- 4. Instruktorzy -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/calendar_dark.png" alt="Instruktorzy SurfIQ" class="w-full h-40 object-cover object-center opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Instruktorzy</h3>
+            <p class="text-muted text-sm leading-relaxed">Grafik, dostepnosc, godziny pracy, automatyczne przypisanie</p>
+            <p class="stat-number text-2xl font-bold mt-3">12</p>
+            <p class="text-muted text-xs">instruktorow rownoczesnie</p>
+          </div>
+        </div>
+
+        <!-- 5. Platnosci i finanse -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/finances_dark.png" alt="Finanse SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Platnosci i finanse</h3>
+            <p class="text-muted text-sm leading-relaxed">Przychod, koszty, zaleglosci, export do ksiegowosci</p>
+            <p class="stat-number text-2xl font-bold mt-3">321k</p>
+            <p class="text-muted text-xs">PLN przetworzone</p>
+          </div>
+        </div>
+
+        <!-- 6. Sprzet i magazyn -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/services_dark.png" alt="Uslugi SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Sprzet i magazyn</h3>
+            <p class="text-muted text-sm leading-relaxed">Stany magazynowe, alerty, wypozyczalnia, serwis</p>
+            <p class="stat-number text-2xl font-bold mt-3">71</p>
+            <p class="text-muted text-xs">produktow w katalogu</p>
+          </div>
+        </div>
+
+        <!-- 7. Sklep B2B -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/shop_dark.png" alt="Sklep SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Sklep B2B</h3>
+            <p class="text-muted text-sm leading-relaxed">Wlasne produkty + siec miedzy szkolami + rekomendacje po kursie</p>
+            <p class="stat-number text-2xl font-bold mt-3">B2B</p>
+            <p class="text-muted text-xs">siec miedzy szkolami</p>
+          </div>
+        </div>
+
+        <!-- 8. Multi-spot / MEWIA -->
+        <div class="module-card p-0 overflow-hidden">
+          <img src="/assets/screenshots/final/mewia_dark.png" alt="MEWIA SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">Multi-spot / MEWIA</h3>
+            <p class="text-muted text-sm leading-relaxed">Automatyczne zarzadzanie spotami z roza wiatrow</p>
+            <p class="stat-number text-2xl font-bold mt-3">2</p>
+            <p class="text-muted text-xs">lokalizacje: Hel + Hurghada</p>
+          </div>
+        </div>
+
+        <!-- 9. AI Agenci -->
+        <div class="module-card p-0 overflow-hidden border-turquoise/20">
+          <img src="/assets/screenshots/final/weather_dark.png" alt="Pogoda SurfIQ" class="w-full h-40 object-cover object-top opacity-90">
+          <div class="p-6">
+            <h3 class="text-white font-semibold text-lg mb-2">AI Agenci</h3>
+            <p class="text-muted text-sm leading-relaxed">Email, SMS, WhatsApp, IG, FB, TikTok — automatycznie 24/7</p>
+            <p class="stat-number text-2xl font-bold mt-3">6</p>
+            <p class="text-muted text-xs">kanalow komunikacji</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Punch line + dashboard showcase -->
+  <div class="py-16 fade-in" style="background: #081D3A;">
+    <p class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent max-w-3xl mx-auto px-6 text-center mb-10">Instruktor widzi swoj grafik. Wlasciciel widzi caly biznes.</p>
+    <div class="max-w-4xl mx-auto px-6">
+      <img src="/assets/screenshots/final/calendar_dark.png" alt="SurfIQ Kalendarz — instruktorzy, sporty, drag and drop" class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-turquoise/5">
+    </div>
+  </div>
+
+  <!-- ===== 6. CALENDAR SHOWCASE ===== -->
+  <section id="calendar" class="gradient-deep py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Kalendarz</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Kalendarz stworzony dla sportow wodnych</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Widok tygodniowy z wiatrem, instruktorami i statusem platnosci. Konflikty wykryte automatycznie.</p>
+      </div>
+
+      <div class="fade-in">
+        <div class="glass rounded-3xl p-5 lg:p-8 overflow-x-auto">
+          <!-- Wind forecast row -->
+          <div class="grid grid-cols-[90px_repeat(7,1fr)] gap-2 mb-4 min-w-[750px]">
+            <div class="text-xs text-muted font-medium flex items-center">Wiatr</div>
+            <div class="bg-turquoise/10 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-turquoise text-[11px] font-medium">12 kn</p>
+              <p class="text-muted text-[9px]">SW</p>
+            </div>
+            <div class="bg-turquoise/10 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-turquoise text-[11px] font-medium">15 kn</p>
+              <p class="text-muted text-[9px]">SW</p>
+            </div>
+            <div class="bg-turquoise/20 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-turquoise text-[11px] font-bold">18 kn</p>
+              <p class="text-turquoise/70 text-[9px]">W</p>
+            </div>
+            <div class="bg-turquoise/20 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-turquoise text-[11px] font-bold">20 kn</p>
+              <p class="text-turquoise/70 text-[9px]">W</p>
+            </div>
+            <div class="bg-turquoise/10 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-turquoise text-[11px] font-medium">14 kn</p>
+              <p class="text-muted text-[9px]">NW</p>
+            </div>
+            <div class="bg-turquoise/30 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-aqua text-[11px] font-bold">22 kn</p>
+              <p class="text-turquoise/70 text-[9px]">W</p>
+            </div>
+            <div class="bg-turquoise/10 rounded-lg px-2 py-1.5 text-center">
+              <p class="text-turquoise text-[11px] font-medium">16 kn</p>
+              <p class="text-muted text-[9px]">SW</p>
+            </div>
+          </div>
+
+          <!-- Header -->
+          <div class="grid grid-cols-[90px_repeat(7,1fr)] gap-2 mb-3 min-w-[750px]">
+            <div></div>
+            <div class="text-center text-[11px] text-muted font-medium">Pn 19.05</div>
+            <div class="text-center text-[11px] text-muted font-medium">Wt 20.05</div>
+            <div class="text-center text-[11px] text-white font-semibold bg-turquoise/10 rounded-lg py-1">Sr 21.05</div>
+            <div class="text-center text-[11px] text-muted font-medium">Cz 22.05</div>
+            <div class="text-center text-[11px] text-muted font-medium">Pt 23.05</div>
+            <div class="text-center text-[11px] text-muted font-medium">Sb 24.05</div>
+            <div class="text-center text-[11px] text-muted font-medium">Nd 25.05</div>
+          </div>
+
+          <!-- Instructor rows -->
+          <div class="space-y-2.5 min-w-[750px]">
+            <!-- Instructor -->
+            <div class="grid grid-cols-[90px_repeat(7,1fr)] gap-2 items-start">
+              <div class="text-sm text-white/80 font-medium py-2">Filip</div>
+              <div class="bg-cobalt/30 border border-cobalt/40 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Kite Basic</p>
+                <p class="text-[9px] text-white/50">09:00-11:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-cobalt/30 border border-cobalt/40 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Kite IKO2</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-yellow-400"></div></div>
+              </div>
+              <div class="bg-cobalt/30 border border-cobalt/40 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Kite Advanced</p>
+                <p class="text-[9px] text-white/50">09:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-cobalt/30 border border-cobalt/40 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Kite IKO3</p>
+                <p class="text-[9px] text-white/50">14:00-16:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div></div>
+              <div class="bg-cobalt/30 border border-cobalt/40 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Kite Intro</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-yellow-400"></div></div>
+              </div>
+              <div class="bg-cobalt/30 border border-cobalt/40 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Kite Basic</p>
+                <p class="text-[9px] text-white/50">09:00-11:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+            </div>
+
+            <!-- Magda -->
+            <div class="grid grid-cols-[90px_repeat(7,1fr)] gap-2 items-start">
+              <div class="text-sm text-white/80 font-medium py-2">Magda</div>
+              <div></div>
+              <div class="bg-green-500/20 border border-green-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Wing Foil Adv</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-green-500/20 border border-green-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Wing Foil</p>
+                <p class="text-[9px] text-white/50">14:00-16:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-red-400"></div><div class="w-2 h-2 rounded-full bg-yellow-400"></div></div>
+              </div>
+              <div class="bg-green-500/20 border border-green-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Wing Intro</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div></div>
+              <div class="bg-green-500/20 border border-green-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Wing Foil Adv</p>
+                <p class="text-[9px] text-white/50">09:00-11:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-green-500/20 border border-green-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Wing Foil</p>
+                <p class="text-[9px] text-white/50">11:00-13:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+            </div>
+
+            <!-- Konrad -->
+            <div class="grid grid-cols-[90px_repeat(7,1fr)] gap-2 items-start">
+              <div class="text-sm text-white/80 font-medium py-2">Konrad</div>
+              <div class="bg-orange-500/20 border border-orange-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Windsurf Intro</p>
+                <p class="text-[9px] text-white/50">14:00-16:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-yellow-400"></div></div>
+              </div>
+              <div></div>
+              <div class="bg-orange-500/20 border border-orange-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Windsurfing</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-orange-500/20 border border-orange-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Windsurf Adv</p>
+                <p class="text-[9px] text-white/50">14:00-16:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-orange-500/20 border border-orange-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Windsurfing</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-yellow-400"></div></div>
+              </div>
+              <div class="bg-orange-500/20 border border-orange-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Windsurf Kids</p>
+                <p class="text-[9px] text-white/50">14:00-15:30</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-orange-500/20 border border-orange-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">Windsurf Intro</p>
+                <p class="text-[9px] text-white/50">10:00-12:00</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+            </div>
+
+            <!-- Kasia -->
+            <div class="grid grid-cols-[90px_repeat(7,1fr)] gap-2 items-start">
+              <div class="text-sm text-white/80 font-medium py-2">Kasia</div>
+              <div class="bg-purple-500/20 border border-purple-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">SUP Tour</p>
+                <p class="text-[9px] text-white/50">08:00-09:30</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-purple-500/20 border border-purple-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">SUP Yoga</p>
+                <p class="text-[9px] text-white/50">07:00-08:30</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div></div>
+              <div class="bg-purple-500/20 border border-purple-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">SUP Tour</p>
+                <p class="text-[9px] text-white/50">17:00-18:30</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div></div>
+              <div class="bg-purple-500/20 border border-purple-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">SUP Family</p>
+                <p class="text-[9px] text-white/50">10:00-11:30</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+              <div class="bg-purple-500/20 border border-purple-500/30 rounded-xl p-2">
+                <p class="text-[10px] text-white font-medium">SUP Tour</p>
+                <p class="text-[9px] text-white/50">08:00-09:30</p>
+                <div class="flex gap-1 mt-1"><div class="w-2 h-2 rounded-full bg-green-400"></div><div class="w-2 h-2 rounded-full bg-green-400"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="flex flex-wrap gap-6 mt-6 pt-4 border-t border-white/5">
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-green-400"></div><span class="text-xs text-muted">Zaplacone</span></div>
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div><span class="text-xs text-muted">Zaliczka</span></div>
+            <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 rounded-full bg-red-400"></div><span class="text-xs text-muted">Nieoplacone</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-cobalt/30 border border-cobalt/40"></div><span class="text-xs text-muted">Kite</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-green-500/20 border border-green-500/30"></div><span class="text-xs text-muted">Wing</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-orange-500/20 border border-orange-500/30"></div><span class="text-xs text-muted">Windsurf</span></div>
+            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-purple-500/20 border border-purple-500/30"></div><span class="text-xs text-muted">SUP</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6B. REZERWACJA W 3 KROKACH ===== -->
+  <section class="py-24 lg:py-32 gradient-ocean">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Rezerwacja online</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Rezerwacja w 3 krokach</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Klient rezerwuje sam z telefonu. Ty dostajesz powiadomienie.</p>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-8 lg:gap-12 fade-in">
+        <!-- Step 1: Choose sport & date -->
+        <div class="text-center">
+          <div class="phone-frame p-5 w-[200px] mx-auto mb-5">
+            <div class="w-14 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
+            <p class="text-turquoise text-[9px] font-bold uppercase mb-3">Krok 1</p>
+            <div class="space-y-2 mb-3">
+              <p class="text-white text-[10px] font-medium mb-2">Wybierz sport</p>
+              <div class="grid grid-cols-2 gap-1.5">
+                <div class="bg-turquoise/15 border border-turquoise/30 rounded-lg p-2 text-center">
+                  <p class="text-turquoise text-[9px] font-bold">Kite</p>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                  <p class="text-muted text-[9px]">Wing</p>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                  <p class="text-muted text-[9px]">Windsurf</p>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                  <p class="text-muted text-[9px]">SUP</p>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <p class="text-white text-[10px] font-medium mb-1">Wybierz termin</p>
+              <div class="bg-white/5 border border-white/10 rounded-lg p-2">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-muted text-[8px]">Maj 2026</span>
+                  <span class="text-muted text-[8px]">></span>
+                </div>
+                <div class="grid grid-cols-7 gap-0.5">
+                  <div class="w-4 h-4 rounded text-[7px] flex items-center justify-center text-muted">19</div>
+                  <div class="w-4 h-4 rounded text-[7px] flex items-center justify-center text-muted">20</div>
+                  <div class="w-4 h-4 rounded bg-turquoise/30 text-[7px] flex items-center justify-center text-white font-bold">21</div>
+                  <div class="w-4 h-4 rounded text-[7px] flex items-center justify-center text-muted">22</div>
+                  <div class="w-4 h-4 rounded text-[7px] flex items-center justify-center text-muted">23</div>
+                  <div class="w-4 h-4 rounded text-[7px] flex items-center justify-center text-turquoise">24</div>
+                  <div class="w-4 h-4 rounded text-[7px] flex items-center justify-center text-turquoise">25</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-white font-semibold text-sm">Klient wybiera sport i termin</p>
+          <p class="text-muted text-xs mt-1">Intuicyjny formularz mobilny</p>
+        </div>
+
+        <!-- Step 2: System checks availability -->
+        <div class="text-center">
+          <div class="phone-frame p-5 w-[200px] mx-auto mb-5">
+            <div class="w-14 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
+            <p class="text-turquoise text-[9px] font-bold uppercase mb-3">Krok 2</p>
+            <p class="text-white text-[10px] font-medium mb-2">Dostepne sloty — 21.05</p>
+            <div class="space-y-1.5">
+              <div class="bg-turquoise/10 border border-turquoise/30 rounded-lg p-2 flex justify-between items-center">
+                <div>
+                  <p class="text-white text-[9px] font-medium">09:00 - 11:00</p>
+                  <p class="text-turquoise text-[8px]">Filip</p>
+                </div>
+                <div class="w-4 h-4 rounded-full border-2 border-turquoise flex items-center justify-center">
+                  <div class="w-2 h-2 rounded-full bg-turquoise"></div>
+                </div>
+              </div>
+              <div class="bg-white/5 border border-white/10 rounded-lg p-2 flex justify-between items-center">
+                <div>
+                  <p class="text-white text-[9px] font-medium">11:00 - 13:00</p>
+                  <p class="text-muted text-[8px]">Magda</p>
+                </div>
+                <div class="w-4 h-4 rounded-full border-2 border-white/20"></div>
+              </div>
+              <div class="bg-white/5 border border-white/10 rounded-lg p-2 flex justify-between items-center">
+                <div>
+                  <p class="text-white text-[9px] font-medium">14:00 - 16:00</p>
+                  <p class="text-muted text-[8px]">Konrad</p>
+                </div>
+                <div class="w-4 h-4 rounded-full border-2 border-white/20"></div>
+              </div>
+              <div class="bg-white/3 border border-white/5 rounded-lg p-2 flex justify-between items-center opacity-50">
+                <div>
+                  <p class="text-white/50 text-[9px] font-medium">16:00 - 18:00</p>
+                  <p class="text-muted text-[8px]">Brak miejsc</p>
+                </div>
+                <div class="w-4 h-4 rounded-full border-2 border-white/10 bg-white/5"></div>
+              </div>
+            </div>
+            <div class="mt-2 bg-green-500/10 rounded-lg p-1.5 border border-green-500/20">
+              <p class="text-green-400 text-[8px] font-medium text-center">Instruktor przypisany automatycznie</p>
+            </div>
+          </div>
+          <p class="text-white font-semibold text-sm">System sprawdza dostepnosc</p>
+          <p class="text-muted text-xs mt-1">Instruktor przypisany automatycznie</p>
+        </div>
+
+        <!-- Step 3: Confirmation + payment -->
+        <div class="text-center">
+          <div class="phone-frame p-5 w-[200px] mx-auto mb-5">
+            <div class="w-14 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
+            <p class="text-turquoise text-[9px] font-bold uppercase mb-3">Krok 3</p>
+            <div class="bg-turquoise/10 border border-turquoise/30 rounded-xl p-3 mb-3">
+              <div class="flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <p class="text-turquoise text-[10px] font-bold">Zarezerwowano</p>
+              </div>
+              <div class="space-y-1 text-left">
+                <p class="text-white text-[9px]">Kite Basic — 2h</p>
+                <p class="text-muted text-[8px]">21 maja, 09:00-11:00</p>
+                <p class="text-muted text-[8px]">Instruktor: Filip</p>
+                <p class="text-white text-[10px] font-bold mt-1">250 PLN</p>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="bg-cobalt/20 border border-cobalt/30 rounded-lg p-2 text-center">
+                <p class="text-blue-300 text-[9px] font-bold">Zaplac Przelewy24</p>
+              </div>
+              <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                <p class="text-muted text-[9px]">Zaplac Stripe</p>
+              </div>
+              <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                <p class="text-muted text-[9px]">BLIK</p>
+              </div>
+            </div>
+            <div class="mt-2 flex items-center justify-center gap-1">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <p class="text-green-400 text-[8px] font-medium">SMS potwierdzenie wyslane</p>
+            </div>
+          </div>
+          <p class="text-white font-semibold text-sm">Potwierdzenie + platnosc</p>
+          <p class="text-muted text-xs mt-1">Platnosc online lub na miejscu</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. AI AGENTS ===== -->
+  <section id="ai-agents" class="py-24 lg:py-32 relative gradient-cobalt">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">AI Agenci</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Pracuja kiedy Ty jestes na wodzie</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Piszesz jedno polecenie. System wykonuje zadanie na wszystkich kanalach.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-10 items-start fade-in">
+        <!-- Agent list — enhanced with detailed descriptions -->
+        <div class="space-y-4">
+          <div class="module-card p-5 flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-turquoise/10 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-white font-semibold">Agent sprzedazowy</p>
+                <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">LIVE</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed">Odpowiada na zapytania klientow przez WhatsApp, Messenger i email. Kwalifikuje leady, podaje ceny, umawia na lekcje — 24 godziny na dobe.</p>
+            </div>
+          </div>
+
+          <div class="module-card p-5 flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-cobalt/20 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-white font-semibold">Agent contentowy</p>
+                <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">LIVE</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed">Tworzy i publikuje posty na Instagram, Facebook i TikTok. Planuje content na caly tydzien z hashtagami, hookami i doborem zdjec.</p>
+            </div>
+          </div>
+
+          <div class="module-card p-5 flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-turquoise/10 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-white font-semibold">Agent wind alert</p>
+                <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">LIVE</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed">Monitoruje wiatr 24/7. Gdy warunki sie zmieniaja, wysyla powiadomienia do instruktorow i klientow. "Jutro 20 kn — rezerwuj!"</p>
+            </div>
+          </div>
+
+          <div class="module-card p-5 flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-cobalt/20 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-white font-semibold">Agent follow-up</p>
+                <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">LIVE</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed">Przypomina klientom o nadchodzacych lekcjach, zbiera feedback po kursie, proponuje kolejne zajecia i buduje lojalnosc.</p>
+            </div>
+          </div>
+
+          <div class="module-card p-5 flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-turquoise/10 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-white font-semibold">Agent raportow</p>
+                <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">LIVE</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed">Generuje dzienne i tygodniowe raporty finansowe. Wysyla podsumowanie na email wlasciciela — przychod, lekcje, trendy.</p>
+            </div>
+          </div>
+
+          <div class="module-card p-5 flex items-start gap-4">
+            <div class="w-11 h-11 rounded-2xl bg-cobalt/20 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-white font-semibold">Agent marketplace</p>
+                <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">LIVE</span>
+              </div>
+              <p class="text-muted text-sm leading-relaxed">Zarzadza ogloszeniami na FB Marketplace, odpowiada na wiadomosci kupujacych, aktualizuje stany i ceny.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Command Center mockup -->
+        <div class="glass rounded-3xl p-6">
+          <div class="flex items-center gap-2 mb-5">
+            <div class="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#FEBC2E]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#28C840]"></div>
+            <span class="text-white/30 text-xs ml-3 font-mono">Command Center</span>
+            <div class="ml-auto flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <span class="text-green-400 text-[10px] font-medium">5 agentow aktywnych</span>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="inbox-row p-3.5 flex items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-medium truncate">Zmien cene kite 2h na 250 zl</p>
+                <p class="text-muted text-[11px] mt-0.5">Dzis, 09:14 — cennik zaktualizowany</p>
+              </div>
+              <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">Wykonano</span>
+            </div>
+
+            <div class="inbox-row p-3.5 flex items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-medium truncate">Wyslij przypomnienie o jutrzejszych lekcjach</p>
+                <p class="text-muted text-[11px] mt-0.5">Dzis, 10:02 — 8 SMS wyslanych</p>
+              </div>
+              <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">Wykonano</span>
+            </div>
+
+            <div class="inbox-row p-3.5 flex items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-medium truncate">Wrzuc post o wietrze na IG i FB</p>
+                <p class="text-muted text-[11px] mt-0.5">Dzis, 11:30 — opublikowano na 2 platformach</p>
+              </div>
+              <span class="bg-green-500/20 text-green-400 text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">Wykonano</span>
+            </div>
+
+            <div class="inbox-row p-3.5 flex items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-medium truncate">Odpisz na DM o kurs wing foil w sobote</p>
+                <p class="text-muted text-[11px] mt-0.5">Dzis, 12:45 — czeka na potwierdzenie slotu</p>
+              </div>
+              <span class="bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">W toku</span>
+            </div>
+
+            <div class="inbox-row p-3.5 flex items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-medium truncate">Pokaz przychod z tego tygodnia</p>
+                <p class="text-muted text-[11px] mt-0.5">Dzis, 13:00 — generuje raport</p>
+              </div>
+              <span class="bg-cobalt/30 text-blue-300 text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">Generuje</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7B. INTEGRATIONS ===== -->
+  <section class="py-24 lg:py-32 gradient-deep">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Integracje</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Polaczony z narzedziami, ktorych juz uzywasz</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">SurfIQ integruje sie z platformami social media, platnosci, pogody i komunikacji</p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 fade-in">
+        <!-- Instagram -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <span class="text-white text-sm font-bold">IG</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Instagram</p>
+            <p class="text-muted text-xs mt-0.5">Automatyczne posty o warunkach i kursach</p>
+          </div>
+        </div>
+
+        <!-- Facebook -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-[#1877F2] flex items-center justify-center">
+              <span class="text-white text-sm font-bold">FB</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Facebook</p>
+            <p class="text-muted text-xs mt-0.5">Publikacja na stronie i w grupach kite</p>
+          </div>
+        </div>
+
+        <!-- TikTok -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-black border border-white/20 flex items-center justify-center">
+              <span class="text-white text-sm font-bold">TT</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">TikTok</p>
+            <p class="text-muted text-xs mt-0.5">Wideo z sesji i reelsy</p>
+          </div>
+        </div>
+
+        <!-- WhatsApp -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-[#25D366] flex items-center justify-center">
+              <span class="text-white text-sm font-bold">WA</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">WhatsApp</p>
+            <p class="text-muted text-xs mt-0.5">Odpowiedzi na zapytania 24/7</p>
+          </div>
+        </div>
+
+        <!-- Messenger -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#00B2FF] to-[#006AFF] flex items-center justify-center">
+              <span class="text-white text-sm font-bold">M</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Messenger</p>
+            <p class="text-muted text-xs mt-0.5">Obsluga leadow z FB</p>
+          </div>
+        </div>
+
+        <!-- Gmail -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+              <span class="text-red-400 text-sm font-bold">G</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Gmail</p>
+            <p class="text-muted text-xs mt-0.5">Automatyczne odpowiedzi klientom</p>
+          </div>
+        </div>
+
+        <!-- SMS -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-turquoise/20 flex items-center justify-center">
+              <span class="text-turquoise text-sm font-bold">SMS</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">SMS</p>
+            <p class="text-muted text-xs mt-0.5">Przypomnienia o lekcjach</p>
+          </div>
+        </div>
+
+        <!-- Google Calendar -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-[#4285F4]/20 flex items-center justify-center">
+              <span class="text-blue-300 text-sm font-bold">GC</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Google Calendar</p>
+            <p class="text-muted text-xs mt-0.5">Synchronizacja grafiku</p>
+          </div>
+        </div>
+
+        <!-- Stripe / P24 -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-[#635BFF]/20 flex items-center justify-center">
+              <span class="text-[#635BFF] text-sm font-bold">P</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Stripe / Przelewy24</p>
+            <p class="text-muted text-xs mt-0.5">Platnosci online</p>
+          </div>
+        </div>
+
+        <!-- Windguru -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-turquoise/10 flex items-center justify-center">
+              <span class="text-turquoise text-sm font-bold">WG</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Windguru</p>
+            <p class="text-muted text-xs mt-0.5">Prognoza wiatru w panelu</p>
+          </div>
+        </div>
+
+        <!-- WooCommerce -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-[#96588A]/20 flex items-center justify-center">
+              <span class="text-[#96588A] text-sm font-bold">WC</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">WooCommerce</p>
+            <p class="text-muted text-xs mt-0.5">Sklep ze sprzetem</p>
+          </div>
+        </div>
+
+        <!-- Google Ads -->
+        <div class="glass rounded-2xl p-5 flex flex-col items-start gap-3 hover:border-turquoise/30 transition-all">
+          <div class="flex items-center justify-between w-full">
+            <div class="w-9 h-9 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+              <span class="text-yellow-400 text-sm font-bold">GA</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              <span class="text-green-400 text-[9px] font-medium">Polaczony</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Google Ads</p>
+            <p class="text-muted text-xs mt-0.5">Sledzenie konwersji</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Punch line: after AI / integrations -->
+  <div class="text-center py-16 fade-in" style="background: #081D3A;">
+    <p class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent max-w-3xl mx-auto px-6">AI pracuje, kiedy Ty jestes na wodzie</p>
+  </div>
+
+  <!-- Premium multi-device showcase -->
+  <div class="py-16 fade-in gradient-deep">
+    <div class="max-w-5xl mx-auto px-6">
+      <img src="/assets/screenshots/final/finances_dark.png" alt="SurfIQ Finanse — przychod, zaleglosci, koszty" class="w-full rounded-2xl border border-white/10 shadow-2xl shadow-turquoise/5">
+    </div>
+  </div>
+
+  <!-- ===== 8. MOBILE APP ===== -->
+  <section class="gradient-deep py-24 lg:py-32">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Aplikacja mobilna</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Cala szkola w telefonie</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Instruktor widzi swoj grafik. Wlasciciel widzi caly biznes. Klient rezerwuje sam.</p>
+      </div>
+
+      <!-- Role badges -->
+      <div class="flex flex-wrap justify-center gap-3 mb-12 fade-in">
+        <span class="glass rounded-full px-5 py-2 text-sm text-white/80 font-medium">Wlasciciel</span>
+        <span class="glass rounded-full px-5 py-2 text-sm text-white/80 font-medium">Instruktor</span>
+        <span class="glass rounded-full px-5 py-2 text-sm text-white/80 font-medium">Kursant</span>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-6 lg:gap-10 fade-in">
+        <!-- Phone 1: Dashboard -->
+        <div class="phone-frame p-5 w-[210px]">
+          <div class="w-16 h-1 bg-white/20 rounded-full mx-auto mb-5"></div>
+          <div class="space-y-2.5">
+            <div class="bg-white/8 rounded-xl p-3 border border-white/5">
+              <p class="text-[9px] text-muted">Pogoda dzis</p>
+              <p class="stat-number text-lg font-bold">22 kn SW</p>
+              <p class="text-[9px] text-muted">24C | fala 0.3m</p>
+            </div>
+            <div class="bg-white/8 rounded-xl p-3 border border-white/5">
+              <p class="text-[9px] text-muted">Lekcje dzis</p>
+              <p class="text-white text-lg font-bold">8</p>
+              <p class="text-green-400 text-[9px]">Wszystkie potwierdzone</p>
+            </div>
+            <div class="bg-white/8 rounded-xl p-3 border border-white/5">
+              <p class="text-[9px] text-muted">Przychod dzis</p>
+              <p class="stat-number text-lg font-bold">4 820 zl</p>
+              <p class="text-green-400 text-[9px]">+18% vs srednia</p>
+            </div>
+            <div class="bg-turquoise/10 rounded-xl p-2.5 border border-turquoise/20 text-center">
+              <p class="text-turquoise text-xs font-semibold">+ Dodaj rezerwacje</p>
+            </div>
+          </div>
+          <p class="text-center text-[10px] text-turquoise mt-4 font-semibold">Dashboard</p>
+        </div>
+
+        <!-- Phone 2: Kalendarz -->
+        <div class="phone-frame p-5 w-[210px]">
+          <div class="w-16 h-1 bg-white/20 rounded-full mx-auto mb-5"></div>
+          <div class="space-y-2">
+            <div class="bg-cobalt/20 rounded-xl p-2.5 border-l-2 border-l-cobalt">
+              <p class="text-[10px] text-white font-medium">09:00 — Kite Basic</p>
+              <p class="text-[8px] text-muted">Jan K. + 2 osoby</p>
+              <div class="flex gap-1 mt-1"><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-yellow-400"></div></div>
+            </div>
+            <div class="bg-green-500/15 rounded-xl p-2.5 border-l-2 border-l-green-400">
+              <p class="text-[10px] text-white font-medium">11:00 — Wing Foil</p>
+              <p class="text-[8px] text-muted">Marta S.</p>
+              <div class="flex gap-1 mt-1"><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div></div>
+            </div>
+            <div class="bg-orange-500/15 rounded-xl p-2.5 border-l-2 border-l-orange-400">
+              <p class="text-[10px] text-white font-medium">14:00 — Windsurfing</p>
+              <p class="text-[8px] text-muted">Grupa 4 osoby</p>
+              <div class="flex gap-1 mt-1"><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div></div>
+            </div>
+            <div class="bg-cobalt/20 rounded-xl p-2.5 border-l-2 border-l-cobalt">
+              <p class="text-[10px] text-white font-medium">16:00 — Kite IKO2</p>
+              <p class="text-[8px] text-muted">Piotr W.</p>
+              <div class="flex gap-1 mt-1"><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div></div>
+            </div>
+            <div class="bg-purple-500/15 rounded-xl p-2.5 border-l-2 border-l-purple-400">
+              <p class="text-[10px] text-white font-medium">17:30 — SUP Tour</p>
+              <p class="text-[8px] text-muted">Grupa 6 osob</p>
+              <div class="flex gap-1 mt-1"><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-green-400"></div><div class="w-1.5 h-1.5 rounded-full bg-yellow-400"></div></div>
+            </div>
+          </div>
+          <p class="text-center text-[10px] text-turquoise mt-4 font-semibold">Kalendarz</p>
+        </div>
+
+        <!-- Phone 3: Platnosci -->
+        <div class="phone-frame p-5 w-[210px]">
+          <div class="w-16 h-1 bg-white/20 rounded-full mx-auto mb-5"></div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2.5 bg-white/8 rounded-xl p-2.5 border border-white/5">
+              <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              </div>
+              <div>
+                <p class="text-[10px] text-white font-medium">Anna M. — 350 PLN</p>
+                <p class="text-[8px] text-green-400">Zaplacone</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 bg-white/8 rounded-xl p-2.5 border border-white/5">
+              <div class="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+              </div>
+              <div>
+                <p class="text-[10px] text-white font-medium">Piotr W. — 200 PLN</p>
+                <p class="text-[8px] text-yellow-400">Zaliczka 100 PLN</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 bg-white/8 rounded-xl p-2.5 border border-white/5">
+              <div class="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+                <div class="w-2 h-2 rounded-full bg-red-400"></div>
+              </div>
+              <div>
+                <p class="text-[10px] text-white font-medium">Marek Z. — 450 PLN</p>
+                <p class="text-[8px] text-red-400">Brak platnosci</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5 bg-white/8 rounded-xl p-2.5 border border-white/5">
+              <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                <div class="w-2 h-2 rounded-full bg-green-400"></div>
+              </div>
+              <div>
+                <p class="text-[10px] text-white font-medium">Kasia D. — 180 PLN</p>
+                <p class="text-[8px] text-green-400">Stripe</p>
+              </div>
+            </div>
+            <div class="mt-3 bg-turquoise/10 rounded-xl p-3 border border-turquoise/20 text-center">
+              <p class="text-turquoise text-[11px] font-bold">Dzis: 4 820 PLN</p>
+              <p class="text-muted text-[9px]">89% wplat zarejestrowanych</p>
+            </div>
+          </div>
+          <p class="text-center text-[10px] text-turquoise mt-4 font-semibold">Platnosci</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== WEATHER FEATURE SHOWCASE ===== -->
+  <section class="py-24 lg:py-32 gradient-deep">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid lg:grid-cols-2 gap-12 items-center fade-in">
+        <div>
+          <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Pogoda</p>
+          <h2 class="text-3xl md:text-4xl font-bold mb-6">3 zrodla pogody w jednym widoku</h2>
+          <p class="text-muted text-lg mb-6">Windguru, Windy i Windfinder obok siebie. Porownaj prognozy i zdecyduj w 10 sekund czy dzis uczysz.</p>
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-turquoise/10 flex items-center justify-center"><svg class="w-4 h-4 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+              <p class="text-white/80">Windguru — kolorowe tabele, wiele modeli</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-turquoise/10 flex items-center justify-center"><svg class="w-4 h-4 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+              <p class="text-white/80">Windy — animowana mapa wiatru ECMWF</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-turquoise/10 flex items-center justify-center"><svg class="w-4 h-4 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+              <p class="text-white/80">Windfinder — Super Forecast, dane ze stacji</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-turquoise/10 flex items-center justify-center"><svg class="w-4 h-4 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>
+              <p class="text-white/80">MEWIA — aktualny sektor wiatru w czasie rzeczywistym</p>
+            </div>
+          </div>
+        </div>
+        <!-- CSS weather mockup -->
+        <div class="glass rounded-2xl p-5 border border-white/10">
+          <p class="text-white text-sm font-semibold mb-4">Pogoda — Jastarnia, dzis</p>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+              <p class="text-turquoise text-[10px] font-semibold mb-2">Windguru</p>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[9px] text-muted">10:00</span><span class="text-[10px] text-green-400 font-medium">14 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">12:00</span><span class="text-[10px] text-green-400 font-medium">18 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">14:00</span><span class="text-[10px] text-yellow-400 font-medium">22 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">16:00</span><span class="text-[10px] text-green-400 font-medium">19 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">18:00</span><span class="text-[10px] text-green-400 font-medium">15 kn</span></div>
+              </div>
+            </div>
+            <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+              <p class="text-cobalt text-[10px] font-semibold mb-2">Windy</p>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[9px] text-muted">10:00</span><span class="text-[10px] text-green-400 font-medium">13 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">12:00</span><span class="text-[10px] text-green-400 font-medium">17 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">14:00</span><span class="text-[10px] text-green-400 font-medium">20 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">16:00</span><span class="text-[10px] text-green-400 font-medium">18 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">18:00</span><span class="text-[10px] text-green-400 font-medium">14 kn</span></div>
+              </div>
+            </div>
+            <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+              <p class="text-aqua text-[10px] font-semibold mb-2">Windfinder</p>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[9px] text-muted">10:00</span><span class="text-[10px] text-green-400 font-medium">15 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">12:00</span><span class="text-[10px] text-green-400 font-medium">19 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">14:00</span><span class="text-[10px] text-yellow-400 font-medium">23 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">16:00</span><span class="text-[10px] text-green-400 font-medium">20 kn</span></div>
+                <div class="flex justify-between"><span class="text-[9px] text-muted">18:00</span><span class="text-[10px] text-green-400 font-medium">16 kn</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between bg-turquoise/5 rounded-lg px-3 py-2 border border-turquoise/20">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <span class="text-[10px] text-turquoise font-medium">MEWIA Live</span>
+            </div>
+            <span class="text-white text-[11px] font-semibold">SW 18 kn | sektor 240</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 9. MEWIA — Wind Rose ===== -->
+  <section id="mewia" class="py-24 lg:py-32 gradient-ocean">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">MEWIA</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Multi-spot Engine with Wind Intelligence</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">System automatycznie wybiera najlepszy spot na podstawie aktualnego wiatru.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-12 items-center fade-in">
+        <!-- Wind Rose SVG -->
+        <div class="flex justify-center">
+          <div class="relative w-[320px] h-[320px]">
+            <svg viewBox="0 0 320 320" class="w-full h-full">
+              <!-- Background circle -->
+              <circle cx="160" cy="160" r="140" fill="rgba(20,209,201,0.03)" stroke="rgba(20,209,201,0.15)" stroke-width="1"/>
+              <circle cx="160" cy="160" r="100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <circle cx="160" cy="160" r="60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <!-- Direction lines -->
+              <line x1="160" y1="20" x2="160" y2="300" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <line x1="20" y1="160" x2="300" y2="160" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+              <!-- Wind sectors (270-90 = W-N-E = good for Jastarnia) -->
+              <path d="M160,160 L160,30 A130,130 0 0,1 290,160 Z" fill="rgba(20,209,201,0.2)" stroke="rgba(20,209,201,0.6)" stroke-width="1.5"/>
+              <path d="M160,160 L290,160 A130,130 0 0,1 252,252 Z" fill="rgba(20,209,201,0.08)" stroke="rgba(20,209,201,0.3)" stroke-width="1"/>
+              <path d="M160,160 L68,252 A130,130 0 0,1 30,160 Z" fill="rgba(20,209,201,0.08)" stroke="rgba(20,209,201,0.3)" stroke-width="1"/>
+              <path d="M160,160 L30,160 A130,130 0 0,1 160,30 Z" fill="rgba(20,209,201,0.2)" stroke="rgba(20,209,201,0.6)" stroke-width="1.5"/>
+              <!-- Current wind arrow -->
+              <line x1="160" y1="160" x2="90" y2="100" stroke="#14D1C9" stroke-width="3" stroke-linecap="round"/>
+              <polygon points="85,95 95,105 80,108" fill="#14D1C9"/>
+              <!-- Labels -->
+              <text x="160" y="18" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="11" font-weight="600">N</text>
+              <text x="302" y="164" text-anchor="start" fill="rgba(255,255,255,0.6)" font-size="11" font-weight="600">E</text>
+              <text x="160" y="312" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="11" font-weight="600">S</text>
+              <text x="12" y="164" text-anchor="start" fill="rgba(255,255,255,0.6)" font-size="11" font-weight="600">W</text>
+              <!-- Center dot -->
+              <circle cx="160" cy="160" r="5" fill="#14D1C9"/>
+            </svg>
+            <!-- Labels on top of SVG -->
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-turquoise/20 rounded-full px-3 py-0.5">
+              <span class="text-turquoise text-[10px] font-bold">GOOD ZONE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status + recommendation -->
+        <div class="space-y-5">
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-3 h-3 rounded-full bg-green-400 animate-pulse"></div>
+              <p class="text-white font-semibold">Status aktualny</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-muted text-xs">Kierunek</p>
+                <p class="text-white text-xl font-bold">W (270)</p>
+              </div>
+              <div>
+                <p class="text-muted text-xs">Sila</p>
+                <p class="stat-number text-xl font-bold">18 kn</p>
+              </div>
+              <div>
+                <p class="text-muted text-xs">Temperatura</p>
+                <p class="text-white text-xl font-bold">24C</p>
+              </div>
+              <div>
+                <p class="text-muted text-xs">Fala</p>
+                <p class="text-white text-xl font-bold">0.4m</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-turquoise rounded-2xl p-6">
+            <div class="flex items-center gap-3 mb-3">
+              <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <p class="text-turquoise font-semibold">Rekomendacja MEWIA</p>
+            </div>
+            <p class="text-white/80 text-sm leading-relaxed">Spot <span class="text-white font-semibold">Jastarnia</span> — sektor W aktywny (270-360). Idealne warunki dla kitesurfingu i windsurfingu. Wiatr stabilny, bez podmuchow.</p>
+          </div>
+
+          <div class="glass rounded-2xl p-5">
+            <p class="text-muted text-xs mb-2">Aktywny sektor (Jastarnia)</p>
+            <div class="flex items-center gap-3">
+              <div class="flex-1 h-2 rounded-full bg-white/10">
+                <div class="h-2 rounded-full bg-gradient-to-r from-turquoise to-aqua" style="width: 85%"></div>
+              </div>
+              <span class="text-turquoise text-sm font-bold">85%</span>
+            </div>
+            <p class="text-muted text-[10px] mt-2">Pokrycie sektora roboczego — idealnie</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 10. FINANCE ===== -->
+  <section id="finance" class="py-24 lg:py-32" style="background:linear-gradient(180deg,#E6EAF2 0%,#f4f6fa 100%)">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-cobalt text-sm font-semibold uppercase tracking-widest mb-3">Finanse</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4 text-navy">Dashboard finansowy w czasie rzeczywistym</h2>
+        <p class="text-navy/60 max-w-2xl mx-auto text-lg">Wiesz ile zarabiasz — dzis, w tym tygodniu, w calym sezonie.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-8 fade-in">
+        <!-- LEFT: Dashboard mockup -->
+        <div>
+          <!-- Stat cards -->
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white rounded-xl p-4 text-center shadow-lg shadow-cobalt/5 border border-gray-100">
+              <p class="text-navy/50 text-[10px] mb-1">Najlepszy miesiac</p>
+              <p class="text-cobalt text-2xl font-bold">263 404</p>
+              <p class="text-navy/40 text-[10px]">PLN — sierpien 2025</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-lg shadow-cobalt/5 border border-gray-100">
+              <p class="text-navy/50 text-[10px] mb-1">Srednia rezerwacja</p>
+              <p class="text-cobalt text-2xl font-bold">335</p>
+              <p class="text-navy/40 text-[10px]">PLN per booking</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-lg shadow-cobalt/5 border border-gray-100">
+              <p class="text-navy/50 text-[10px] mb-1">Oplacone</p>
+              <p class="text-green-600 text-2xl font-bold">1 740</p>
+              <p class="text-navy/40 text-[10px]">rezerwacji (78%)</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 text-center shadow-lg shadow-cobalt/5 border border-gray-100">
+              <p class="text-navy/50 text-[10px] mb-1">Zaleglosci</p>
+              <p class="text-amber-600 text-2xl font-bold">487</p>
+              <p class="text-navy/40 text-[10px]">do sciagniecia</p>
+            </div>
+          </div>
+
+          <!-- Monthly revenue chart -->
+          <div class="bg-white rounded-2xl p-5 shadow-lg shadow-cobalt/5 border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-navy font-semibold text-sm">Przychod miesiecznie — sezon 2025</p>
+              <div class="flex items-center gap-1">
+                <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                <span class="text-green-600 text-[10px] font-medium">569 294 PLN total</span>
+              </div>
+            </div>
+            <div class="flex items-end justify-between gap-2 h-[160px]">
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full rounded-t bg-gray-200" style="height:1%"></div>
+                <p class="text-navy/40 text-[8px]">KWI</p>
+                <p class="text-navy text-[8px]">0.6k</p>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full rounded-t bg-gray-200" style="height:1%"></div>
+                <p class="text-navy/40 text-[8px]">MAJ</p>
+                <p class="text-navy text-[8px]">0.6k</p>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full rounded-t bg-gradient-to-t from-cobalt to-cobalt/70" style="height:33%"></div>
+                <p class="text-navy/40 text-[8px]">CZE</p>
+                <p class="text-navy text-[8px] font-medium">85.8k</p>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full rounded-t bg-gradient-to-t from-cobalt to-ocean" style="height:73%"></div>
+                <p class="text-navy/40 text-[8px]">LIP</p>
+                <p class="text-navy text-[8px] font-medium">192k</p>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full rounded-t bg-gradient-to-t from-turquoise to-aqua shadow-lg shadow-turquoise/30" style="height:100%"></div>
+                <p class="text-cobalt text-[8px] font-bold">SIE</p>
+                <p class="text-cobalt text-[8px] font-bold">263k</p>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full rounded-t bg-gray-200" style="height:6%"></div>
+                <p class="text-navy/40 text-[8px]">WRZ</p>
+                <p class="text-navy text-[8px]">15.7k</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Top services + instructors -->
+        <div>
+          <!-- Top services -->
+          <div class="bg-white rounded-2xl p-5 mb-4 shadow-lg shadow-cobalt/5 border border-gray-100">
+            <p class="text-navy font-semibold text-sm mb-4">Top uslugi wg przychodu</p>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-cobalt"></div>
+                  <p class="text-navy text-xs">Kite — indywidualna</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">198 722 PLN</p>
+                  <p class="text-navy/40 text-[9px]">399 lekcji</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-turquoise"></div>
+                  <p class="text-navy text-xs">Windsurf — indywidualna</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">128 217 PLN</p>
+                  <p class="text-navy/40 text-[9px]">516 lekcji</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-ocean"></div>
+                  <p class="text-navy text-xs">Windsurf — podwojna</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">65 366 PLN</p>
+                  <p class="text-navy/40 text-[9px]">154 lekcje</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                  <p class="text-navy text-xs">Deskorolka — indywidualna</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">45 992 PLN</p>
+                  <p class="text-navy/40 text-[9px]">291 lekcji</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top instructors -->
+          <div class="bg-white rounded-2xl p-5 shadow-lg shadow-cobalt/5 border border-gray-100">
+            <p class="text-navy font-semibold text-sm mb-4">Top instruktorzy wg przychodu</p>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-cobalt/20 flex items-center justify-center text-[9px] text-cobalt font-bold">MP</div>
+                  <p class="text-navy text-xs">Michal P.</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">80 360 PLN</p>
+                  <p class="text-navy/40 text-[9px]">244 lekcje</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-turquoise/20 flex items-center justify-center text-[9px] text-turquoise font-bold">K</div>
+                  <p class="text-navy text-xs">Konrad</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">65 410 PLN</p>
+                  <p class="text-navy/40 text-[9px]">131 lekcji</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-ocean/20 flex items-center justify-center text-[9px] text-ocean font-bold">SB</div>
+                  <p class="text-navy text-xs">Sebastian B.</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">40 551 PLN</p>
+                  <p class="text-navy/40 text-[9px]">77 lekcji</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-amber-400/20 flex items-center justify-center text-[9px] text-amber-600 font-bold">MA</div>
+                  <p class="text-navy text-xs">Magda A.</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-cobalt text-sm font-bold">28 327 PLN</p>
+                  <p class="text-navy/40 text-[9px]">55 lekcji</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Punch line: after finance -->
+  <div class="text-center py-16 fade-in" style="background: #081D3A;">
+    <p class="text-xl md:text-2xl font-medium max-w-3xl mx-auto px-6 leading-relaxed text-white/70 italic border-l-4 border-turquoise pl-6 text-left max-w-2xl mx-auto">"Wiesz ile zarabiasz — bez Excela, bez liczenia po sezonie"</p>
+  </div>
+
+  <!-- ===== 11. SHOP ===== -->
+  <section id="shop" class="py-24 lg:py-32 gradient-cobalt">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Sklep B2B</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Sprzedawaj sprzet — bezposrednio po kursie</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Integracja z Cabrinha i innymi markami. Rekomendacje dopasowane do poziomu kursanta.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 fade-in">
+        <!-- Product 1 -->
+        <div class="product-card">
+          <div class="aspect-square bg-gradient-to-b from-white/5 to-transparent p-4 flex items-center justify-center">
+            <img src="https://cdn.shopify.com/s/files/1/0020/3874/7297/files/03S_Moto_Apex_Profile-copy-2048x2048_1200x.webp" alt="Cabrinha Moto Apex 2026" class="w-full h-full object-contain">
+          </div>
+          <div class="p-4">
+            <p class="text-white font-semibold text-sm">Cabrinha Moto Apex 2026</p>
+            <p class="text-muted text-xs mt-1">Latawiec freeride / performance</p>
+            <div class="flex items-center justify-between mt-3">
+              <p class="stat-number text-lg font-bold">4 820 zl</p>
+              <span class="bg-turquoise/10 text-turquoise text-[10px] font-bold px-2 py-0.5 rounded-full">BESTSELLER</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product 2 -->
+        <div class="product-card">
+          <div class="aspect-square bg-gradient-to-b from-white/5 to-transparent p-4 flex items-center justify-center">
+            <img src="https://cdn.shopify.com/s/files/1/0020/3874/7297/files/01_Switchblade_Profile_1200x.webp" alt="Cabrinha Switchblade 2026" class="w-full h-full object-contain">
+          </div>
+          <div class="p-4">
+            <p class="text-white font-semibold text-sm">Cabrinha Switchblade 2026</p>
+            <p class="text-muted text-xs mt-1">Latawiec all-around</p>
+            <div class="flex items-center justify-between mt-3">
+              <p class="stat-number text-lg font-bold">6 999 zl</p>
+              <span class="bg-cobalt/20 text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full">NEW</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product 3 -->
+        <div class="product-card">
+          <div class="aspect-square bg-gradient-to-b from-white/5 to-transparent p-4 flex items-center justify-center">
+            <img src="https://cdn.shopify.com/s/files/1/0020/3874/7297/files/04_Stylus_Deck_Profile_1200x.webp" alt="Cabrinha Stylus 2026" class="w-full h-full object-contain">
+          </div>
+          <div class="p-4">
+            <p class="text-white font-semibold text-sm">Cabrinha Stylus 2026</p>
+            <p class="text-muted text-xs mt-1">Deska twin-tip freeride</p>
+            <div class="flex items-center justify-between mt-3">
+              <p class="stat-number text-lg font-bold">3 299 zl</p>
+              <span class="bg-green-500/10 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">IN STOCK</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product 4 -->
+        <div class="product-card">
+          <div class="aspect-square bg-gradient-to-b from-white/5 to-transparent p-4 flex items-center justify-center">
+            <img src="https://cdn.shopify.com/s/files/1/0020/3874/7297/files/04_Mantis_Profile_Gray_1200x.webp" alt="Cabrinha Mantis 2026" class="w-full h-full object-contain">
+          </div>
+          <div class="p-4">
+            <p class="text-white font-semibold text-sm">Cabrinha Mantis 2026</p>
+            <p class="text-muted text-xs mt-1">Wing foil — zaawansowany</p>
+            <div class="flex items-center justify-between mt-3">
+              <p class="stat-number text-lg font-bold">4 820 zl</p>
+              <span class="bg-turquoise/10 text-turquoise text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B2B note -->
+      <div class="mt-10 text-center fade-in">
+        <p class="text-muted text-sm">Zintegrowane z Cabrinha Shopify API — stany magazynowe, ceny i zdjecia aktualizuja sie automatycznie</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 12. PRICING ===== -->
+  <section id="pricing" class="py-24 lg:py-32 gradient-deep">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Cennik</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Prosty cennik, bez ukrytych kosztow</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Wybierz plan dopasowany do skali Twojej szkoly.</p>
+      </div>
+
+      <!-- Main pricing cards -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12 fade-in">
+        <!-- Start -->
+        <div class="pricing-card p-7 flex flex-col">
+          <h3 class="text-white font-bold text-xl mb-1">Start</h3>
+          <p class="text-muted text-sm mb-6">Dla malych szkol</p>
+          <div class="mb-6">
+            <span class="stat-number text-4xl font-bold">499</span>
+            <span class="text-muted text-sm"> PLN/mies</span>
+          </div>
+          <ul class="space-y-3 mb-8 flex-1">
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>1 lokalizacja</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Do 5 instruktorow</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Kalendarz + CRM</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Platnosci online</li>
+          </ul>
+          <a href="#contact" class="btn-outline px-6 py-3 text-turquoise font-semibold text-center block text-sm">Wybierz Start</a>
+        </div>
+
+        <!-- Pro — POPULAR -->
+        <div class="pricing-card pricing-popular p-7 flex flex-col relative">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-turquoise to-aqua text-navy text-xs font-bold px-4 py-1 rounded-full">POPULAR</div>
+          <h3 class="text-white font-bold text-xl mb-1">Pro</h3>
+          <p class="text-muted text-sm mb-6">Rosnaça szkola</p>
+          <div class="mb-6">
+            <span class="stat-number text-4xl font-bold">899</span>
+            <span class="text-muted text-sm"> PLN/mies + 0.5%</span>
+          </div>
+          <ul class="space-y-3 mb-8 flex-1">
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>2 lokalizacje</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Do 10 instruktorow</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>MEWIA + pogoda</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Sklep B2B</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Dashboard finansowy</li>
+          </ul>
+          <a href="#contact" class="btn-primary px-6 py-3 text-white font-semibold text-center block text-sm">Wybierz Pro</a>
+        </div>
+
+        <!-- Premium -->
+        <div class="pricing-card p-7 flex flex-col">
+          <h3 class="text-white font-bold text-xl mb-1">Premium</h3>
+          <p class="text-muted text-sm mb-6">Multi-spot enterprise</p>
+          <div class="mb-6">
+            <span class="stat-number text-4xl font-bold">1 499</span>
+            <span class="text-muted text-sm"> PLN/mies + 0.5%</span>
+          </div>
+          <ul class="space-y-3 mb-8 flex-1">
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Multi-spot bez limitow</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Bez limitu instruktorow</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Wszystkie moduly</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Priority support</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-turquoise mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Custom integracje</li>
+          </ul>
+          <a href="#contact" class="btn-outline px-6 py-3 text-turquoise font-semibold text-center block text-sm">Wybierz Premium</a>
+        </div>
+
+        <!-- AI Pack -->
+        <div class="pricing-card p-7 flex flex-col" style="border-color: rgba(21,101,224,0.3); background: rgba(21,101,224,0.04);">
+          <h3 class="text-white font-bold text-xl mb-1">AI Pack</h3>
+          <p class="text-muted text-sm mb-6">Addon do kazdego planu</p>
+          <div class="mb-6">
+            <span class="stat-number text-4xl font-bold">699</span>
+            <span class="text-muted text-sm"> PLN/mies (od)</span>
+          </div>
+          <ul class="space-y-3 mb-8 flex-1">
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-blue-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Agent sprzedazowy</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-blue-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Agent contentowy</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-blue-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Wind Alert</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-blue-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>6 kanalow komunikacji</li>
+            <li class="flex items-start gap-2 text-sm text-white/70"><svg class="w-4 h-4 text-blue-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Raporty AI</li>
+          </ul>
+          <a href="#contact" class="btn-outline px-6 py-3 text-turquoise font-semibold text-center block text-sm" style="border-color: rgba(21,101,224,0.5);">Dodaj AI Pack</a>
+        </div>
+      </div>
+
+      <!-- Additional info cards -->
+      <div class="grid sm:grid-cols-3 gap-5 fade-in">
+        <div class="glass rounded-2xl p-6 text-center">
+          <p class="stat-number text-2xl font-bold mb-2">od 1 500 PLN</p>
+          <p class="text-white font-semibold text-sm mb-1">Wdrozenie</p>
+          <p class="text-muted text-xs">Import danych, konfiguracja, szkolenie zespolu</p>
+        </div>
+        <div class="glass rounded-2xl p-6 text-center">
+          <p class="stat-number text-2xl font-bold mb-2">3 rezerwacje</p>
+          <p class="text-white font-semibold text-sm mb-1">ROI</p>
+          <p class="text-muted text-xs">Tyle nowych rezerwacji zwraca Ci abonament</p>
+        </div>
+        <div class="glass rounded-2xl p-6 text-center" style="border-color: rgba(20,209,201,0.3);">
+          <p class="stat-number text-2xl font-bold mb-2">499 PLN/mies</p>
+          <p class="text-white font-semibold text-sm mb-1">Founding School</p>
+          <p class="text-muted text-xs">Specjalna cena dla pierwszych 10 szkol</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 13. CASE STUDY ===== -->
+  <section class="py-24 lg:py-32 gradient-ocean">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Case Study</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Szkola kite — 2 sezony na SurfIQ</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Zbudowany na doswiadczeniu prawdziwej szkoly. 2 lokalizacje, 2 sezony, pelna automatyzacja.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 fade-in">
+        <div class="glass rounded-2xl p-7 text-center pulse-glow">
+          <p class="stat-number text-5xl font-bold mb-2">824</p>
+          <p class="text-white font-medium">kursantow w bazie</p>
+          <p class="text-muted text-xs mt-2">pelna migracja + nowi klienci</p>
+        </div>
+        <div class="glass rounded-2xl p-7 text-center">
+          <p class="stat-number text-5xl font-bold mb-2">2 228</p>
+          <p class="text-white font-medium">rezerwacji w 2 sezonach</p>
+          <p class="text-muted text-xs mt-2">sezon 2025 + 2026</p>
+        </div>
+        <div class="glass rounded-2xl p-7 text-center">
+          <p class="stat-number text-5xl font-bold mb-2">569k+</p>
+          <p class="text-white font-medium">PLN przychodu</p>
+          <p class="text-muted text-xs mt-2">laczny przychod przez system</p>
+        </div>
+        <div class="glass rounded-2xl p-7 text-center">
+          <p class="stat-number text-5xl font-bold mb-2">36</p>
+          <p class="text-white font-medium">uslug w 6 sportach</p>
+          <p class="text-muted text-xs mt-2">kite, wind, wing, SUP, wake, foil</p>
+        </div>
+      </div>
+
+      <!-- Quote -->
+      <div class="mt-12 max-w-3xl mx-auto text-center fade-in">
+        <div class="glass rounded-3xl p-8 lg:p-10">
+            <svg class="w-8 h-8 text-turquoise/40 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+            <p class="text-white/80 text-lg leading-relaxed italic mb-6">SurfIQ powstal z prawdziwej potrzeby — prowadzilismy szkole i tonelismy w Excelu. Teraz wszystko jest w jednym panelu. Pogoda, rezerwacje, instruktorzy, finanse. System oszczedza 2-3 godziny dziennie.</p>
+            <p class="text-turquoise font-semibold">Wlasciciel szkoly kite</p>
+            <p class="text-muted text-sm">Wlasciciel szkoly sportow wodnych, instruktor IKO</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 14. SECURITY ===== -->
+  <section class="py-24 lg:py-32 gradient-deep">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Bezpieczenstwo</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Dane Twojej szkoly sa bezpieczne</h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">Enterprise-grade security od pierwszego dnia.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 fade-in">
+        <div class="trust-badge p-6 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-turquoise/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">SSL / TLS</p>
+            <p class="text-muted text-xs mt-1">Szyfrowanie end-to-end</p>
+          </div>
+        </div>
+
+        <div class="trust-badge p-6 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-turquoise/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">RODO / GDPR</p>
+            <p class="text-muted text-xs mt-1">Pelna zgodnosc z regulacjami EU</p>
+          </div>
+        </div>
+
+        <div class="trust-badge p-6 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-turquoise/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Backup dzienny</p>
+            <p class="text-muted text-xs mt-1">Automatyczne kopie co 24h</p>
+          </div>
+        </div>
+
+        <div class="trust-badge p-6 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-turquoise/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Role i uprawnienia</p>
+            <p class="text-muted text-xs mt-1">Owner / Admin / Instruktor / Kursant</p>
+          </div>
+        </div>
+
+        <div class="trust-badge p-6 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-turquoise/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">EU Cloud (Supabase)</p>
+            <p class="text-muted text-xs mt-1">Dane w europejskim data center</p>
+          </div>
+        </div>
+
+        <div class="trust-badge p-6 flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-turquoise/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-turquoise" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">99.9% uptime</p>
+            <p class="text-muted text-xs mt-1">Monitoring 24/7 (UptimeRobot)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 15. FAQ ===== -->
+  <section class="py-24 lg:py-32 gradient-ocean">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">FAQ</p>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Czeste pytania</h2>
+      </div>
+
+      <div class="space-y-3 fade-in">
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Dla jakich szkol jest SurfIQ?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">SurfIQ jest dla szkol kite, windsurfingu, wing foilu, SUP i surfingu. Od malych jednoosobowych po multi-spot z 20+ instruktorami. System skaluje sie razem z Toba.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Czy moge importowac dane z istniejacego systemu?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">Tak. Importujemy dane z Excel, CSV, Google Sheets i innych systemow rezerwacji. Wdrozenie obejmuje migr acje calej bazy kursantow i rezerwacji.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Jak dziala integracja z pogoda?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">Laczymy sie z Windguru, OpenWeather i IMGW. Prognoza wiatru wyswietla sie bezposrednio w kalendarzu. System MEWIA automatycznie sugeruje najlepszy spot.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Czy instruktorzy maja wlasne konto?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">Tak. Kazdy instruktor loguje sie do swojego panelu. Widzi swoj grafik, lekcje, kursantow. Nie widzi finansow — to tylko dla wlasciciela.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Jak szybko moge zaczac?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">Od podpisania umowy do startu — 3-5 dni roboczych. Obejmuje import danych, konfiguracje modulow i szkolenie zespolu online.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Co jesli nie mam technicznej wiedzy?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">System jest zaprojektowany dla ludzi, ktorzy wola byc na wodzie niz przed komputerem. Interfejs jest prosty, a wdrozenie obejmuje pelne szkolenie.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Czy system dziala offline?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">Aplikacja mobilna cachuje dane lokalnie. Mozesz przegladac grafik i kursantow bez internetu. Zmiany synchronizuja sie automatycznie po powrocie do sieci.</p>
+          </div>
+        </div>
+
+        <div class="faq-item p-5 cursor-pointer" onclick="toggleFaq(this)">
+          <div class="flex items-center justify-between">
+            <p class="text-white font-medium text-sm">Jakie platnosci sa wspierane?</p>
+            <svg class="w-5 h-5 text-muted transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div class="faq-content">
+            <p class="text-muted text-sm pt-4 leading-relaxed">Stripe, Przelewy24, BLIK, przelew tradycyjny, gotowka. System automatycznie paruje wplaty z rezerwacjami i oznacza status platnosci.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 16. FINAL CTA ===== -->
+  <section id="contact" class="py-24 lg:py-32 relative overflow-hidden">
+    <div class="absolute inset-0 gradient-cta opacity-90"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1),transparent_70%)]"></div>
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 fade-in">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">Gotowy zamienic chaos w system?</h2>
+      <p class="text-white/80 text-lg mb-4 max-w-2xl mx-auto">Umow 30-minutowe demo. Pokaze Ci jak SurfIQ wygladaloby dla Twojej szkoly.</p>
+      <p class="text-white/60 text-sm mb-10">Bez zobowiazan. Bez karty kredytowej. Tylko rozmowa o Twoim biznesie.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="mailto:office@surfiq.eu" class="bg-white text-navy font-bold px-10 py-4 rounded-2xl text-base hover:bg-white/90 transition-all hover:shadow-[0_8px_40px_rgba(255,255,255,0.3)] hover:-translate-y-1 inline-block">Umow demo</a>
+        <a href="mailto:office@surfiq.eu" class="border-2 border-white/40 text-white font-semibold px-10 py-4 rounded-2xl text-base hover:bg-white/10 hover:border-white/60 transition-all hover:-translate-y-1 inline-block">office@surfiq.eu</a>
+      </div>
+      <div class="mt-12 flex flex-wrap justify-center gap-8">
+        <div class="text-center">
+          <p class="text-white text-2xl font-bold">30 min</p>
+          <p class="text-white/60 text-xs">demo call</p>
+        </div>
+        <div class="text-center">
+          <p class="text-white text-2xl font-bold">3-5 dni</p>
+          <p class="text-white/60 text-xs">do startu</p>
+        </div>
+        <div class="text-center">
+          <p class="text-white text-2xl font-bold">0 PLN</p>
+          <p class="text-white/60 text-xs">za demo</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 17. FOOTER ===== -->
+  <footer class="bg-navy border-t border-white/5 py-16">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid md:grid-cols-3 gap-10 items-start">
+        <div>
+          <img src="/assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-14 mb-2">
+          <p class="text-muted text-sm mt-3">Smarter schools. Better waves.</p>
+          <p class="text-muted/50 text-xs mt-4">System operacyjny dla szkol sportow wodnych.</p>
+        </div>
+        <div>
+          <p class="text-white font-semibold text-sm mb-4">Produkt</p>
+          <ul class="space-y-2.5">
+            <li><a href="#modules" class="text-muted text-sm hover:text-white transition-colors">Moduly</a></li>
+            <li><a href="#calendar" class="text-muted text-sm hover:text-white transition-colors">Kalendarz</a></li>
+            <li><a href="#ai-agents" class="text-muted text-sm hover:text-white transition-colors">AI Agenci</a></li>
+            <li><a href="#pricing" class="text-muted text-sm hover:text-white transition-colors">Cennik</a></li>
+            <li><a href="#contact" class="text-muted text-sm hover:text-white transition-colors">Kontakt</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-white font-semibold text-sm mb-4">Kontakt</p>
+          <ul class="space-y-2.5">
+            <li class="text-muted text-sm">office@surfiq.eu</li>
+            <li class="text-muted text-sm">Jastarnia, Polska</li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-white/5 mt-12 pt-8 flex flex-wrap items-center justify-between gap-4">
+        <p class="text-muted/60 text-xs">2026 SurfIQ. Wszystkie prawa zastrzezone.</p>
+        <p class="text-muted/60 text-xs">Produkt <span class="text-muted">LM GreenWaves</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== JS ===== -->
+  <script>
+    // Intersection Observer for fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // FAQ accordion
+    function toggleFaq(el) {
+      const content = el.querySelector('.faq-content');
+      const icon = el.querySelector('svg');
+      const isOpen = content.classList.contains('open');
+
+      // Close all
+      document.querySelectorAll('.faq-content').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.faq-item svg').forEach(i => i.style.transform = '');
+
+      if (!isOpen) {
+        content.classList.add('open');
+        icon.style.transform = 'rotate(180deg)';
+      }
+    }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+
+  <!-- Vercel Web Analytics -->
+  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Vercel Speed Insights -->
+  <script defer src="/_vercel/speed-insights/script.js"></script>
+  <!-- Plausible Analytics (privacy-friendly, no cookies) -->
+  <script defer data-domain="surfiq.eu" src="https://plausible.io/js/script.js"></script>
+</body>
+</html>

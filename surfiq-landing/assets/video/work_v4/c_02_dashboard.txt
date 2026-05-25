@@ -1,0 +1,11 @@
+file 'dashboard.png'
+duration 4.61
+file 'weather.png'
+duration 4.61
+file 'reports.png'
+duration 4.61
+file 'dashboard.png'
+duration 4.61
+file 'calendar.png'
+duration 4.61
+file 'calendar.png'

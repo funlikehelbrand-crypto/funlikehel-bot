@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://surfiq.eu/</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://surfiq.eu/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://surfiq.eu/en/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://surfiq.eu/de/"/>
+  </url>
+  <url>
+    <loc>https://surfiq.eu/en/</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://surfiq.eu/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://surfiq.eu/en/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://surfiq.eu/de/"/>
+  </url>
+  <url>
+    <loc>https://surfiq.eu/de/</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://surfiq.eu/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://surfiq.eu/en/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://surfiq.eu/de/"/>
+  </url>
+  <url>
+    <loc>https://surfiq.eu/demo/</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://surfiq.eu/blog/jak-zarzadzac-szkola-kite.html</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://surfiq.eu/blog/excel-vs-system-rezerwacji.html</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://surfiq.eu/blog/pogoda-kitesurfing-gdzie-sprawdzac.html</loc>
+    <lastmod>2026-05-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

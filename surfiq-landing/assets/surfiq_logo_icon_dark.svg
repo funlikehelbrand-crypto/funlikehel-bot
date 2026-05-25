@@ -1,0 +1,23 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ocean" x1="160" y1="110" x2="830" y2="880" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#64F1E6"/>
+      <stop offset="0.45" stop-color="#14D1C9"/>
+      <stop offset="1" stop-color="#1565E0"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="44" stdDeviation="42" flood-color="#081D3A" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="236" fill="none"/>
+  <g filter="url(#softShadow)">
+    <rect x="112" y="112" width="800" height="800" rx="220" fill="#0D47A1"/>
+    <path d="M279 605C356 486 473 435 609 466C684 483 736 521 783 574C755 440 652 338 520 321C371 302 248 388 194 529C164 608 175 691 219 761C236 704 254 648 279 605Z" fill="url(#ocean)"/>
+    <path d="M273 679C369 570 486 539 609 581C679 605 724 653 762 720C668 703 592 720 526 765C458 812 384 829 311 797C269 779 239 749 219 713C234 706 254 694 273 679Z" fill="#64F1E6" fill-opacity="0.96"/>
+    <path d="M461 354C563 260 723 280 806 392C857 462 859 554 819 626C806 526 742 456 647 425C575 402 511 414 461 442V354Z" fill="#1565E0"/>
+    <circle cx="659" cy="369" r="38" fill="#64F1E6"/>
+    <circle cx="759" cy="494" r="22" fill="#14D1C9"/>
+    <circle cx="581" cy="428" r="17" fill="#FFFFFF" fill-opacity="0.88"/>
+    <path d="M659 369L759 494M659 369L581 428" stroke="#FFFFFF" stroke-opacity="0.56" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

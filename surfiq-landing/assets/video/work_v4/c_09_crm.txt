@@ -1,0 +1,11 @@
+file 'dashboard.png'
+duration 4.54
+file 'services.png'
+duration 4.54
+file 'inbox_dark.png'
+duration 4.54
+file 'dashboard.png'
+duration 4.54
+file 'services.png'
+duration 4.54
+file 'services.png'

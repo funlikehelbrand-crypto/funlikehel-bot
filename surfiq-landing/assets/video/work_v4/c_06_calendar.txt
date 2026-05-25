@@ -1,0 +1,9 @@
+file 'calendar.png'
+duration 5.07
+file 'calendar2.png'
+duration 5.07
+file 'calendar.png'
+duration 5.07
+file 'calendar2.png'
+duration 5.07
+file 'calendar2.png'

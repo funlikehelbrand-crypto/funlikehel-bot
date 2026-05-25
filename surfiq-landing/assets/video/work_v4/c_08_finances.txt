@@ -1,0 +1,15 @@
+file 'reports.png'
+duration 5.04
+file 'services.png'
+duration 5.04
+file 'shop.png'
+duration 5.04
+file 'reports.png'
+duration 5.04
+file 'services.png'
+duration 5.04
+file 'reports.png'
+duration 5.04
+file 'shop.png'
+duration 5.04
+file 'shop.png'

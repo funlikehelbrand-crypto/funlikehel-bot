@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SurfIQ — Betriebssystem für Wassersportschulen</title>
+  <meta name="description" content="SurfIQ ist das Managementsystem für Kite-, Wind-, Wing- und SUP-Schulen. Buchungen, Wetter, Finanzen, KI-Agenten — alles in einem Panel. 14 Tage kostenlos.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://surfiq.eu/de/">
+  <link rel="alternate" hreflang="pl" href="https://surfiq.eu/">
+  <link rel="alternate" hreflang="en" href="https://surfiq.eu/en/">
+  <link rel="alternate" hreflang="de" href="https://surfiq.eu/de/">
+  <link rel="alternate" hreflang="x-default" href="https://surfiq.eu/en/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://surfiq.eu/de/">
+  <meta property="og:title" content="SurfIQ — Betriebssystem für Wassersportschulen">
+  <meta property="og:description" content="Buchungen, Wetter, Finanzen und KI-Agenten in einem Panel. 14 Tage kostenlos.">
+  <meta property="og:image" content="https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png">
+  <meta property="og:locale" content="de_DE">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SurfIQ — Betriebssystem für Wassersportschulen">
+  <meta name="twitter:image" content="https://surfiq.eu/assets/generated/logo_final/final_logo_wide.png">
+  <link rel="icon" type="image/png" href="../assets/generated/logo_final/final_icon.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"SurfIQ","url":"https://surfiq.eu/de/","applicationCategory":"BusinessApplication","operatingSystem":"Web","offers":[{"@type":"Offer","name":"Starter","price":"499","priceCurrency":"PLN"},{"@type":"Offer","name":"Pro","price":"899","priceCurrency":"PLN"},{"@type":"Offer","name":"Enterprise","price":"1499","priceCurrency":"PLN"}]}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{navy:'#081D3A',ocean:'#0D47A1',turquoise:'#14D1C9',aqua:'#64F1E6',muted:'#8EA4BF'},fontFamily:{sans:['Poppins','system-ui','sans-serif']}}}}</script>
+  <style>
+    *{font-family:'Poppins',system-ui,sans-serif}html{scroll-behavior:smooth}
+    .fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}.fade-in.visible{opacity:1;transform:translateY(0)}
+    .btn-p{background:linear-gradient(135deg,#1565E0,#0D47A1);border-radius:14px;box-shadow:0 4px 20px rgba(21,101,224,.3);transition:all .3s}
+    .btn-p:hover{box-shadow:0 8px 40px rgba(21,101,224,.5);transform:translateY(-2px)}
+    .btn-o{border:1.5px solid rgba(20,209,201,.5);border-radius:14px;transition:all .3s}
+    .btn-o:hover{background:rgba(20,209,201,.08);border-color:#14D1C9;transform:translateY(-2px)}
+    .stat{background:linear-gradient(135deg,#14D1C9,#64F1E6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .glass{background:rgba(255,255,255,.04);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:16px}
+    .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;transition:all .3s}
+    .card:hover{border-color:rgba(20,209,201,.4);transform:translateY(-4px)}
+    .pop{border-color:rgba(20,209,201,.5);background:rgba(20,209,201,.04)}
+    .scr{border-radius:16px;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .glow-t{box-shadow:0 0 40px rgba(20,209,201,.15)}
+    .glow-b{box-shadow:0 0 30px rgba(21,101,224,.2)}
+    .float{animation:float 4s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    .pulse-dot{animation:pulseDot 2s ease-in-out infinite}
+    @keyframes pulseDot{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
+    .slide-in-left{opacity:0;transform:translateX(-40px);transition:opacity .8s,transform .8s}
+    .slide-in-right{opacity:0;transform:translateX(40px);transition:opacity .8s,transform .8s}
+    .slide-in-left.visible,.slide-in-right.visible{opacity:1;transform:translateX(0)}
+    .gradient-border{position:relative}
+    .gradient-border::before{content:'';position:absolute;inset:-1px;border-radius:20px;padding:1px;background:linear-gradient(135deg,#14D1C9,#1565E0,#14D1C9);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+    .hotspot{position:relative;cursor:pointer}
+    .hotspot::after{content:'';position:absolute;top:-4px;right:-4px;width:12px;height:12px;background:#14D1C9;border-radius:50%;animation:pulseDot 2s infinite}
+    .channel-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .3s}
+    .channel-icon:hover{transform:scale(1.15);box-shadow:0 0 20px rgba(20,209,201,.3)}
+    /* Lightbox */
+    .scr{cursor:zoom-in;transition:transform .3s,box-shadow .3s}.scr:hover{transform:scale(1.02);box-shadow:0 25px 70px rgba(0,0,0,.4)}
+    .lightbox-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);justify-content:center;align-items:center;cursor:zoom-out;opacity:0;transition:opacity .3s}
+    .lightbox-overlay.active{display:flex;opacity:1}
+    .lightbox-overlay img{max-width:94vw;max-height:92vh;border-radius:12px;box-shadow:0 20px 80px rgba(0,0,0,.6);object-fit:contain}
+    .lightbox-close{position:absolute;top:20px;right:28px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;z-index:10000}
+    .lightbox-close:hover{background:rgba(255,255,255,.2);transform:scale(1.1)}
+    /* Chat widget */
+    .chat-fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#14D1C9,#0D47A1);box-shadow:0 4px 20px rgba(20,209,201,.4);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9990;transition:all .3s;border:none;color:#fff;font-size:26px}
+    .chat-fab:hover{transform:scale(1.1);box-shadow:0 8px 30px rgba(20,209,201,.6)}
+    .chat-fab .dot{position:absolute;top:4px;right:4px;width:12px;height:12px;background:#22c55e;border-radius:50%;border:2px solid #081D3A}
+    .chat-window{display:none;position:fixed;bottom:96px;right:24px;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 120px);border-radius:20px;overflow:hidden;z-index:9990;flex-direction:column;background:#0a1e3a;border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+    .chat-window.open{display:flex}
+    .chat-header{padding:16px 20px;background:linear-gradient(135deg,#0D47A1,#081D3A);display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .chat-header .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#14D1C9,#0D47A1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .chat-header .info{flex:1}.chat-header .name{color:#fff;font-weight:600;font-size:14px}.chat-header .status{color:#14D1C9;font-size:11px}
+    .chat-header .close-chat{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:4px}
+    .chat-header .close-chat:hover{color:#fff}
+    .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+    .chat-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word}
+    .chat-msg.bot{background:rgba(255,255,255,.06);color:#e2e8f0;border-bottom-left-radius:4px;align-self:flex-start}
+    .chat-msg.user{background:linear-gradient(135deg,#1565E0,#0D47A1);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+    .chat-input-area{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:8px;background:rgba(8,29,58,.8)}
+    .chat-input-area input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;color:#fff;font-size:13px;outline:none;font-family:inherit}
+    .chat-input-area input::placeholder{color:rgba(255,255,255,.3)}
+    .chat-input-area input:focus{border-color:rgba(20,209,201,.5)}
+    .chat-input-area button{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#14D1C9,#0D47A1);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+    .chat-input-area button:hover{transform:scale(1.05)}
+    .chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px}
+    .chat-quick button{background:rgba(20,209,201,.1);border:1px solid rgba(20,209,201,.3);border-radius:20px;color:#14D1C9;font-size:11px;padding:6px 12px;cursor:pointer;transition:all .2s;font-family:inherit}
+    .chat-quick button:hover{background:rgba(20,209,201,.2);border-color:#14D1C9}
+    /* Mobile menu */
+    .mobile-menu{display:none;position:fixed;inset:0;z-index:9998;background:rgba(8,29,58,.98);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:32px}
+    .mobile-menu.open{display:flex}
+    .mobile-menu a{color:#fff;font-size:1.25rem;font-weight:600;transition:color .2s}
+    .mobile-menu a:hover{color:#14D1C9}
+    .hamburger{display:none;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:8px}
+    @media(max-width:767px){.hamburger{display:flex;align-items:center;justify-content:center}}
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T4HT1DG5RW"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-T4HT1DG5RW")</script>
+<!-- Facebook Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1639337547278346');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1639337547278346&ev=PageView&noscript=1"/></noscript>
+</head>
+<body class="bg-navy text-white antialiased overflow-x-hidden">
+
+  <!-- NAV -->
+  <nav class="fixed top-0 w-full z-50 bg-navy/85 backdrop-blur-xl border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/de/"><img src="../assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-12"></a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm text-muted hover:text-white transition-colors">Funktionen</a>
+        <a href="#kitesafari" class="text-sm text-muted hover:text-white transition-colors">KiteSafari</a>
+        <a href="#ai" class="text-sm text-muted hover:text-white transition-colors">KI-Agenten</a>
+        <a href="#pricing" class="text-sm text-muted hover:text-white transition-colors">Preise</a>
+        <a href="#faq" class="text-sm text-muted hover:text-white transition-colors">FAQ</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-1 text-xs text-muted">
+          <a href="/" class="px-2 py-1 rounded hover:bg-white/5">PL</a>
+          <a href="/en/" class="px-2 py-1 rounded hover:bg-white/5">EN</a>
+          <a href="/de/" class="px-2 py-1 rounded bg-white/10 text-white font-semibold">DE</a>
+        </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">&#9776;</button>
+        <a href="#demo" class="btn-p px-5 py-2 text-sm font-semibold text-white">Demo buchen</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <button id="mobileMenuClose" style="position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer">&times;</button>
+    <a href="#features" class="mobile-nav-link">Funktionen</a>
+    <a href="#kitesafari" class="mobile-nav-link">KiteSafari</a>
+    <a href="#ai" class="mobile-nav-link">KI-Agenten</a>
+    <a href="#pricing" class="mobile-nav-link">Preise</a>
+    <a href="#faq" class="mobile-nav-link">FAQ</a>
+    <a href="#demo" class="mobile-nav-link text-turquoise">Demo buchen</a>
+    <div class="flex items-center gap-3 mt-4">
+      <a href="/" class="px-3 py-1.5 rounded text-muted text-sm hover:bg-white/5">PL</a>
+      <a href="/en/" class="px-3 py-1.5 rounded text-muted text-sm hover:bg-white/5">EN</a>
+      <a href="/de/" class="px-3 py-1.5 rounded bg-white/10 text-white font-semibold text-sm">DE</a>
+    </div>
+  </div>
+
+  <!-- HERO — screenshot: dashboard (MEWIA aktywna, roza wiatrow, pogoda, ogloszenia, szybkie akcje) -->
+  <section class="min-h-screen flex items-center pt-20" style="background:radial-gradient(ellipse at 20% 50%,rgba(13,71,161,.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 30%,rgba(20,209,201,.1) 0%,transparent 50%),#081D3A">
+    <div class="max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
+      <div class="fade-in">
+        <img src="../assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-32 md:h-44 mb-8">
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-8">Das Betriebssystem für <span class="bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent">Wassersportschulen</span></h1>
+        <div class="space-y-3 mb-8">
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">Wetter aus 3 Quellen, Kalender und Buchungen in einem Panel</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">KI-Agenten betreuen Kunden 24/7 auf 6 Kanälen</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">Finanzen, Berichte und Instruktoren-Ranking in Echtzeit</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">KiteSafari — von WhatsApp bis an Bord</p></div>
+          <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-turquoise flex-shrink-0"></div><p class="text-muted">Getestet mit 10.000+ Teilnehmern. 2 Saisons. 2 Standorte.</p></div>
+        </div>
+        <div class="flex flex-wrap gap-4 mb-10">
+          <a href="/demo/" class="btn-p px-8 py-4 text-white font-semibold text-base">Demo buchen</a>
+          <a href="#features" class="btn-o px-8 py-4 text-turquoise font-semibold text-base">Funktionen ansehen</a>
+        </div>
+        <div class="flex gap-10">
+          <div><p class="stat text-2xl font-bold">10 000+</p><p class="text-muted text-xs">Teilnehmer</p></div>
+          <div><p class="stat text-2xl font-bold">25 000+</p><p class="text-muted text-xs">Buchungen</p></div>
+          <div><p class="stat text-2xl font-bold">2</p><p class="text-muted text-xs">Testsaisons</p></div>
+        </div>
+      </div>
+      <div class="fade-in relative">
+        <img src="../assets/screenshots/final/dashboard_dark.png" alt="SurfIQ — Dashboard mit Wetter, Transfer 2nd Spot und Windrose" class="w-full scr">
+        <!-- Floating badges -->
+        <div class="absolute -top-3 -right-3 glass px-4 py-2 float glow-t hidden lg:flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></div>
+          <span class="text-xs text-white/90 font-medium">Transfer 2nd Spot</span>
+        </div>
+        <div class="absolute -bottom-3 -left-3 glass px-4 py-2 float hidden lg:flex items-center gap-2" style="animation-delay:-2s">
+          <span class="text-turquoise text-sm">&#9889;</span>
+          <span class="text-xs text-white/90 font-medium">KI: 24/7</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTEGRATIONS STRIP -->
+  <section class="py-10 border-y border-white/5 bg-navy/50">
+    <div class="max-w-5xl mx-auto px-6">
+      <p class="text-center text-muted text-xs uppercase tracking-widest mb-6">Integriert mit den Tools die du bereits kennst</p>
+      <div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 text-muted/60">
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#127754;</span>
+          <span class="text-[10px]">Windguru</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#127744;</span>
+          <span class="text-[10px]">Windy</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#128172;</span>
+          <span class="text-[10px]">WhatsApp</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#128247;</span>
+          <span class="text-[10px]">Instagram</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#128077;</span>
+          <span class="text-[10px]">Facebook</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#129302;</span>
+          <span class="text-[10px]">Claude AI</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#9993;</span>
+          <span class="text-[10px]">Gmail</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+          <span class="text-2xl">&#127925;</span>
+          <span class="text-[10px]">TikTok</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-20 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Funktionen</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Alles, was Ihre Schule braucht</h2>
+      </div>
+
+      <!-- 1. Kalendarz — screenshot: calendar (instruktorzy, filtry sportow Kite/Wind/Wing/SUP, MEWIA sektor, rezerwacja Patrycja Kite) -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Kalender</p>
+          <h3 class="text-2xl font-bold mb-4">Dienstplan wie eine Windguru-Vorhersage — Stunden, Wind & Instruktoren</h3>
+          <p class="text-muted mb-6">Intuitives Layout mit Stunden vertikal und Instruktoren in Spalten — genau wie die Windguru-Vorhersage, die Sie bereits kennen. Sehen Sie Windrichtung und -stärke, Transfer 2nd Spot-Alert über dem Kalender, Sportfilter (Kite, Wind, Wing, Carver, SUP, Bosman). Klicken Sie auf einen Slot und fügen Sie eine Buchung hinzu. Wechseln Sie zwischen Stunden- und klassischer Ansicht.</p>
+          <div class="flex gap-8">
+            <div><p class="stat text-xl font-bold">10+</p><p class="text-muted text-xs">Instruktoren</p></div>
+            <div><p class="stat text-xl font-bold">6</p><p class="text-muted text-xs">Disziplinen</p></div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <img src="../assets/screenshots/final/calendar_light_transpose.png" alt="SurfIQ Kalender — Windguru-Stil Stundenansicht mit Wind und Instruktoren" class="scr" loading="lazy">
+          <img src="../assets/screenshots/final/calendar_light.png" alt="Kalender — klassische Wochenansicht" class="scr" loading="lazy">
+        </div>
+      </div>
+
+      <!-- 2. Pogoda — screenshot: weather (3 panele: Windy mapa, Windguru tabela, Windfinder prognoza + roza wiatrow) -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <img src="../assets/screenshots/final/weather_dark.png" alt="3 Wetterquellen — Windy, Windguru, Windfinder + Windrose" class="scr order-2 lg:order-1" loading="lazy">
+        <div class="order-1 lg:order-2">
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Wetter</p>
+          <h3 class="text-2xl font-bold mb-4">3 Prognosen nebeneinander</h3>
+          <p class="text-muted mb-6">Windy mit Windkarte, Windguru mit farbiger Tabelle, Windfinder mit Stundenprognose. Darunter die Windrose mit aktueller Richtung und Stärke. Entscheidung in 10 Sekunden.</p>
+          <div class="flex gap-8">
+            <div><p class="stat text-xl font-bold">3</p><p class="text-muted text-xs">Wetterquellen</p></div>
+            <div><p class="stat text-xl font-bold">Live</p><p class="text-muted text-xs">Echtzeitdaten</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Raporty — screenshot: reports (przychod, godziny, rezerwacje, no-show, koszty, zysk/godz., marza sportu) -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Berichte</p>
+          <h3 class="text-2xl font-bold mb-4">Umsatz, Kosten und Marge — auf einen Blick</h3>
+          <p class="text-muted mb-6">Bezahlter vs. gesamter Umsatz. Buchungen, Instruktoren-Stunden, No-Shows. Fixkosten pro Stunde, Nettogewinn. Sportmarge — welcher Kurs am meisten einbringt. Filtern nach Kite, Wind, Wing, Carver, SUP.</p>
+        </div>
+        <img src="../assets/screenshots/final/reports_dark.png" alt="Berichte — Umsatz, Kosten, Stunden, Sportmarge" class="scr" loading="lazy">
+      </div>
+
+      <!-- 4. KiteSafari -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div class="space-y-4 order-2 lg:order-1">
+          <img src="../assets/screenshots/final/kitesafari_dark.png" alt="KiteSafari — Trip-Dashboard Orange Bay" class="scr" loading="lazy">
+          <img src="../assets/screenshots/final/kitesafari_boats_dark.png" alt="KiteSafari — Reisenliste mit Preisen" class="scr" loading="lazy">
+        </div>
+        <div class="order-1 lg:order-2">
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">KiteSafari</p>
+          <h3 class="text-2xl font-bold mb-4">Kite-Reisen von A bis Z</h3>
+          <p class="text-muted mb-6">Planen Sie Safari-Trips: Teilnehmer, Zahlungen, Transfers, Wetter, Ausrüstung — alles in einer Ansicht. Eine Vorbereitungs-Checkliste stellt sicher, dass nichts vergessen wird. Teilnehmer-Manifest mit Könnerstufen, Dokumenten und Equipment. Mehrere Trips parallel — Hel, Hurghada, Orange Bay.</p>
+          <div class="flex gap-8">
+            <div><p class="stat text-xl font-bold">18</p><p class="text-muted text-xs">Teilnehmer/Trip</p></div>
+            <div><p class="stat text-xl font-bold">2</p><p class="text-muted text-xs">Standorte</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4b. KiteSafari Details -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Trip-Details</p>
+          <h3 class="text-2xl font-bold mb-4">Manifest, Transfers und Finanzen</h3>
+          <p class="text-muted mb-6">Volle Trip-Ansicht: Teilnehmer-Manifest mit Avataren und Könnerstufen, Transfers mit Standorten, Budget mit Kosten pro Person. Erstellen Sie ein neues Safari mit einem Formular — Standort, Marina, Skipper, Koordinator, Zeitplan, Preis.</p>
+        </div>
+        <img src="../assets/screenshots/final/kitesafari_details_dark.png" alt="KiteSafari — Teilnehmer-Manifest, Transfers, Finanzen" class="scr" loading="lazy">
+      </div>
+
+      <!-- 5. Uslugi — screenshot: services (katalog: Kite poziom I-IV, Wind, Surf, cennik PLN) -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center mb-28 fade-in">
+        <div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Leistungen</p>
+          <h3 class="text-2xl font-bold mb-4">Kurskatalog mit Preisliste</h3>
+          <p class="text-muted mb-6">Kitesurfen Level I-IV, Windsurfen, Wing Foil, Surfen, Skateboard, SUP. Jede Leistung mit Dauer, Preis und Standort. Bearbeiten und deaktivieren mit einem Klick.</p>
+        </div>
+        <img src="../assets/screenshots/final/services_dark.png" alt="Leistungskatalog — Kite, Wind, Wing mit Preisen" class="scr" loading="lazy">
+      </div>
+
+      <!-- 6. Sklep — screenshot: shop (Cabrinha 2026, zdjecia, ceny, produkty) -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center fade-in">
+        <img src="../assets/screenshots/final/shop_dark_full.png" alt="Shop — Cabrinha 2026 Produkte" class="scr order-2 lg:order-1" loading="lazy">
+        <div class="order-1 lg:order-2">
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-widest mb-2">Shop</p>
+          <h3 class="text-2xl font-bold mb-4">Equipment und Produktkatalog</h3>
+          <p class="text-muted mb-6">Cabrinha 2026 — Kites, Boards, Wing Foils. Bilder, Preise, Lagerbestände. Provisionen und Empfehlungen. Filter: Kites, Boards, Foils, Zubehör.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INBOX — Kommunikationszentrale -->
+  <section class="py-28 relative overflow-hidden" style="background:radial-gradient(ellipse at 30% 40%,rgba(20,209,201,.08) 0%,transparent 50%),radial-gradient(ellipse at 70% 60%,rgba(21,101,224,.08) 0%,transparent 50%),linear-gradient(180deg,#081D3A,#0a1e3a,#081D3A)">
+    <div class="max-w-6xl mx-auto px-6">
+      <!-- Header -->
+      <div class="text-center mb-6 fade-in">
+        <div class="inline-block bg-turquoise/10 border border-turquoise/20 rounded-full px-4 py-1.5 mb-5">
+          <span class="text-turquoise text-xs font-bold uppercase tracking-widest">Neu</span>
+        </div>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Alle Nachrichten.<br><span class="bg-gradient-to-r from-turquoise to-aqua bg-clip-text text-transparent">Ein System. Kein Chaos.</span></h2>
+        <p class="text-muted max-w-2xl mx-auto text-lg">WhatsApp, Instagram, Messenger, E-Mail, SMS und Website-Formulare — alles an einem Ort. Von der ersten DM bis zur fertigen Buchung.</p>
+      </div>
+
+      <!-- Inbox screenshot — real panel -->
+      <div class="max-w-5xl mx-auto mt-14 fade-in">
+        <div class="grid md:grid-cols-2 gap-6 items-center">
+          <div>
+            <img src="../assets/screenshots/final/inbox_dark.png" alt="SurfIQ Inbox — Dark Theme, WhatsApp, IG, Messenger vereint" class="scr w-full" loading="lazy">
+            <p class="text-muted text-xs text-center mt-3">Dark Mode — vollständige Gesprächsliste</p>
+          </div>
+          <div>
+            <img src="../assets/screenshots/final/inbox_light.png" alt="SurfIQ Inbox — Light Theme, Kundengespräch mit Profil" class="scr w-full" loading="lazy">
+            <p class="text-muted text-xs text-center mt-3">Light Mode — aktiver Chat mit Kundenprofil</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inbox features -->
+      <div class="grid md:grid-cols-3 gap-5 mt-12 fade-in">
+        <div class="glass p-5 text-center">
+          <p class="text-2xl mb-2">&#128172;</p>
+          <p class="text-white font-semibold text-sm mb-1">6 Kanäle in einem</p>
+          <p class="text-muted text-xs">WhatsApp, Instagram, Messenger, E-Mail, SMS, Formulare</p>
+        </div>
+        <div class="glass p-5 text-center">
+          <p class="text-2xl mb-2">&#129302;</p>
+          <p class="text-white font-semibold text-sm mb-1">KI antwortet und bucht</p>
+          <p class="text-muted text-xs">Automatische Antwort, Buchungserstellung, Instruktoren-Zuweisung</p>
+        </div>
+        <div class="glass p-5 text-center">
+          <p class="text-2xl mb-2">&#128176;</p>
+          <p class="text-white font-semibold text-sm mb-1">Kommunikation, die verkauft</p>
+          <p class="text-muted text-xs">Von der DM zur Buchung in 60 Sekunden. Weniger Chaos, mehr Kurse.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <section class="py-20 bg-navy">
+    <div class="max-w-5xl mx-auto px-6 fade-in">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">10 000+</p><p class="text-muted text-sm mt-1">Teilnehmer</p></div>
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">25 000+</p><p class="text-muted text-sm mt-1">Buchungen</p></div>
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">12</p><p class="text-muted text-sm mt-1">KI-Agenten</p></div>
+        <div class="glass p-5 text-center"><p class="stat text-3xl font-bold">2</p><p class="text-muted text-sm mt-1">Testsaisons</p></div>
+      </div>
+
+      <!-- Reviews carousel -->
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Wetter aus 3 Quellen in einem Dashboard ist ein Game-Changer. Statt jeden Morgen 3 Seiten zu öffnen, habe ich alles auf einem Bildschirm. Die Personalprognose spart mir 30 Minuten täglich."</p>
+          <p class="text-turquoise font-semibold text-sm">Marco R.</p>
+          <p class="text-muted text-xs">Head Instructor, El Gouna</p>
+        </div>
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Der WhatsApp-Agent antwortet Kunden in 10 Sekunden — zu jeder Uhrzeit. Vor SurfIQ habe ich Kunden verloren, weil ich nächtliche Nachrichten nicht beantworten konnte. Jetzt macht es die KI für mich."</p>
+          <p class="text-turquoise font-semibold text-sm">Anna L.</p>
+          <p class="text-muted text-xs">School Manager, Hel Peninsula</p>
+        </div>
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Der Kalender mit Drag-and-Drop und Sportfarben hat unser Leben verändert. Null Doppelbuchungen seit wir SurfIQ nutzen. Instruktoren sehen ihren Plan auf dem Handy — keine Anrufe am Morgen."</p>
+          <p class="text-turquoise font-semibold text-sm">Konrad W.</p>
+          <p class="text-muted text-xs">Operations Director, 2 Standorte</p>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6 mt-6 max-w-3xl mx-auto">
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Das Finanzmodul zeigt Margen pro Sport und pro Instruktor. Ich weiß endlich, wie viel ich wirklich verdiene und wo die Schule Geld verliert. Berichte mit einem Klick generiert."</p>
+          <p class="text-turquoise font-semibold text-sm">Sophie D.</p>
+          <p class="text-muted text-xs">School Owner, Soma Bay</p>
+        </div>
+        <div class="glass p-6">
+          <div class="flex gap-1 mb-3">
+            <span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span><span class="text-turquoise">&#9733;</span>
+          </div>
+          <p class="text-white/80 text-sm italic mb-4">"Das KiteSafari-Modul ist das, wonach wir seit Jahren gesucht haben. Teilnehmermanifest, Zahlungsstatus, Equipment-Zuweisung — alles in einer Ansicht. Unsere erste Reise mit SurfIQ war perfekt."</p>
+          <p class="text-turquoise font-semibold text-sm">Jan S.</p>
+          <p class="text-muted text-xs">Safari Operations, Red Sea</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY SURFIQ — comparison -->
+  <section class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Vergleich</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Warum SurfIQ?</h2>
+      </div>
+      <div class="overflow-x-auto fade-in">
+        <table class="w-full text-sm text-left">
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="py-4 px-4 text-muted font-normal w-1/4"></th>
+              <th class="py-4 px-4 text-muted font-normal text-center">Excel / Papier</th>
+              <th class="py-4 px-4 text-muted font-normal text-center">Andere Software</th>
+              <th class="py-4 px-4 text-center"><span class="bg-turquoise/10 text-turquoise px-3 py-1 rounded-full font-semibold">SurfIQ</span></th>
+            </tr>
+          </thead>
+          <tbody class="text-white/70">
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Online-Buchungen</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Teilweise</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Wetter aus 3 Quellen</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">KI-Agenten 24/7</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; 6 Kanäle</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Finanzen & Sportmarge</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Manuell</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Basis</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; Live</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">KiteSafari / Ausflüge</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Spot-Transfers</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003;</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-3 px-4 font-medium text-white">Inbox (6 Kanäle)</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-yellow-400">1-2 Kanäle</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; 6 Kanäle</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 font-medium text-white">Speziell für Wassersport</td>
+              <td class="py-3 px-4 text-center text-red-400">&#10007;</td>
+              <td class="py-3 px-4 text-center text-yellow-400">Allgemein</td>
+              <td class="py-3 px-4 text-center text-green-400">&#10003; 100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Team</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Die Menschen hinter SurfIQ</h2>
+      </div>
+      <div class="max-w-md mx-auto fade-in">
+        <!-- Magda -->
+        <div class="glass overflow-hidden group flex flex-col">
+          <div class="h-80 overflow-hidden">
+            <img src="../assets/team_magda.jpg" alt="Magdalena" class="w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition-transform duration-500">
+          </div>
+          <div class="p-6 flex-1">
+            <h3 class="text-white text-xl font-bold">Magdalena</h3>
+            <p class="text-turquoise text-sm font-semibold mb-3">Kontakt, Onboarding und Anpassung</p>
+            <p class="text-muted text-sm leading-relaxed">Erster Ansprechpartner für neue Schulen. Führt Onboarding durch, konfiguriert das System nach Kundenbedürfnissen und übernimmt individuelle Anpassungen. Bergliebhaberin, Snowboarderin, Snowkiterin und Fotografin. Gründerin der Marke SLOWHOP.WEAR.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI AGENTS + UNIQUE FEATURES -->
+  <section id="ai" class="py-24 relative overflow-hidden" style="background:linear-gradient(180deg,#081D3A,#0e3670,#081D3A)">
+    <!-- Background glow effects -->
+    <div class="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-turquoise/5 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-ocean/10 rounded-full blur-[100px]"></div>
+
+    <div class="max-w-6xl mx-auto px-6 relative z-10">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">AI-First</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Das einzige System mit integrierten KI-Agenten</h2>
+        <p class="text-muted max-w-2xl mx-auto">Ein Kunde schreibt um 23:00 — die KI antwortet in weniger als 2 Minuten. Auf 6 Kanälen. 24/7. Sie sind auf dem Wasser.</p>
+      </div>
+
+      <!-- AI Channels grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-16 fade-in">
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-purple-500 to-pink-500 mx-auto mb-2">&#128247;</div>
+          <p class="text-white text-sm font-semibold">Instagram</p>
+          <p class="text-muted text-xs">DM + Kommentare</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-green-500 to-green-600 mx-auto mb-2">&#128172;</div>
+          <p class="text-white text-sm font-semibold">WhatsApp</p>
+          <p class="text-muted text-xs">Cloud API</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-blue-500 to-blue-700 mx-auto mb-2">&#128077;</div>
+          <p class="text-white text-sm font-semibold">Facebook</p>
+          <p class="text-muted text-xs">Seite + Messenger</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-red-400 to-orange-500 mx-auto mb-2">&#9993;</div>
+          <p class="text-white text-sm font-semibold">E-Mail</p>
+          <p class="text-muted text-xs">Auto-Antworten</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-yellow-400 to-yellow-600 mx-auto mb-2">&#128241;</div>
+          <p class="text-white text-sm font-semibold">SMS</p>
+          <p class="text-muted text-xs">Erinnerungen</p>
+        </div>
+        <div class="glass p-4 text-center group hover:glow-t transition-all cursor-pointer">
+          <div class="channel-icon bg-gradient-to-br from-gray-800 to-black mx-auto mb-2">&#127925;</div>
+          <p class="text-white text-sm font-semibold">TikTok</p>
+          <p class="text-muted text-xs">Kommentare</p>
+        </div>
+      </div>
+
+      <!-- AI Stats -->
+      <div class="grid md:grid-cols-3 gap-6 mb-16 fade-in">
+        <div class="glass p-6 text-center glow-t">
+          <p class="stat text-3xl font-bold">&lt;2 Min.</p>
+          <p class="text-muted text-sm mt-1">durchschnittliche Antwortzeit</p>
+        </div>
+        <div class="glass p-6 text-center">
+          <p class="stat text-3xl font-bold">24/7</p>
+          <p class="text-muted text-sm mt-1">ohne Pausen, ohne Urlaub</p>
+        </div>
+        <div class="glass p-6 text-center">
+          <p class="stat text-3xl font-bold">3-4 Std.</p>
+          <p class="text-muted text-sm mt-1">Zeitersparnis pro Tag</p>
+        </div>
+      </div>
+
+      <!-- Unique features hotspots -->
+      <div class="text-center mb-12 fade-in">
+        <h3 class="text-2xl font-bold mb-2">Was uns unterscheidet</h3>
+        <p class="text-muted">Funktionen, die Sie in keinem anderen System finden</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5 fade-in">
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#127754;</div>
+          <h4 class="text-white font-semibold mb-2">3 Wetterquellen</h4>
+          <p class="text-muted text-sm">Windguru + Windy + Windfinder nebeneinander. Kein Mitbewerber hat das.</p>
+        </div>
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#128674;</div>
+          <h4 class="text-white font-semibold mb-2">Transfer</h4>
+          <p class="text-muted text-sm">Boot, Auto, Bus — planen Sie Teilnehmer-Transfers zu einem anderen Spot. Kosten, Kapazität, SMS-Benachrichtigungen.</p>
+        </div>
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#127758;</div>
+          <h4 class="text-white font-semibold mb-2">KiteSafari</h4>
+          <p class="text-muted text-sm">Kite-Trips mit vollständiger Logistik: Transport, Unterkunft, Kurse, Tagesplan, Budget. Hel → El Gouna und weiter.</p>
+        </div>
+        <div class="glass p-6 hotspot hover:glow-t transition-all">
+          <div class="text-3xl mb-3">&#129302;</div>
+          <h4 class="text-white font-semibold mb-2">AI-first</h4>
+          <p class="text-muted text-sm">12 KI-Agenten, 6 Monate an einem echten Unternehmen getestet. Anti-Spam, Anti-Loop, Fallback.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KITESAFARI -->
+  <section id="kitesafari" class="py-28 relative overflow-hidden" style="background:radial-gradient(ellipse at 50% 30%,rgba(20,209,201,.06) 0%,transparent 50%),#081D3A">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-6 fade-in">
+        <div class="inline-block bg-ocean/20 border border-ocean/30 rounded-full px-4 py-1.5 mb-5">
+          <span class="text-blue-300 text-xs font-bold uppercase tracking-widest">Premium-Modul</span>
+        </div>
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">KiteSafari</h2>
+        <p class="text-turquoise text-lg font-medium mb-2">Von WhatsApp bis an Bord — alles in SurfIQ.</p>
+        <p class="text-muted max-w-2xl mx-auto">Sie organisieren Kite-Safaris, Camps oder Bootsausflüge? Der gesamte Betrieb in einem Panel — von der Kundenanfrage bis zur Abrechnung nach der Rückkehr.</p>
+      </div>
+
+      <!-- Safari mockup — CSS -->
+      <div class="max-w-5xl mx-auto mt-14 fade-in">
+        <div class="rounded-2xl border border-white/10 overflow-hidden shadow-2xl" style="background:rgba(8,29,58,.95)">
+          <!-- Top bar -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 rounded-full bg-red-400"></div>
+              <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+              <div class="w-3 h-3 rounded-full bg-green-400"></div>
+              <span class="text-white/30 text-xs ml-3 font-mono">panel.surfiq.eu/safari</span>
+            </div>
+            <span class="text-xs text-orange-400 font-semibold bg-orange-400/10 px-3 py-1 rounded-full">&#128676; KiteSafari</span>
+          </div>
+          <!-- Safari content -->
+          <div class="p-5">
+            <!-- Safari header -->
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="text-white text-lg font-bold">Kite Safari — El Gouna</h3>
+                <p class="text-muted text-xs">22.-28. Mai 2026 &bull; Boot: Sea Explorer &bull; Marina: El Gouna Bay</p>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded-lg font-semibold">8/12 Plätze</span>
+                <span class="text-[10px] bg-turquoise/20 text-turquoise px-2 py-1 rounded-lg font-semibold">Offen</span>
+              </div>
+            </div>
+
+            <!-- Participant manifest -->
+            <div class="rounded-xl border border-white/5 overflow-hidden mb-5">
+              <div class="bg-white/3 px-4 py-2 border-b border-white/5 flex items-center justify-between">
+                <span class="text-white text-xs font-semibold">Teilnehmermanifest</span>
+                <span class="text-muted text-[10px]">8 Teilnehmer</span>
+              </div>
+              <div class="divide-y divide-white/5 text-[11px]">
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span class="text-white font-medium w-28">Anna K.</span>
+                  <span class="text-muted w-16">Kite L2</span>
+                  <span class="text-green-400 w-14">Bezahlt</span>
+                  <span class="text-turquoise w-20">Kite 12m</span>
+                  <span class="text-muted w-20">Hotel → Bus</span>
+                  <span class="text-green-400 w-16">&#10003; Check-in</span>
+                  <span class="text-green-400 ml-auto">&#9875; An Bord</span>
+                </div>
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span class="text-white font-medium w-28">Max M.</span>
+                  <span class="text-muted w-16">Kite L3</span>
+                  <span class="text-green-400 w-14">Bezahlt</span>
+                  <span class="text-turquoise w-20">Kite 9m</span>
+                  <span class="text-muted w-20">Eigenes</span>
+                  <span class="text-green-400 w-16">&#10003; Check-in</span>
+                  <span class="text-green-400 ml-auto">&#9875; An Bord</span>
+                </div>
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                  <span class="text-white font-medium w-28">Erik H.</span>
+                  <span class="text-muted w-16">Wing L1</span>
+                  <span class="text-yellow-400 w-14">Anzahlung</span>
+                  <span class="text-orange-400 w-20">Fehlt!</span>
+                  <span class="text-muted w-20">Hotel → Bus</span>
+                  <span class="text-yellow-400 w-16">&#9888; Kein Equipment</span>
+                  <span class="text-yellow-400 ml-auto">Wartet</span>
+                </div>
+                <div class="px-4 py-2.5 flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                  <span class="text-white font-medium w-28">Julia B.</span>
+                  <span class="text-muted w-16">Kite L2</span>
+                  <span class="text-green-400 w-14">Bezahlt</span>
+                  <span class="text-turquoise w-20">Kite 10m</span>
+                  <span class="text-muted w-20">Marina</span>
+                  <span class="text-green-400 w-16">&#10003; Check-in</span>
+                  <span class="text-blue-400 ml-auto">&#127754; Im Wasser</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom stats -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="stat text-lg font-bold">8/12</p>
+                <p class="text-muted text-[9px]">Teilnehmer</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-green-400 text-lg font-bold">6</p>
+                <p class="text-muted text-[9px]">Bezahlt</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-turquoise text-lg font-bold">7</p>
+                <p class="text-muted text-[9px]">Equipment OK</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-orange-400 text-lg font-bold">1</p>
+                <p class="text-muted text-[9px]">Fehlt</p>
+              </div>
+              <div class="bg-white/3 rounded-lg p-3 text-center">
+                <p class="text-white text-lg font-bold">3/8</p>
+                <p class="text-muted text-[9px]">Im Wasser</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process flow -->
+      <div class="max-w-4xl mx-auto mt-14 fade-in">
+        <div class="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Lead</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Kunde</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Zahlung</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Transfer</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Equipment</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-turquoise/20 text-turquoise px-3 py-1.5 rounded-lg font-semibold">Check-in</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-turquoise/20 text-turquoise px-3 py-1.5 rounded-lg font-semibold">Auf dem Wasser</span>
+          <span class="text-turquoise">&#8594;</span>
+          <span class="bg-white/5 text-muted px-3 py-1.5 rounded-lg">Abrechnung</span>
+        </div>
+      </div>
+
+      <!-- Safari features grid -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-12 fade-in">
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#128466;</p>
+          <p class="text-white font-semibold text-sm">Safari Planner</p>
+          <p class="text-muted text-xs mt-1">Termine, Boot, Marina, Limits, Preis, Instruktoren, Skipper</p>
+        </div>
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#128221;</p>
+          <p class="text-white font-semibold text-sm">Participant Manifest</p>
+          <p class="text-muted text-xs mt-1">Level, Zahlung, Einverständnis, Equipment, Check-in, Boarding</p>
+        </div>
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#128674;</p>
+          <p class="text-white font-semibold text-sm">Transfer & Pickup</p>
+          <p class="text-muted text-xs mt-1">Hotel-Abholungen, Busse, Fahrer, Ankunftsstatus</p>
+        </div>
+        <div class="glass p-5">
+          <p class="text-xl mb-2">&#127754;</p>
+          <p class="text-white font-semibold text-sm">Live Boat View</p>
+          <p class="text-muted text-xs mt-1">Wer an Bord, wer im Wasser, wer Hilfe braucht</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" class="py-24" style="background:linear-gradient(180deg,#081D3A,#0a2444,#081D3A)">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">Preise</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Einfache Pläne. Keine versteckten Kosten.</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 fade-in">
+        <div class="card p-7 flex flex-col">
+          <p class="text-turquoise text-sm font-semibold uppercase mb-2">Starter</p>
+          <div class="mb-4"><span class="stat text-4xl font-bold">499</span><span class="text-muted text-sm"> PLN/Mo.</span></div>
+          <p class="text-muted text-xs mb-2">Für kleine Schulen und Stationen, die Buchungen, Teilnehmer, Instruktoren und den grundlegenden Betrieb organisieren möchten.</p>
+          <p class="text-white/50 text-xs mb-4">Bis zu 100 Teilnehmer und 3 Instruktoren</p>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-wider mb-3">Im Paket:</p>
+          <ul class="space-y-2 text-sm text-white/70 mb-8 flex-1">
+            <li>Buchungen und Kalender</li>
+            <li>Teilnehmer-CRM</li>
+            <li>Wetter aus 3 Quellen: Windguru, Windy, Windfinder</li>
+            <li>Instruktoren-Dienstplan</li>
+            <li>Finanzen und Berichte</li>
+            <li>1 KI-Agent</li>
+            <li>Inseltransfers</li>
+            <li>Shop und Equipment — ohne KI-Agenten</li>
+          </ul>
+          <a href="/demo/" class="btn-o px-6 py-3 text-turquoise font-semibold text-center block text-sm">Demo buchen</a>
+        </div>
+        <div class="card pop p-7 flex flex-col relative">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-turquoise text-navy text-xs font-bold px-4 py-1 rounded-full">Meistgewähltes Paket</div>
+          <p class="text-turquoise text-sm font-semibold uppercase mb-2">Pro</p>
+          <div class="mb-4"><span class="stat text-4xl font-bold">899</span><span class="text-muted text-sm"> PLN/Mo.</span></div>
+          <p class="text-muted text-xs mb-2">Die beste Wahl für wachsende Schulen, die mehr Automatisierung, Vertriebsunterstützung und zusätzliche operative Module benötigen.</p>
+          <p class="text-white/50 text-xs mb-4">Bis zu 500 Teilnehmer und 10 Instruktoren</p>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-wider mb-3">Im Paket:</p>
+          <ul class="space-y-2 text-sm text-white/70 mb-8 flex-1">
+            <li>Alles aus dem Starter-Paket</li>
+            <li>2 KI-Agenten</li>
+            <li>KiteSafari-Modul</li>
+            <li>Shop</li>
+            <li>Erweiterte Buchungs- und Schulbetriebsverwaltung</li>
+          </ul>
+          <a href="/demo/" class="btn-p px-6 py-3 text-white font-semibold text-center block text-sm">Demo buchen</a>
+        </div>
+        <div class="card p-7 flex flex-col">
+          <p class="text-turquoise text-sm font-semibold uppercase mb-2">Enterprise</p>
+          <div class="mb-4"><span class="stat text-4xl font-bold">1 499</span><span class="text-muted text-sm"> PLN/Mo.</span></div>
+          <p class="text-muted text-xs mb-2">Für große Schulen, Standort-Netzwerke und Veranstalter, die volle Automatisierung, Integrationen und individuelles Onboarding benötigen.</p>
+          <p class="text-white/50 text-xs mb-4">Unbegrenzte Teilnehmer und Instruktoren</p>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-wider mb-3">Im Paket:</p>
+          <ul class="space-y-2 text-sm text-white/70 mb-8 flex-1">
+            <li>Alles aus dem Pro-Paket</li>
+            <li>Multi-Kanal-Nachrichtenbetreuung</li>
+            <li>KI-Agenten für 6 Kommunikationskanäle</li>
+            <li>Website-Personalisierung</li>
+            <li>Chatbot für die Website</li>
+            <li>Custom Branding</li>
+            <li>API und Datenimport</li>
+            <li>Dediziertes Onboarding</li>
+            <li>Unterstützung bei Datenmigration und Prozesskonfiguration</li>
+          </ul>
+          <a href="mailto:office@surfiq.eu" class="btn-o px-6 py-3 text-turquoise font-semibold text-center block text-sm">Kontaktieren Sie uns</a>
+        </div>
+      </div>
+      <!-- Premium-Zusatzmodule -->
+      <div class="text-center mt-16 mb-8 fade-in">
+        <h3 class="text-2xl font-bold">Premium-Zusatzmodule</h3>
+      </div>
+      <div class="grid md:grid-cols-2 gap-5 fade-in">
+        <div class="card p-6 gradient-border">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="text-3xl">&#129302;</div>
+            <div>
+              <p class="text-white font-bold mb-1">AI Pack — Ab 499 PLN / Monat</p>
+              <p class="text-muted text-sm mb-3">Erweitertes Automatisierungspaket für Schulen, die KI in Vertrieb, Kundenservice und Marketing stärker nutzen möchten.</p>
+            </div>
+          </div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-wider mb-3">Im Paket:</p>
+          <ul class="space-y-1.5 text-sm text-white/70">
+            <li>Vertriebs-Agent</li>
+            <li>Content-Agent</li>
+            <li>Wind Alert Agent</li>
+            <li>Bis zu 6 Kommunikationskanäle</li>
+            <li>KI-Berichte</li>
+            <li>Automatische Antworten auf Kundenanfragen</li>
+            <li>Unterstützung bei der Erstellung von Marketingkommunikation</li>
+          </ul>
+        </div>
+        <div class="card p-6 gradient-border">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="text-3xl">&#128676;</div>
+            <div>
+              <p class="text-white font-bold mb-1">KiteSafari — Preis auf Anfrage</p>
+              <p class="text-muted text-sm mb-3">Ein eigenes System für KiteSafari-Veranstalter — entwickelt für Logistik, Transfers, Gäste und Kommunikation.</p>
+            </div>
+          </div>
+          <p class="text-turquoise text-xs font-semibold uppercase tracking-wider mb-3">Im Modul:</p>
+          <ul class="space-y-1.5 text-sm text-white/70 mb-4">
+            <li>Teilnehmerbuchungen</li>
+            <li>Transfers</li>
+            <li>Reiseplan</li>
+            <li>Boot- und Gruppenlogistik</li>
+            <li>KI-Concierge für Teilnehmer</li>
+            <li>Kommunikation vor und während der Reise</li>
+            <li>Zahlungen und Berichte</li>
+          </ul>
+          <a href="mailto:office@surfiq.eu" class="btn-o inline-block px-5 py-2 text-turquoise font-semibold text-sm">Angebot anfragen</a>
+        </div>
+      </div>
+      <!-- Preisfuss -->
+      <div class="text-center mt-12 fade-in">
+        <h3 class="text-xl font-bold text-white mb-3">14 Tage kostenlos</h3>
+        <p class="text-muted text-sm max-w-2xl mx-auto mb-4">Testen Sie SurfIQ 14 Tage lang ohne Kreditkarte und ohne Verpflichtungen. Sehen Sie, wie Ihr Panel, Kalender, CRM, Wetter, Finanzen und KI-Agenten im realen Schulalltag funktionieren.</p>
+        <p class="text-muted text-sm max-w-2xl mx-auto">Premium-Optionen werden individuell berechnet — je nach Schulgröße, Anzahl der Standorte und Umfang der Automatisierung.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-24 bg-navy">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="text-center mb-16 fade-in">
+        <p class="text-turquoise text-sm font-semibold uppercase tracking-widest mb-3">FAQ</p>
+        <h2 class="text-3xl md:text-4xl font-bold">Häufig gestellte Fragen</h2>
+      </div>
+      <div class="space-y-4 fade-in">
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Kann ich SurfIQ kostenlos testen?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Ja! Wir bieten 14 Tage kostenlosen Zugang ohne Kreditkarte. Füllen Sie einfach das Demo-Formular aus — wir konfigurieren Ihr Konto innerhalb von 24 Stunden.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Wie lange dauert das Onboarding?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Die Grundkonfiguration dauert 1-2 Tage. Vollständiges Onboarding mit Datenmigration und Teamschulung — in der Regel eine Woche. Wir unterstützen Sie bei jedem Schritt.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Kann ich Daten aus einem anderen System importieren?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Ja. Wir importieren Daten aus Excel, Google Sheets, SurfCloud und anderen Systemen. Im Enterprise-Paket ist die Migration inklusive.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Wie funktionieren die KI-Agenten?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">KI-Agenten antworten automatisch auf Kundennachrichten auf 6 Kanälen (Instagram, WhatsApp, Facebook, E-Mail, SMS, TikTok). Sie kennen Ihr Angebot, Ihre Preise und Verfügbarkeit. Antwortzeit unter 2 Minuten, 24/7.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Funktioniert SurfIQ auf dem Handy?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Ja — das Panel ist voll responsiv. Instruktoren sehen ihren Dienstplan auf dem Handy, und Sie verwalten Ihre Schule von jedem Gerät aus.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Welche Sportarten unterstützt SurfIQ?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Kitesurfen, Windsurfen, Wing Foil, SUP, Surfen, Wakeboarden, Pumpfoil und mehr. Das System ist flexibel — Sie können eigene Disziplinen und Kurse hinzufügen.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Kann ich mehrere Standorte verwalten?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Ja! SurfIQ unterstützt mehrere Standorte in einem Panel. Getestet an 2 Standorten (Polen + Ägypten) über 2 volle Saisons.</p>
+        </details>
+        <details class="glass p-5 group cursor-pointer">
+          <summary class="flex items-center justify-between text-white font-semibold text-sm list-none">
+            <span>Was kostet es nach der Testphase?</span>
+            <span class="text-turquoise text-xl group-open:rotate-45 transition-transform">+</span>
+          </summary>
+          <p class="text-muted text-sm mt-3">Die Pläne beginnen bei 499 PLN/Monat (Starter) bis 1499 PLN/Monat (Enterprise). KI- und KiteSafari-Module werden individuell berechnet. Keine versteckten Kosten, Sie können jederzeit kündigen.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="demo" class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-ocean to-turquoise opacity-90"></div>
+    <div class="max-w-3xl mx-auto px-6 text-center relative z-10 fade-in">
+      <h2 class="text-3xl md:text-5xl font-bold mb-6">Bereit, Chaos in ein System zu verwandeln?</h2>
+      <p class="text-white/80 text-lg mb-10">Buchen Sie eine persönliche Demo. Ohne Verpflichtungen.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="/demo/" class="bg-white text-navy font-bold px-10 py-4 rounded-2xl hover:bg-white/90 transition-all hover:-translate-y-1">Demo buchen</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-navy border-t border-white/5 py-12">
+    <div class="max-w-6xl mx-auto px-6 flex flex-wrap justify-between gap-8">
+      <div>
+        <img src="../assets/generated/logo_final/final_logo_dark.png" alt="SurfIQ" class="h-12 mb-3">
+        <p class="text-muted text-sm">Smarter schools. Better waves.</p>
+      </div>
+      <div>
+        <p class="text-white font-semibold text-sm mb-3">Produkt</p>
+        <ul class="space-y-1.5 text-muted text-sm">
+          <li><a href="#features" class="hover:text-white">Funktionen</a></li>
+          <li><a href="#pricing" class="hover:text-white">Preise</a></li>
+          <li><a href="/demo/" class="hover:text-white">Demo buchen</a></li>
+          <li><a href="/blog/" class="hover:text-white">Blog</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-white font-semibold text-sm mb-3">Kontakt</p>
+        <ul class="space-y-1.5 text-muted text-sm">
+          <li>office@surfiq.eu</li>
+          <li>+48 690 270 032</li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-6 mt-8 pt-6 border-t border-white/5 text-muted/50 text-xs">&copy; 2026 SurfIQ. Alle Rechte vorbehalten.</div>
+  </footer>
+
+  <!-- Lightbox overlay -->
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" aria-label="Schließen">&times;</button>
+    <img src="" alt="Screenshot-Vorschau">
+  </div>
+
+  <!-- Chat widget -->
+  <button class="chat-fab" id="chatFab" aria-label="Chat mit SurfIQ" style="padding:0;overflow:hidden;">
+    <img src="../assets/generated/logo_final/final_icon.png" alt="SurfIQ" style="width:36px;height:36px;border-radius:50%;">
+    <span class="dot"></span>
+  </button>
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="avatar">&#128676;</div>
+      <div class="info">
+        <div class="name">SurfIQ Bot</div>
+        <div class="status">Online — sofortige Antworten</div>
+      </div>
+      <button class="close-chat" id="chatClose" aria-label="Chat schließen">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg bot">Hallo! Ich bin der SurfIQ Bot. Fragen Sie mich zu Funktionen, Preisen, Demo oder allem anderen. Ich helfe gerne!</div>
+    </div>
+    <div class="chat-quick" id="chatQuick">
+      <button data-q="Was sind die Preispläne?">Preise</button>
+      <button data-q="Welche Funktionen hat SurfIQ?">Funktionen</button>
+      <button data-q="Kann ich eine Demo testen?">Demo</button>
+      <button data-q="Wie kann ich das Team kontaktieren?">Kontakt</button>
+      <button data-q="Was ist KiteSafari?">KiteSafari</button>
+      <button data-q="Wie funktionieren die KI-Agenten?">KI-Agenten</button>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Nachricht eingeben..." autocomplete="off">
+      <button id="chatSend" aria-label="Senden">&#10148;</button>
+    </div>
+  </div>
+
+  <script>
+    // Intersection observer for fade-in
+    const o=new IntersectionObserver(e=>{e.forEach(e=>{e.isIntersecting&&e.target.classList.add('visible')})},{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+    document.querySelectorAll('.fade-in,.slide-in-left,.slide-in-right').forEach(e=>o.observe(e));
+    // Counter animation for stats
+    document.querySelectorAll('.stat').forEach(el=>{
+      const orig=el.textContent;
+      const num=parseInt(orig.replace(/[^\d]/g,''));
+      if(num>0&&num<100000){
+        let start=0;const end=num;const dur=1500;const step=Math.ceil(end/60);
+        const obs2=new IntersectionObserver(entries=>{
+          if(entries[0].isIntersecting){
+            const timer=setInterval(()=>{start+=step;if(start>=end){el.textContent=orig;clearInterval(timer)}else{el.textContent=start.toLocaleString('de')}},dur/60);
+            obs2.disconnect()
+          }
+        },{threshold:.5});
+        obs2.observe(el)
+      }
+    });
+
+    // --- LIGHTBOX ---
+    (function(){
+      const overlay=document.getElementById('lightbox');
+      const lbImg=overlay.querySelector('img');
+      const closeBtn=overlay.querySelector('.lightbox-close');
+      document.querySelectorAll('img.scr').forEach(img=>{
+        img.addEventListener('click',function(){
+          lbImg.src=this.src;
+          lbImg.alt=this.alt;
+          overlay.classList.add('active');
+          document.body.style.overflow='hidden';
+        });
+      });
+      function closeLB(){overlay.classList.remove('active');document.body.style.overflow=''}
+      closeBtn.addEventListener('click',closeLB);
+      overlay.addEventListener('click',function(e){if(e.target===overlay)closeLB()});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('active'))closeLB()});
+    })();
+
+    // --- MOBILE MENU ---
+    (function(){
+      const btn=document.getElementById('hamburgerBtn');
+      const menu=document.getElementById('mobileMenu');
+      const closeBtn=document.getElementById('mobileMenuClose');
+      btn.addEventListener('click',()=>menu.classList.add('open'));
+      closeBtn.addEventListener('click',()=>menu.classList.remove('open'));
+      menu.querySelectorAll('a').forEach(a=>{
+        a.addEventListener('click',()=>menu.classList.remove('open'));
+      });
+    })();
+
+    // --- CHAT WIDGET ---
+    (function(){
+      const fab=document.getElementById('chatFab');
+      const win=document.getElementById('chatWindow');
+      const closeBtn=document.getElementById('chatClose');
+      const msgs=document.getElementById('chatMessages');
+      const input=document.getElementById('chatInput');
+      const sendBtn=document.getElementById('chatSend');
+      const quickBtns=document.getElementById('chatQuick');
+
+      let welcomed=false;
+      fab.addEventListener('click',()=>{win.classList.toggle('open');if(win.classList.contains('open')){input.focus();fab.querySelector('.dot').style.display='none';if(!welcomed){welcomed=true;setTimeout(()=>botReply('hi'),400)}}});
+      closeBtn.addEventListener('click',()=>win.classList.remove('open'));
+
+      function addMsg(text,type){
+        const d=document.createElement('div');
+        d.className='chat-msg '+type;
+        d.textContent=text;
+        msgs.appendChild(d);
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      // Chat history for context
+      const chatHistory=[];
+
+      async function botReply(q){
+        chatHistory.push({role:'user',content:q});
+        // Show typing indicator
+        const typing=document.createElement('div');
+        typing.className='chat-msg bot';
+        typing.textContent='...';
+        typing.id='typing';
+        msgs.appendChild(typing);
+        msgs.scrollTop=msgs.scrollHeight;
+
+        try{
+          const resp=await fetch('/api/surfiq-chat',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({message:q,history:chatHistory.slice(-10)})
+          });
+          const data=await resp.json();
+          const reply=data.reply||'Entschuldigung, etwas ist schiefgelaufen. Schreiben Sie uns an office@surfiq.eu!';
+          typing.remove();
+          addMsg(reply,'bot');
+          chatHistory.push({role:'assistant',content:reply});
+        }catch(err){
+          typing.remove();
+          addMsg('Verbindungsfehler. Bitte versuchen Sie es erneut oder schreiben Sie an office@surfiq.eu!','bot');
+        }
+      }
+
+      function handleSend(){
+        const q=input.value.trim();
+        if(!q)return;
+        addMsg(q,'user');
+        input.value='';
+        botReply(q);
+        if(quickBtns.style.display!=='none'){quickBtns.style.display='none'}
+      }
+
+      sendBtn.addEventListener('click',handleSend);
+      input.addEventListener('keydown',e=>{if(e.key==='Enter')handleSend()});
+      quickBtns.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click',function(){
+          const q=this.dataset.q;
+          addMsg(q,'user');
+          botReply(q);
+          quickBtns.style.display='none';
+        });
+      });
+    })();
+  </script>
+<!-- Cookie consent -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(8,29,58,.97);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);padding:16px 24px;font-size:13px">
+  <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
+    <p class="text-white/70 flex-1 min-w-[200px]">Wir verwenden Cookies und Analysetools (Google Analytics, Facebook Pixel) zur Verbesserung der Seite. Durch die Nutzung stimmst du deren Verwendung zu. <a href="mailto:office@surfiq.eu" class="text-turquoise hover:underline">Datenschutz</a></p>
+    <div class="flex gap-3">
+      <button onclick="acceptCookies()" class="btn-p px-5 py-2 text-white text-sm font-semibold">Alle akzeptieren</button>
+      <button onclick="rejectCookies()" class="btn-o px-5 py-2 text-turquoise text-sm font-semibold">Nur notwendige</button>
+    </div>
+  </div>
+</div>
+<script>
+function acceptCookies(){localStorage.setItem('cookie_consent','all');document.getElementById('cookieBanner').style.display='none'}
+function rejectCookies(){localStorage.setItem('cookie_consent','essential');document.getElementById('cookieBanner').style.display='none';
+  window['ga-disable-G-T4HT1DG5RW']=true;
+  if(window.fbq)window.fbq=function(){};
+}
+if(!localStorage.getItem('cookie_consent')){document.getElementById('cookieBanner').style.display='block'}
+else if(localStorage.getItem('cookie_consent')==='essential'){window['ga-disable-G-T4HT1DG5RW']=true;if(window.fbq)window.fbq=function(){}}
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
