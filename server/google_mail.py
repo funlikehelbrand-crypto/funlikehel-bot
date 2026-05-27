@@ -12,8 +12,33 @@ from googleapiclient.discovery import build
 from claude_agent import get_reply
 from google_auth import get_credentials
 from team_tasks import is_team_member, process_team_email
+import os
+import requests as _req
 
 logger = logging.getLogger(__name__)
+
+# Supabase sync for Messages panel
+_SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://pmkzzchckmpcmvtdhxwh.supabase.co")
+_SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+def _sync_to_panel(sender_email, sender_name, subject, body, reply=None, status="new"):
+    if not _SUPABASE_KEY: return
+    try:
+        h = {"apikey": _SUPABASE_KEY, "Authorization": f"Bearer {_SUPABASE_KEY}", "Content-Type": "application/json"}
+        conv = {"channel": "email", "contact_name": sender_name or sender_email.split("@")[0], "contact_email": sender_email, "status": status, "unread_count": 1, "last_message_text": (body or "")[:200], "last_message_at": __import__("datetime").datetime.utcnow().isoformat() + "Z", "tags": ["email", "auto"]}
+        r = _req.get(f"{_SUPABASE_URL}/rest/v1/conversations?contact_email=eq.{sender_email}&channel=eq.email&limit=1", headers={**h, "Prefer": "return=representation"})
+        if r.status_code == 200 and r.json():
+            cid = r.json()[0]["id"]
+            _req.patch(f"{_SUPABASE_URL}/rest/v1/conversations?id=eq.{cid}", headers={**h, "Prefer": "return=minimal"}, json={"last_message_text": conv["last_message_text"], "last_message_at": conv["last_message_at"], "status": status, "unread_count": r.json()[0].get("unread_count", 0) + 1})
+        else:
+            r2 = _req.post(f"{_SUPABASE_URL}/rest/v1/conversations", headers={**h, "Prefer": "return=representation"}, json=conv)
+            cid = r2.json()[0]["id"] if r2.status_code in (200, 201) and r2.json() else None
+        if cid:
+            _req.post(f"{_SUPABASE_URL}/rest/v1/messages", headers={**h, "Prefer": "return=minimal"}, json={"conversation_id": cid, "sender_type": "customer", "sender_name": sender_name or sender_email, "body": f"[{subject}]\n{body[:500]}", "delivery_status": "read"})
+            if reply:
+                _req.post(f"{_SUPABASE_URL}/rest/v1/messages", headers={**h, "Prefer": "return=minimal"}, json={"conversation_id": cid, "sender_type": "ai", "sender_name": "Alicja AI", "body": reply[:500], "delivery_status": "sent"})
+    except Exception as e:
+        logger.warning("Supabase sync: %s", e)
 
 LABEL_PROCESSED = "FUNLIKEHEL_BOT"  # etykieta oznaczająca przetworzone maile
 
@@ -341,6 +366,7 @@ def process_unread_emails():
             )
             mark_as_read(details["id"])
             logger.info("Odpowiedź wysłana do: %s", details["sender"])
+            _sync_to_panel(sender_email=sender_email, sender_name=details["sender"], subject=details["subject"], body=details["body"], reply=reply_text, status="ai_handled")
 
         except Exception as e:
             logger.error("Błąd przy przetwarzaniu maila %s: %s", msg_ref["id"], e)

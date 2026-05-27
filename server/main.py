@@ -2558,6 +2558,10 @@ async def _handle_messenger(messaging: dict):
             r.raise_for_status()
 
         logger.info("Messenger odpowiedź wysłana do %s", sender_id)
+        try:
+            from google_mail import _sync_to_panel
+            _sync_to_panel(sender_email=sender_id, sender_name=f"Messenger {sender_id}", subject="Messenger DM", body=text, reply=reply_text, status="ai_handled")
+        except: pass
     except Exception as e:
         logger.error("Błąd Messenger: %s", e)
 
@@ -2651,6 +2655,10 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
         reply = get_reply(text, sender_id=sender_id, channel=f"instagram_dm_{account}")
         await send_dm(sender_id, reply, account=account)
         logger.info("Odpowiedź DM wysłana do %s na @%s", sender_id, account)
+        try:
+            from google_mail import _sync_to_panel
+            _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_id}", subject="Instagram DM", body=text, reply=reply, status="ai_handled")
+        except: pass
     except Exception as e:
         logger.error("Błąd przy obsłudze DM na @%s: %s", account, e)
 
