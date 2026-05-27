@@ -6,6 +6,7 @@ Zapisze token.json który będzie używany przez serwer.
 Na Renderze: ustaw zmienną środowiskową GOOGLE_TOKEN_JSON z zawartością token.json.
 """
 
+import base64
 import json
 import os
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -26,30 +27,60 @@ CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "credentials.json")
 TOKEN_FILE = os.path.join(os.path.dirname(__file__), "token.json")
 
 
+def _decode_env_json(raw: str) -> str | None:
+    """Dekoduj env var — próbuje raw JSON, potem base64, potem z czyszczeniem."""
+    s = raw.strip()
+    if not s:
+        return None
+    # 1) Spróbuj raw JSON
+    try:
+        json.loads(s)
+        return s
+    except json.JSONDecodeError:
+        pass
+    # 2) Spróbuj base64
+    try:
+        decoded = base64.b64decode(s).decode("utf-8")
+        json.loads(decoded)
+        return decoded
+    except Exception:
+        pass
+    # 3) Wyczyść cudzysłowy/BOM i spróbuj ponownie
+    s = s.lstrip("\ufeff")
+    if len(s) >= 2 and s[0] == s[-1] and s[0] in ("'", '"'):
+        s = s[1:-1]
+    try:
+        json.loads(s)
+        return s
+    except json.JSONDecodeError:
+        pass
+    return None
+
+
 def _bootstrap_from_env():
     """Jeśli pliki nie istnieją, spróbuj załadować z env vars."""
+    import logging
+    log = logging.getLogger(__name__)
+
     if not os.path.exists(TOKEN_FILE):
-        token_json = os.environ.get("GOOGLE_TOKEN_JSON", "").strip()
+        token_raw = os.environ.get("GOOGLE_TOKEN_JSON", "")
+        token_json = _decode_env_json(token_raw)
         if token_json:
-            try:
-                # Waliduj JSON przed zapisem
-                json.loads(token_json)
-                with open(TOKEN_FILE, "w") as f:
-                    f.write(token_json)
-            except json.JSONDecodeError as e:
-                import logging
-                logging.getLogger(__name__).error("GOOGLE_TOKEN_JSON nieprawidłowy JSON: %s", e)
+            with open(TOKEN_FILE, "w") as f:
+                f.write(token_json)
+            log.info("token.json utworzony z env var (%d bytes)", len(token_json))
+        elif token_raw.strip():
+            log.error("GOOGLE_TOKEN_JSON nieprawidłowy (len=%d)", len(token_raw))
 
     if not os.path.exists(CREDENTIALS_FILE):
-        creds_json = os.environ.get("GOOGLE_CREDENTIALS_JSON", "").strip()
+        creds_raw = os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
+        creds_json = _decode_env_json(creds_raw)
         if creds_json:
-            try:
-                json.loads(creds_json)
-                with open(CREDENTIALS_FILE, "w") as f:
-                    f.write(creds_json)
-            except json.JSONDecodeError as e:
-                import logging
-                logging.getLogger(__name__).error("GOOGLE_CREDENTIALS_JSON nieprawidłowy JSON: %s", e)
+            with open(CREDENTIALS_FILE, "w") as f:
+                f.write(creds_json)
+            log.info("credentials.json utworzony z env var (%d bytes)", len(creds_json))
+        elif creds_raw.strip():
+            log.error("GOOGLE_CREDENTIALS_JSON nieprawidłowy (len=%d)", len(creds_raw))
 
 
 def get_credentials() -> Credentials:
