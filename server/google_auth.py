@@ -27,7 +27,7 @@ CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "credentials.json")
 TOKEN_FILE = os.path.join(os.path.dirname(__file__), "token.json")
 
 
-def _decode_env_json(raw: str) -> str | None:
+def _decode_env_json(raw: str):
     """Dekoduj env var — próbuje raw JSON, potem base64, potem z czyszczeniem."""
     s = raw.strip()
     if not s:
