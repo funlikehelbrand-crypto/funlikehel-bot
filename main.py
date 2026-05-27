@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import hmac
+import json
 import logging
 import os
 from datetime import datetime
@@ -9,7 +10,7 @@ import httpx
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import PlainTextResponse, HTMLResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -35,10 +36,10 @@ except Exception as e:
 try:
     from google_mail import process_unread_emails
     from youtube import process_youtube_comments
-    from tiktok import get_auth_url, exchange_code_for_token
+    from tiktok import get_auth_url, exchange_code_for_token, save_token, get_stored_token, get_valid_access_token, upload_video_from_url, check_upload_status, list_videos, refresh_access_token
     from cleanup_mail import daily_cleanup, trash_cleanup
     from google_business import process_reviews
-    from auto_upload import process_upload_folder
+    from auto_upload import process_upload_folder, process_tiktok_upload_folder
     from sms_campaign import run_campaign, send_reminder, send_notification
     from google_contacts import get_contacts_with_phones
     from facebook_groups import process_facebook_groups
@@ -47,12 +48,35 @@ except Exception as e:
     logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
     HAS_GOOGLE_MODULES = False
 
+# LinkedIn — opcjonalny
+try:
+    from linkedin_agent import (
+        get_auth_url as li_get_auth_url,
+        exchange_code_for_token as li_exchange_code,
+        get_access_token as li_get_access_token,
+        LinkedInAgent,
+        publish_next_post as li_publish_next,
+        list_post_status as li_list_posts,
+    )
+    HAS_LINKEDIN = True
+except Exception as e:
+    logging.warning("LinkedIn moduł niedostępny: %s", e)
+    HAS_LINKEDIN = False
+
 load_dotenv("api.env")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="FUN like HEL — Instagram Bot + Gmail + Chatbot")
+
+@app.get("/api/probe")
+async def deploy_probe():
+    return {
+        "deployed": "cb3f888-tiktok-upload",
+        "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN")),
+        "tiktok_endpoints": ["/tiktok/upload", "/tiktok/upload-from-yt", "/tiktok/upload-from-ig", "/tiktok/upload-from-drive", "/tiktok/upload/status/{publish_id}", "/tiktok/videos", "/tiktok/refresh-token"],
+    }
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -62,16 +86,94 @@ app.include_router(booking_router)
 # Init booking DB on startup
 init_db()
 
+# Init SMS v2 — migracje (idempotentne, bezpieczne)
+try:
+    from sms_migrations import run_migrations as _run_sms_migrations
+    _run_sms_migrations()
+except Exception as _sms_mig_err:
+    logging.warning("SMS migracje nieudane (kontynuuję): %s", _sms_mig_err)
+
 # Init Instagram multi-account
 if HAS_ALL_MODULES:
     init_ig_accounts()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://faceless-security-enactment.ngrok-free.dev"],
+    allow_origins=["https://funlikehel.pl", "https://www.funlikehel.pl", "https://panel.funlikehel.pl", "https://surfiq.eu", "https://www.surfiq.eu", "https://demo.surfiq.eu", "https://faceless-security-enactment.ngrok-free.dev"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# Booking confirmation email
+# ---------------------------------------------------------------------------
+
+class BookingEmailRequest(BaseModel):
+    customerName: str
+    customerEmail: str
+    serviceName: str
+    startDate: str
+    startTime: str | None = None
+    endTime: str | None = None
+    instructorName: str | None = None
+    location: str = "hel"
+    totalPrice: float = 0
+    currency: str = "PLN"
+    bookingRef: str = ""
+
+
+@app.post("/api/send-booking-email")
+async def send_booking_email(req: BookingEmailRequest):
+    """Send booking confirmation email via Gmail API."""
+    if not req.customerEmail or "@" not in req.customerEmail:
+        raise HTTPException(400, "Invalid email")
+
+    loc_name = "Jastarnia, Polska" if req.location == "hel" else "Hurghada, Egipt"
+    time_str = ""
+    if req.startTime:
+        time_str = f" o {req.startTime[:5]}"
+        if req.endTime:
+            time_str += f"-{req.endTime[:5]}"
+
+    subject = f"Potwierdzenie rezerwacji {req.bookingRef} — FUN like HEL"
+    body = f"""Czesc {req.customerName}!
+
+Twoja rezerwacja zostala potwierdzona:
+
+  Usluga: {req.serviceName}
+  Data: {req.startDate}{time_str}
+  Lokalizacja: {loc_name}
+  Instruktor: {req.instructorName or 'Do przypisania'}
+  Cena: {req.totalPrice} {req.currency}
+  Ref: {req.bookingRef}
+
+Pamietaj:
+- Przyjdz 15 minut wczesniej
+- Zabierz stroj kapielowy i recznik
+- W razie zlej pogody skontaktujemy sie z Toba
+
+Do zobaczenia na wodzie!
+
+FUN like HEL | Szkola Kite Wind
+Tel: 690 270 032
+www.funlikehel.pl
+"""
+
+    try:
+        if HAS_GOOGLE_MODULES:
+            from google_mail import send_email
+            await asyncio.get_event_loop().run_in_executor(
+                None, send_email, req.customerEmail, subject, body
+            )
+            logger.info("Booking email sent to %s for %s", req.customerEmail, req.bookingRef)
+            return {"sent": True, "to": req.customerEmail}
+        else:
+            logger.warning("Google modules not available, email not sent")
+            return {"sent": False, "reason": "email_module_unavailable"}
+    except Exception as e:
+        logger.error("Failed to send booking email: %s", e)
+        raise HTTPException(500, f"Email error: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -639,6 +741,145 @@ async def push_send(req: PushSendRequest):
 
 
 # ---------------------------------------------------------------------------
+# Push Notifications — broadcast do staff/admin (FLH Panel)
+# ---------------------------------------------------------------------------
+
+class PushBroadcastRequest(BaseModel):
+    title: str
+    body: str
+    data: dict | None = None
+    roles: list[str] | None = None
+    location: str | None = None
+    api_key: str
+
+
+@app.post("/push/broadcast")
+async def push_broadcast(req: PushBroadcastRequest):
+    """
+    Wysyla push notification do wszystkich urzadzen staff/admin.
+    Domyslnie: admin + staff + instructor.
+    """
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import broadcast_to_staff
+    result = await broadcast_to_staff(
+        title=req.title,
+        body=req.body,
+        data=req.data,
+        roles=req.roles,
+        location=req.location,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushNotifyUserRequest(BaseModel):
+    user_id: str
+    title: str
+    body: str
+    data: dict | None = None
+    api_key: str
+
+
+@app.post("/push/notify-user")
+async def push_notify_user(req: PushNotifyUserRequest):
+    """Wysyla push do wszystkich urzadzen konkretnego usera."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import notify_user
+    result = await notify_user(
+        user_id=req.user_id,
+        title=req.title,
+        body=req.body,
+        data=req.data,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushTriggerBookingRequest(BaseModel):
+    booking_ref: str
+    customer_name: str
+    service_name: str
+    start_date: str
+    location: str = "both"
+    api_key: str
+
+
+@app.post("/push/trigger/new-booking")
+async def push_trigger_new_booking(req: PushTriggerBookingRequest):
+    """Trigger: powiadomienie o nowej rezerwacji do staff."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import trigger_new_booking
+    result = await trigger_new_booking(
+        booking_ref=req.booking_ref,
+        customer_name=req.customer_name,
+        service_name=req.service_name,
+        start_date=req.start_date,
+        location=req.location,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushTriggerMessageRequest(BaseModel):
+    sender_name: str
+    channel: str
+    preview: str
+    message_id: str | None = None
+    api_key: str
+
+
+@app.post("/push/trigger/new-message")
+async def push_trigger_new_message(req: PushTriggerMessageRequest):
+    """Trigger: powiadomienie o nowej wiadomosci w inbox."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import trigger_new_message
+    result = await trigger_new_message(
+        sender_name=req.sender_name,
+        channel=req.channel,
+        preview=req.preview,
+        message_id=req.message_id,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushTriggerWeatherRequest(BaseModel):
+    location: str
+    wind_speed_kn: float
+    description: str = ""
+    api_key: str
+
+
+@app.post("/push/trigger/weather-alert")
+async def push_trigger_weather_alert(req: PushTriggerWeatherRequest):
+    """Trigger: alert pogodowy (silny wiatr >25kn)."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import trigger_weather_alert
+    result = await trigger_weather_alert(
+        location=req.location,
+        wind_speed_kn=req.wind_speed_kn,
+        description=req.description,
+    )
+
+    return {"status": "ok", **result}
+
+
+# ---------------------------------------------------------------------------
 # Cykliczne sprawdzanie Gmaila (co 5 minut)
 # ---------------------------------------------------------------------------
 
@@ -686,14 +927,25 @@ async def trash_cleanup_loop():
 
 
 async def auto_upload_loop():
-    """Sprawdza folder DO_UPLOADU i uploaduje nowe filmy na YouTube — co 1 godzinę."""
+    """Sprawdza folder YT do wrzucenia i uploaduje nowe filmy na YouTube — co 1 godzinę."""
     await asyncio.sleep(120)  # opóźnienie startu
     while True:
         try:
             process_upload_folder()
         except Exception as e:
-            logger.error("Błąd auto-upload: %s", e)
+            logger.error("Błąd auto-upload YT: %s", e)
         await asyncio.sleep(3600)  # 1 godzina
+
+
+async def tiktok_auto_upload_loop():
+    """Sprawdza folder TT do wrzucenia i uploaduje nowe filmy na TikTok — co 2 godziny."""
+    await asyncio.sleep(180)  # opóźnienie startu (po YT loop)
+    while True:
+        try:
+            await process_tiktok_upload_folder()
+        except Exception as e:
+            logger.error("Błąd auto-upload TikTok: %s", e)
+        await asyncio.sleep(7200)  # 2 godziny
 
 
 # Odświeżone Shorty 2026-05-05 — promuj co godzinę jako Stories
@@ -729,9 +981,8 @@ async def shorts_stories_campaign_loop():
 
 
 async def google_business_loop():
-    """Sprawdzanie recenzji Google Business — co 24h.
-    Business Profile API pending approval (wniosek 2026-05-03).
-    Po zatwierdzeniu zmienić sleep na 10800 (3h).
+    """Sprawdzanie recenzji Google Business — co 3h.
+    GBP API approved 2026-05-20. Alicja odpowiada na recenzje.
     """
     await asyncio.sleep(300)  # opóźnienie startu
     while True:
@@ -740,7 +991,7 @@ async def google_business_loop():
             process_reviews()
         except Exception as e:
             logger.error("Błąd Google Business polling: %s", e)
-        await asyncio.sleep(86400)  # 24h — zmień na 10800 po zatwierdzeniu API
+        await asyncio.sleep(10800)  # 3h
 
 
 async def facebook_groups_loop():
@@ -781,6 +1032,127 @@ async def fb_lead_scout_loop():
         await asyncio.sleep(21600)  # 6 godzin
 
 
+async def surfiq_scout_loop():
+    """SurfIQ B2B prospect scanning — every 12 hours."""
+    await asyncio.sleep(600)  # 10 min delay after startup
+    while True:
+        try:
+            logger.info("SurfIQ Prospect Scout: starting scan...")
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, _surfiq_scan)
+            logger.info("SurfIQ Prospect Scout: done — %s", result)
+            # Run enrichment pass after scan
+            if _HAS_SURFIQ_SCOUT:
+                await loop.run_in_executor(None, _surfiq_enrich, 20)
+                logger.info("SurfIQ Prospect Scout: enrichment pass done.")
+        except Exception as e:
+            logger.error("SurfIQ Prospect Scout error: %s", e)
+        await asyncio.sleep(43200)  # 12 hours
+
+
+# ---------------------------------------------------------------------------
+# IG Scheduled Posts — publikuje posty z ig_posts_queue.json o właściwej godzinie
+# ---------------------------------------------------------------------------
+
+RENDER_BASE_URL = "https://funlikehel-bot.onrender.com"
+IG_QUEUE_FILE   = os.path.join(os.path.dirname(__file__), "ig_posts_queue.json")
+
+
+async def ig_scheduled_posts_loop():
+    """Co 5 minut sprawdza kolejkę IG i publikuje posty których czas minął."""
+    await asyncio.sleep(120)  # daj serwerowi chwilę na start
+    while True:
+        try:
+            if not os.path.exists(IG_QUEUE_FILE):
+                await asyncio.sleep(300)
+                continue
+
+            with open(IG_QUEUE_FILE, encoding="utf-8") as f:
+                queue = json.load(f)
+
+            now = int(__import__("time").time())
+            changed = False
+
+            for post in queue:
+                if post.get("status") != "pending":
+                    continue
+                if post["scheduled_ts"] > now:
+                    continue
+
+                # Czas publikacji nadszedł
+                label = post.get("label", "?")
+                logger.info("IG scheduler: publikuję post '%s'", label)
+
+                # Ustal URL zdjęcia
+                image_url = post.get("image_url")
+                if not image_url:
+                    local = post.get("image_local", "")
+                    # Wyciągnij ścieżkę względną po "server/static/"
+                    static_marker = "server/static/"
+                    if static_marker in local:
+                        rel = local[local.index(static_marker) + len(static_marker):]
+                    else:
+                        rel = os.path.basename(local)
+                    image_url = f"{RENDER_BASE_URL}/static/{rel}"
+
+                ig_token = os.getenv("INSTAGRAM_IGAA_TOKEN") or os.getenv("IGAA_TOKEN", "")
+                ig_user_id = "27441134238823713"
+                caption = post.get("caption", "")
+
+                try:
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        # 1. Utwórz media container
+                        media_resp = await client.post(
+                            f"https://graph.instagram.com/v21.0/{ig_user_id}/media",
+                            data={
+                                "image_url": image_url,
+                                "caption": caption,
+                                "access_token": ig_token,
+                            },
+                        )
+                        media_data = media_resp.json()
+                        creation_id = media_data.get("id")
+
+                        if not creation_id:
+                            raise ValueError(f"Brak creation_id: {media_data}")
+
+                        await asyncio.sleep(6)  # IG wymaga chwili na przetworzenie
+
+                        # 2. Opublikuj
+                        pub_resp = await client.post(
+                            f"https://graph.instagram.com/v21.0/{ig_user_id}/media_publish",
+                            data={
+                                "creation_id": creation_id,
+                                "access_token": ig_token,
+                            },
+                        )
+                        pub_data = pub_resp.json()
+                        post_id = pub_data.get("id")
+
+                        post["status"] = "published"
+                        post["ig_post_id"] = post_id
+                        post["published_at"] = now
+                        changed = True
+                        logger.info("IG scheduler: opublikowano '%s' — post_id: %s", label, post_id)
+
+                except Exception as e:
+                    logger.error("IG scheduler błąd dla '%s': %s", label, e)
+                    post["status"] = "error"
+                    post["error"] = str(e)
+                    changed = True
+
+                await asyncio.sleep(10)  # pauza między postami
+
+            if changed:
+                with open(IG_QUEUE_FILE, "w", encoding="utf-8") as f:
+                    json.dump(queue, f, ensure_ascii=False, indent=2)
+
+        except Exception as e:
+            logger.error("IG scheduler loop błąd: %s", e)
+
+        await asyncio.sleep(300)  # sprawdzaj co 5 minut
+
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_alive_loop())
@@ -791,13 +1163,19 @@ async def startup_event():
         asyncio.create_task(trash_cleanup_loop())
         asyncio.create_task(google_business_loop())
         asyncio.create_task(auto_upload_loop())
+        asyncio.create_task(tiktok_auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
         asyncio.create_task(shorts_stories_campaign_loop())
     if _HAS_FB_LEAD_SCOUT:
         asyncio.create_task(fb_lead_scout_loop())
         logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
-    else:
+    if _HAS_SURFIQ_SCOUT:
+        asyncio.create_task(surfiq_scout_loop())
+        logger.info("SurfIQ Prospect Scout loop uruchomiony — skanowanie co 12h.")
+    if not _HAS_FB_LEAD_SCOUT and not _HAS_SURFIQ_SCOUT:
         logger.info("Tryb minimalny — tylko chatbot i API. Brak polling loops.")
+    asyncio.create_task(ig_scheduled_posts_loop())
+    logger.info("IG Scheduled Posts loop uruchomiony — sprawdzanie co 5 min.")
 
 
 # ---------------------------------------------------------------------------
@@ -858,6 +1236,91 @@ async def fb_leads_scan():
     return result
 
 
+@app.post("/api/instagram-to-fb")
+async def instagram_to_fb(mode: str = "latest"):
+    """
+    Pobiera post z Instagrama i publikuje go na stronie Facebook Fun Like Hel.
+    mode: 'latest' = ostatni post, 'top' = post z największą liczbą polubień
+    """
+    import requests as req_lib
+
+    page_token = os.getenv("PAGE_ACCESS_TOKEN", "")
+    page_id = os.getenv("FB_PAGE_ID", "763267196880291")
+    graph = "https://graph.facebook.com/v25.0"
+
+    if not page_token:
+        raise HTTPException(status_code=500, detail="Brak PAGE_ACCESS_TOKEN")
+
+    # Krok 1 — token IGAA do odczytu postów IG (Instagram Business Login)
+    igaa_token = os.getenv("INSTAGRAM_IGAA_TOKEN", "") or os.getenv("IG_READ_TOKEN", "")
+
+    # Krok 2 — pobierz posty IG przez Instagram Graph API (graph.instagram.com)
+    media = []
+    ig_err = "brak tokenu INSTAGRAM_IGAA_TOKEN"
+
+    if igaa_token:
+        r_ig = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
+            "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+            "limit": 10,
+            "access_token": igaa_token
+        })
+        media = r_ig.json().get("data", [])
+        ig_err = r_ig.json().get("error", {}).get("message", "")
+
+    if not media:
+        # Fallback: PAGE_ACCESS_TOKEN może być starym tokenem IGAA
+        r_ig2 = req_lib.get("https://graph.instagram.com/v21.0/me/media", params={
+            "fields": "id,caption,media_type,media_url,thumbnail_url,like_count,timestamp,permalink",
+            "limit": 10,
+            "access_token": page_token
+        })
+        media = r_ig2.json().get("data", [])
+
+    if not media:
+        raise HTTPException(status_code=404, detail=f"Brak postów IG. Ustaw INSTAGRAM_IGAA_TOKEN na Render. Błąd: {ig_err}")
+
+    # Krok 3 — wybierz post
+    if mode == "top":
+        post = max(media, key=lambda x: x.get("like_count", 0))
+    else:
+        post = media[0]  # najnowszy
+
+    caption = post.get("caption", "")
+    media_url = post.get("media_url") or post.get("thumbnail_url", "")
+    permalink = post.get("permalink", "")
+    media_type = post.get("media_type", "IMAGE")
+
+    # Krok 4 — opublikuj na FB
+    from fb_publisher import publish_post, publish_post_with_image
+
+    # Dodaj link do IG posta i skróć caption do 500 znaków
+    text = caption[:500] if caption else ""
+    if permalink:
+        text += f"\n\n📸 Zobacz na Instagram: {permalink}"
+
+    if media_url and media_type in ("IMAGE", "CAROUSEL_ALBUM"):
+        result = publish_post_with_image(text=text, image_url=media_url)
+    else:
+        result = publish_post(text=text, link=permalink)
+
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=f"Błąd publikacji FB: {result['error']}")
+
+    return {
+        "success": True,
+        "ig_post_id": post["id"],
+        "ig_media_type": media_type,
+        "fb_post_id": result["post_id"],
+        "fb_url": result.get("url"),
+        "caption_preview": text[:100]
+    }
+
+
+@app.get("/api/version")
+async def get_version():
+    return {"version": "igaa-2e3294a", "ig_id": "17841402381473231", "igaa": bool(os.getenv("INSTAGRAM_IGAA_TOKEN"))}
+
+
 @app.get("/api/fb-leads/report")
 async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
     """Zwraca listę leadów z bazy SQLite (score >= min_score)."""
@@ -868,6 +1331,155 @@ async def fb_leads_report_endpoint(min_score: int = 30, limit: int = 50):
 
 
 # ---------------------------------------------------------------------------
+# SurfIQ Chat Bot — website chatbot for surfiq.eu
+# ---------------------------------------------------------------------------
+
+try:
+    from surfiq_chat import get_surfiq_reply
+    _HAS_SURFIQ_CHAT = True
+except Exception as _sc_err:
+    logging.warning("surfiq_chat unavailable: %s", _sc_err)
+    _HAS_SURFIQ_CHAT = False
+
+
+# ---------------------------------------------------------------------------
+# SurfIQ Telegram Bot
+# ---------------------------------------------------------------------------
+
+try:
+    from telegram_bot import handle_message as _tg_handle, set_webhook as _tg_set_webhook, get_webhook_info as _tg_webhook_info
+    _HAS_TELEGRAM = True
+except Exception as _tg_err:
+    logging.warning("telegram_bot unavailable: %s", _tg_err)
+    _HAS_TELEGRAM = False
+
+
+@app.post("/api/telegram/webhook")
+async def telegram_webhook(request: Request):
+    """Telegram Bot webhook — receives messages and replies with SurfIQ AI."""
+    if not _HAS_TELEGRAM:
+        return {"ok": False}
+    try:
+        update = await request.json()
+        await _tg_handle(update)
+        return {"ok": True}
+    except Exception as e:
+        logging.error("Telegram webhook error: %s", e)
+        return {"ok": False}
+
+
+@app.post("/api/telegram/setup")
+async def telegram_setup():
+    """Set up Telegram webhook."""
+    if not _HAS_TELEGRAM:
+        return {"error": "telegram_bot unavailable"}
+    result = await _tg_set_webhook("https://funlikehel-bot.onrender.com/api/telegram/webhook")
+    return result
+
+
+@app.get("/api/telegram/status")
+async def telegram_status():
+    """Check Telegram webhook status."""
+    if not _HAS_TELEGRAM:
+        return {"error": "telegram_bot unavailable"}
+    return await _tg_webhook_info()
+
+
+@app.post("/api/surfiq-chat")
+async def surfiq_chat_endpoint(request: Request):
+    """SurfIQ chatbot endpoint — called from surfiq.eu chat widget."""
+    if not _HAS_SURFIQ_CHAT:
+        return {"reply": "Chat is temporarily unavailable. Email us at office@surfiq.eu!"}
+    try:
+        body = await request.json()
+        message = body.get("message", "")
+        history = body.get("history", [])
+        if not message:
+            return {"reply": "How can I help you? Ask me about SurfIQ features, pricing, or demo!"}
+        loop = asyncio.get_event_loop()
+        reply = await loop.run_in_executor(None, get_surfiq_reply, message, history)
+        return {"reply": reply}
+    except Exception as e:
+        logging.error("SurfIQ chat error: %s", e)
+        return {"reply": "Something went wrong. Please email office@surfiq.eu!"}
+
+
+# ---------------------------------------------------------------------------
+# SurfIQ Prospect Scout — B2B sales prospecting for SurfIQ SaaS
+# ---------------------------------------------------------------------------
+
+try:
+    from surfiq_prospect_scout import (
+        scan_prospects as _surfiq_scan,
+        get_prospects_report as _surfiq_report,
+        enrich_pending_prospects as _surfiq_enrich,
+        export_prospects_csv as _surfiq_csv,
+        update_prospect_status as _surfiq_update_status,
+        get_prospects_markdown_report as _surfiq_md_report,
+    )
+    _HAS_SURFIQ_SCOUT = True
+except Exception as _surfiq_err:
+    logging.warning("surfiq_prospect_scout niedostępny: %s", _surfiq_err)
+    _HAS_SURFIQ_SCOUT = False
+
+
+@app.post("/api/surfiq/scan")
+async def surfiq_scan():
+    """Triggers SurfIQ B2B prospect scan across Facebook groups."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _surfiq_scan)
+    return result
+
+
+@app.get("/api/surfiq/report")
+async def surfiq_report(min_score: int = 30, limit: int = 50, status: str = None):
+    """Returns SurfIQ B2B prospects from database."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    prospects = _surfiq_report(min_score=min_score, limit=limit, status=status)
+    return {"count": len(prospects), "prospects": prospects}
+
+
+@app.post("/api/surfiq/enrich")
+async def surfiq_enrich(limit: int = 20):
+    """Runs web enrichment pass for pending prospects."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, _surfiq_enrich, limit)
+    return result
+
+
+@app.get("/api/surfiq/export")
+async def surfiq_export(min_score: int = 25):
+    """Returns CSV export of prospects."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    csv_data = _surfiq_csv(min_score=min_score)
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=surfiq_prospects_{datetime.now().strftime('%Y%m%d')}.csv"
+        },
+    )
+
+
+@app.patch("/api/surfiq/status")
+async def surfiq_update_status(prospect_id: int, status: str, notes: str = None):
+    """Updates prospect outreach status (new/contacted/demo_scheduled/converted/rejected)."""
+    if not _HAS_SURFIQ_SCOUT:
+        raise HTTPException(status_code=503, detail="surfiq_prospect_scout unavailable.")
+    ok = _surfiq_update_status(prospect_id, status, notes)
+    if not ok:
+        raise HTTPException(status_code=400,
+                            detail=f"Invalid status '{status}' or prospect_id {prospect_id} not found.")
+    return {"ok": True, "prospect_id": prospect_id, "status": status}
+
+
+# ---------------------------------------------------------------------------
 # SMS — kampanie i powiadomienia
 # ---------------------------------------------------------------------------
 
@@ -875,6 +1487,7 @@ class SMSCampaignRequest(BaseModel):
     topic: str
     label: str | None = None
     dry_run: bool = False
+    message: str | None = None  # Gotowy tekst SMS (pomija generowanie przez Alicję)
 
 class SMSReminderRequest(BaseModel):
     phone: str
@@ -890,8 +1503,9 @@ class SMSNotificationRequest(BaseModel):
 
 @app.post("/sms/campaign")
 async def sms_campaign(req: SMSCampaignRequest):
-    """Uruchamia kampanię SMS — Alicja generuje treść, wysyłka do kontaktów Google."""
-    result = run_campaign(topic=req.topic, label=req.label, dry_run=req.dry_run)
+    """Uruchamia kampanię SMS — Alicja generuje treść (lub używa podanej), wysyłka do kontaktów Google."""
+    result = run_campaign(topic=req.topic, label=req.label, dry_run=req.dry_run,
+                          message=req.message)
     return result
 
 @app.post("/sms/reminder")
@@ -933,6 +1547,339 @@ async def sms_log(limit: int = 50):
         db.close()
         rows = [dict(r) for r in rows]
     return {"count": len(rows), "log": rows}
+
+
+# ---------------------------------------------------------------------------
+# SMS Tracker — śledzenie kampanii i konwersji
+# ---------------------------------------------------------------------------
+
+try:
+    from sms_tracker import (
+        get_campaign_stats, get_converted_contacts,
+        get_pending_followup, record_conversion
+    )
+    _SMS_TRACKER_OK = True
+except ImportError:
+    _SMS_TRACKER_OK = False
+
+
+class SMSConversionRequest(BaseModel):
+    phone: str
+    name: str
+    conversion_type: str  # "kurs" | "demo_day" | "sklep" | "kontakt"
+    note: str | None = None
+    campaign_key: str | None = None
+
+
+@app.get("/sms/campaigns")
+async def sms_campaigns():
+    """Statystyki kampanii SMS: wysłano, dostarczono, konwersje."""
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    return {"campaigns": get_campaign_stats()}
+
+
+@app.post("/sms/conversion")
+async def sms_conversion(req: SMSConversionRequest):
+    """Rejestruje konwersję — klient zapisał się po kampanii SMS."""
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    record_conversion(
+        phone=req.phone, name=req.name,
+        conversion_type=req.conversion_type,
+        note=req.note, campaign_key=req.campaign_key
+    )
+    return {"status": "ok", "message": f"Konwersja zapisana: {req.name} ({req.conversion_type})"}
+
+
+@app.get("/sms/conversions")
+async def sms_conversions(campaign_key: str = None):
+    """Lista klientów którzy się zapisali po kampanii SMS."""
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    return {"conversions": get_converted_contacts(campaign_key)}
+
+
+@app.get("/sms/followup")
+async def sms_followup(campaign_key: str, min_days: int = 3):
+    """
+    Kontakty z kampanii bez konwersji (do follow-up).
+    min_days — ile dni minęło od wysyłki (domyślnie 3).
+    """
+    if not _SMS_TRACKER_OK:
+        raise HTTPException(status_code=503, detail="sms_tracker niedostępny")
+    contacts = get_pending_followup(campaign_key, min_days)
+    return {
+        "campaign_key": campaign_key,
+        "pending_count": len(contacts),
+        "contacts": contacts,
+    }
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — tracking redirect (NIGDY nie wygasa → nie 404, zawsze redirect)
+# ---------------------------------------------------------------------------
+
+@app.get("/s/{token}")
+async def sms_tracking_redirect(token: str, request: Request):
+    """
+    Endpoint trackingowy SMS — obsługuje linki z wiadomości SMS.
+
+    Rejestruje kliknięcie (IP hash + user-agent) i przekierowuje na target_url z UTM.
+    Jeśli token nieznany — przekierowuje na funlikehel.pl (NIGDY 404!).
+    Token jest permanentny — nie wygasa nigdy.
+    """
+    try:
+        from sms_tracker import record_click
+
+        # Pobierz IP klienta (może być za proxy)
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
+            request.client.host if request.client else ""
+        )
+        user_agent = request.headers.get("user-agent", "")
+
+        result = record_click(
+            tracking_token=token,
+            user_agent=user_agent[:500] if user_agent else None,
+            ip=client_ip or None,
+        )
+
+        redirect_url = result.get("redirect_url", "https://funlikehel.pl")
+        if result.get("found"):
+            logger.info(
+                "SMS click: token=%s recipient=%s campaign=%s → %s",
+                token, result.get("recipient_id"), result.get("campaign_id"), redirect_url,
+            )
+        else:
+            logger.info("SMS click: nieznany token=%s → fallback redirect", token)
+
+        return RedirectResponse(url=redirect_url, status_code=302)
+
+    except Exception as e:
+        logger.error("Błąd tracking redirect dla token=%s: %s", token, e)
+        # Zawsze redirect, nigdy 404
+        return RedirectResponse(url="https://funlikehel.pl", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — tracking pixel (wywoływany z JS na landing page, ?ref={token})
+# ---------------------------------------------------------------------------
+
+@app.get("/api/sms/pixel/{token}")
+async def sms_tracking_pixel(token: str, request: Request):
+    """
+    Lekki tracking pixel — JS na landing page wywołuje ten endpoint
+    gdy wykryje ?ref={token} w URL. Rejestruje kliknięcie bez redirect.
+
+    Zwraca 1x1 przezroczysty GIF + CORS headers.
+    """
+    from starlette.responses import Response
+    try:
+        from sms_tracker import record_click
+
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
+            request.client.host if request.client else ""
+        )
+        user_agent = request.headers.get("user-agent", "")
+
+        result = record_click(
+            tracking_token=token,
+            user_agent=user_agent[:500] if user_agent else None,
+            ip=client_ip or None,
+        )
+
+        if result.get("found"):
+            logger.info(
+                "SMS pixel: token=%s recipient=%s campaign=%s",
+                token, result.get("recipient_id"), result.get("campaign_id"),
+            )
+        else:
+            logger.info("SMS pixel: nieznany token=%s", token)
+
+    except Exception as e:
+        logger.error("Błąd SMS pixel dla token=%s: %s", token, e)
+
+    # 1x1 przezroczysty GIF
+    gif = b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x00\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+    return Response(
+        content=gif,
+        media_type="image/gif",
+        headers={
+            "Access-Control-Allow-Origin": "https://funlikehel.pl",
+            "Cache-Control": "no-store, no-cache",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — webhook przychodzący (opt-out STOP/WYPISZ)
+# ---------------------------------------------------------------------------
+
+@app.post("/api/sms/inbound")
+async def sms_inbound(request: Request):
+    """
+    Webhook przychodzących SMS z SerwerSMS.pl.
+
+    Obsługuje opt-outy: STOP / WYPISZ / CANCEL / REZYGNACJA / UNSUBSCRIBE.
+    Po wykryciu opt-out:
+      - ustawia contact.unsubscribed_at
+      - zapisuje do sms_opt_outs
+      - anuluje wszystkie pending wysyłki do tego kontaktu
+
+    WAŻNE: ten numer NIGDY więcej nie dostanie marketingowego SMS.
+    """
+    try:
+        from sms_tracker import is_stop_message, process_opt_out
+        from sms import _normalize_phone
+
+        # SerwerSMS może wysyłać JSON lub form-data
+        content_type = request.headers.get("content-type", "")
+        if "json" in content_type:
+            body = await request.json()
+        else:
+            form = await request.form()
+            body = dict(form)
+
+        # Pola SerwerSMS.pl inbound webhook
+        phone_raw = (
+            body.get("phone") or body.get("sender") or body.get("from") or ""
+        )
+        message_text = (
+            body.get("message") or body.get("text") or body.get("content") or ""
+        )
+
+        logger.info("SMS inbound: phone=%s text=%s", phone_raw, message_text[:50])
+
+        if not phone_raw or not message_text:
+            logger.warning("SMS inbound: brak phone lub message w payloadzie: %s", body)
+            return {"status": "ignored", "reason": "missing_fields"}
+
+        # Normalizuj numer do E.164
+        phone_normalized = phone_raw.strip().replace(" ", "")
+        if not phone_normalized.startswith("+"):
+            phone_normalized = "+" + _normalize_phone(phone_normalized)
+
+        # Sprawdź czy to opt-out
+        is_stop, keyword = is_stop_message(message_text)
+
+        if is_stop:
+            result = process_opt_out(
+                phone_e164=phone_normalized,
+                raw_message=message_text,
+                keyword=keyword,
+                source="inbound_sms",
+            )
+            logger.info(
+                "Opt-out zarejestrowany: %s | keyword=%s | action=%s",
+                phone_normalized, keyword, result.get("action"),
+            )
+            return {
+                "status": "opt_out_processed",
+                "phone": phone_normalized,
+                "keyword": keyword,
+                "action": result.get("action"),
+            }
+
+        # Nie jest opt-out — logujemy i ignorujemy (ewentualnie przekaż do chatbota)
+        logger.info(
+            "SMS inbound (nie opt-out): %s → '%s'", phone_normalized, message_text[:80]
+        )
+        return {"status": "received", "is_opt_out": False}
+
+    except Exception as e:
+        logger.error("Błąd obsługi SMS inbound: %s", e)
+        # SerwerSMS oczekuje 200 — nie rzucaj wyjątku
+        return {"status": "error", "detail": str(e)}
+
+
+# ---------------------------------------------------------------------------
+# SMS v2 — kampanie (kolejkowanie, batch, status)
+# ---------------------------------------------------------------------------
+
+class SmsCampaignV2Request(BaseModel):
+    name: str
+    type: str  # 'marketing' | 'transactional'
+    message_template: str
+    contacts: list[dict]  # [{phone, first_name, last_name, ...}]
+    target_url: str = "https://funlikehel.pl"
+
+
+class SmsCampaignSendRequest(BaseModel):
+    batch_size: int = 20
+    dry_run: bool = False
+
+
+@app.post("/api/sms/campaigns")
+async def api_create_campaign_v2(req: SmsCampaignV2Request):
+    """
+    Tworzy kampanię SMS v2 z kolejkowaniem i tracking tokenami.
+    Kontakty: [{phone: "+48600000000", first_name: "Jan", ...}]
+    """
+    try:
+        from sms_campaign import prepare_campaign
+        result = prepare_campaign(
+            name=req.name,
+            campaign_type=req.type,
+            message_template=req.message_template,
+            contacts=req.contacts,
+            target_url=req.target_url,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/sms/campaigns/{campaign_id}/send")
+async def api_send_campaign_batch(campaign_id: int, req: SmsCampaignSendRequest):
+    """
+    Wysyła batch kampanii SMS v2.
+    Wznawialny — uruchom wielokrotnie jeśli ma_more=true.
+    """
+    try:
+        from sms_campaign import send_campaign_batch
+        result = send_campaign_batch(
+            campaign_id=campaign_id,
+            batch_size=req.batch_size,
+            dry_run=req.dry_run,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/sms/campaigns/{campaign_id}/status")
+async def api_campaign_status(campaign_id: int):
+    """Status kampanii SMS v2 ze statystykami."""
+    try:
+        from sms_campaign import get_campaign_status
+        return get_campaign_status(campaign_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/sms/opt-outs")
+async def api_sms_opt_outs():
+    """Lista wypisanych kontaktów (opt-out)."""
+    try:
+        from sms_tracker import get_opt_out_list
+        opt_outs = get_opt_out_list()
+        return {"count": len(opt_outs), "opt_outs": opt_outs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/sms/migrations")
+async def api_run_sms_migrations():
+    """Uruchamia migracje DB SMS v2 (bezpieczne — idempotentne)."""
+    try:
+        from sms_migrations import run_migrations, get_migration_status
+        result = run_migrations()
+        status = get_migration_status()
+        return {"migrations": result, "status": status}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
@@ -1054,6 +2001,34 @@ async def polityka():
 tiktok_tokens: dict = {}
 
 
+@app.get("/tiktok/export-token")
+async def tiktok_export_token(secret: str = ""):
+    """Tymczasowy endpoint — zwraca token do kopiowania na lokalny dysk."""
+    import os, json
+    if secret != os.environ.get("ANTHROPIC_API_KEY", "")[:16]:
+        raise HTTPException(status_code=403, detail="forbidden")
+    token_file = os.path.join(os.path.dirname(__file__), "tiktok_token.json")
+    if not os.path.exists(token_file):
+        raise HTTPException(status_code=404, detail="token not found on server")
+    with open(token_file) as f:
+        return json.load(f)
+
+
+@app.get("/tiktok/debug")
+async def tiktok_debug():
+    """Pokazuje aktualną konfigurację TikTok (do debugowania)."""
+    import os
+    key = os.environ.get("TT_CLIENT_KEY", "")
+    redirect = os.environ.get("TT_REDIRECT_URI", "https://funlikehel-bot.onrender.com/tiktok/callback")
+    auth_url = get_auth_url() if HAS_GOOGLE_MODULES else "unavailable"
+    return {
+        "client_key": key[:8] + "..." if key else "BRAK — env var nie ustawiona!",
+        "client_key_full": key,  # tymczasowo pełny klucz do debugowania
+        "redirect_uri": redirect,
+        "auth_url": auth_url,
+    }
+
+
 @app.get("/tiktok/login")
 async def tiktok_login():
     """Otwórz ten URL w przeglądarce żeby autoryzować TikTok."""
@@ -1065,10 +2040,564 @@ async def tiktok_login():
 async def tiktok_callback(code: str):
     """TikTok przekierowuje tutaj po autoryzacji."""
     tokens = await exchange_code_for_token(code)
-    tiktok_tokens["access_token"] = tokens.get("access_token")
-    tiktok_tokens["refresh_token"] = tokens.get("refresh_token")
-    logger.info("TikTok autoryzowany pomyślnie.")
-    return {"status": "ok", "message": "TikTok połączony z FunLikeHel!"}
+    access_token = tokens.get("access_token", "")
+    refresh_token = tokens.get("refresh_token", "")
+    tiktok_tokens["access_token"] = access_token
+    tiktok_tokens["refresh_token"] = refresh_token
+    logger.info("TikTok autoryzowany. access_token=%s...", access_token[:12])
+    # Zwracamy token — użytkownik musi go zapisać jako env var TT_ACCESS_TOKEN na Render
+    return HTMLResponse(f"""
+    <html><body style="font-family:monospace;padding:20px;background:#1a1a1a;color:#0f0">
+    <h2>✅ TikTok połączony!</h2>
+    <p>Skopiuj poniższe wartości do Render Dashboard → Environment:</p>
+    <hr/>
+    <p><b>TT_ACCESS_TOKEN</b><br>
+    <textarea rows="3" cols="80" onclick="this.select()">{access_token}</textarea></p>
+    <p><b>TT_REFRESH_TOKEN</b><br>
+    <textarea rows="3" cols="80" onclick="this.select()">{refresh_token}</textarea></p>
+    <hr/>
+    <p>1. Idź na <a href="https://dashboard.render.com" style="color:#0ff">dashboard.render.com</a></p>
+    <p>2. funlikehel-bot → Environment → Add env vars</p>
+    <p>3. Wklej TT_ACCESS_TOKEN i TT_REFRESH_TOKEN</p>
+    <p>4. Save Changes (Render auto-restartuje serwis)</p>
+    <p>5. Pipeline będzie działał na zawsze (refresh automatyczny)</p>
+    </body></html>
+    """)
+
+
+class TikTokUploadRequest(BaseModel):
+    video_url: str
+    caption: str
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+
+
+@app.post("/tiktok/upload")
+async def tiktok_upload(req: TikTokUploadRequest):
+    """Publikuje wideo na TikTok z podanego URL.
+    Body: { video_url, caption, privacy_level? }
+    """
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    try:
+        token = await get_valid_access_token()
+        result = await upload_video_from_url(token, req.video_url, req.caption)
+        publish_id = result.get("data", {}).get("publish_id", "unknown")
+        return {"status": "ok", "publish_id": publish_id, "caption": req.caption}
+    except RuntimeError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class YouTubeUploadFromIGRequest(BaseModel):
+    ig_url: str = ""       # URL reela/posta z IG (np. "https://www.instagram.com/reel/ABC123/")
+    ig_media_id: str = ""  # Albo bezpośrednio media ID z Graph API
+    title: str = ""        # Tytuł na YT; jeśli pusty — z opisu IG
+    description: str = ""  # Opis na YT; jeśli pusty — generowany
+    tags: list[str] = []
+    privacy: str = "public"  # public | unlisted | private
+    account: str = "funlikehel"  # Konto IG do użycia
+
+
+IG_API = "https://graph.instagram.com/v21.0"
+IG_ACCOUNTS = {"funlikehel": "27441134238823713", "surf4hel": "35116715114638747"}
+
+
+def _ig_token(account: str) -> str:
+    """Zwraca IGAA token dla danego konta IG."""
+    if account == "funlikehel":
+        return os.getenv("INSTAGRAM_IGAA_TOKEN", "")
+    return os.getenv(f"Insta_{account}", "")
+
+
+async def _fetch_ig_media_via_api(ig_url: str, ig_media_id: str, account: str) -> tuple[str, str, str]:
+    """Pobiera video_url, caption, shortcode z Instagram Graph API. Zwraca (video_url, caption, shortcode)."""
+    import re
+    token = _ig_token(account)
+    if not token:
+        raise RuntimeError(f"Brak IGAA tokenu dla konta {account}")
+
+    shortcode = ""
+    if ig_url and not ig_media_id:
+        m = re.search(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)", ig_url)
+        if m:
+            shortcode = m.group(1)
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        if ig_media_id:
+            r = await client.get(
+                f"{IG_API}/{ig_media_id}",
+                params={"access_token": token, "fields": "media_url,caption,media_type,shortcode"},
+            )
+            if r.status_code != 200:
+                raise RuntimeError(f"IG API error: {r.text[:300]}")
+            data = r.json()
+            return data.get("media_url", ""), data.get("caption", ""), data.get("shortcode", shortcode)
+
+        if not shortcode:
+            raise RuntimeError("Nie mogę wyciągnąć shortcode z URL. Podaj ig_media_id lub poprawny URL.")
+
+        ig_user_id = IG_ACCOUNTS.get(account, "")
+        if not ig_user_id:
+            r = await client.get(f"{IG_API}/me", params={"access_token": token, "fields": "id"})
+            if r.status_code == 200:
+                ig_user_id = r.json().get("id", "")
+        if not ig_user_id:
+            raise RuntimeError(f"Nie znaleziono IG user ID dla konta {account}")
+
+        r = await client.get(
+            f"{IG_API}/{ig_user_id}/media",
+            params={"access_token": token, "fields": "id,media_url,caption,media_type,shortcode", "limit": 50},
+        )
+        if r.status_code != 200:
+            raise RuntimeError(f"IG API media list error: {r.text[:300]}")
+        for item in r.json().get("data", []):
+            if item.get("shortcode") == shortcode:
+                return item.get("media_url", ""), item.get("caption", ""), shortcode
+
+        raise RuntimeError(f"Nie znaleziono posta o shortcode '{shortcode}' w ostatnich 50 postach. Podaj ig_media_id.")
+
+
+@app.post("/youtube/upload-from-ig")
+async def youtube_upload_from_ig(req: YouTubeUploadFromIGRequest):
+    """Pobiera wideo z Instagrama (Graph API) i publikuje na YouTube."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł YouTube niedostępny")
+    if not req.ig_url and not req.ig_media_id:
+        raise HTTPException(status_code=400, detail="Podaj ig_url lub ig_media_id")
+
+    import tempfile, os as _os
+    from youtube import upload_video
+
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = _os.path.join(tmp_dir, "ig_video.mp4")
+    try:
+        video_url, caption, shortcode = await _fetch_ig_media_via_api(req.ig_url, req.ig_media_id, req.account)
+        if not video_url:
+            raise RuntimeError("Post nie zawiera wideo (media_url pusty). Upewnij się, że to reel/wideo, nie zdjęcie.")
+
+        # Pobierz plik wideo
+        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
+            r = await client.get(video_url)
+            if r.status_code != 200:
+                raise RuntimeError(f"Nie mogę pobrać wideo: HTTP {r.status_code}")
+            with open(tmp_path, "wb") as f:
+                f.write(r.content)
+
+        title = req.title or (caption[:80] if caption else "FUN like HEL")
+        description = req.description or caption or "Szkoła sportów wodnych FUN like HEL — Jastarnia & Hurghada\nwww.funlikehel.pl"
+        tags = req.tags or ["kitesurfing", "windsurfing", "funlikehel", "hel", "jastarnia", "sporty wodne"]
+
+        response = upload_video(
+            file_path=tmp_path,
+            title=title[:100],
+            description=description,
+            tags=tags,
+            privacy=req.privacy,
+        )
+        video_id = response.get("id", "unknown")
+        return {
+            "status": "ok",
+            "youtube_video_id": video_id,
+            "youtube_url": f"https://youtube.com/watch?v={video_id}",
+            "title": title[:100],
+            "ig_url": req.ig_url or f"https://instagram.com/reel/{shortcode}/",
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("IG→YT upload failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.get("/youtube/ig-media-list")
+async def youtube_ig_media_list(account: str = "funlikehel", limit: int = 20):
+    """Lista ostatnich wideo/reelsów z IG do wyboru."""
+    token = _ig_token(account)
+    if not token:
+        raise HTTPException(status_code=400, detail=f"Brak IGAA tokenu dla konta {account}")
+
+    ig_user_id = IG_ACCOUNTS.get(account, "")
+    async with httpx.AsyncClient(timeout=30) as client:
+        if not ig_user_id:
+            r = await client.get(f"{IG_API}/me", params={"access_token": token, "fields": "id"})
+            if r.status_code == 200:
+                ig_user_id = r.json().get("id", "")
+        if not ig_user_id:
+            raise HTTPException(status_code=400, detail="Nie znaleziono IG user ID")
+
+        r = await client.get(
+            f"{IG_API}/{ig_user_id}/media",
+            params={"access_token": token, "fields": "id,caption,media_type,shortcode,timestamp", "limit": limit},
+        )
+        if r.status_code != 200:
+            raise HTTPException(status_code=502, detail=r.text[:300])
+        items = r.json().get("data", [])
+        videos = [
+            {
+                "id": i["id"],
+                "shortcode": i.get("shortcode", ""),
+                "caption": (i.get("caption", "") or "")[:120],
+                "media_type": i.get("media_type"),
+                "timestamp": i.get("timestamp"),
+                "url": f"https://instagram.com/reel/{i['shortcode']}/" if i.get("shortcode") else "",
+            }
+            for i in items if i.get("media_type") == "VIDEO"
+        ]
+        return {"videos": videos, "count": len(videos)}
+
+
+class TikTokUploadFromYTRequest(BaseModel):
+    video_id: str          # YouTube video ID (np. "En4TFI2OrEg")
+    caption: str = ""      # Opis TikTok; jeśli pusty — generowany z tytułu YT
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+
+
+@app.post("/tiktok/upload-from-yt")
+async def tiktok_upload_from_yt(req: TikTokUploadFromYTRequest):
+    """Pobiera film z YouTube przez yt-dlp i publikuje na TikTok.
+    Body: { video_id, caption?, privacy_level? }
+    """
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    import subprocess, tempfile, os as _os, sys as _sys
+    yt_url = f"https://www.youtube.com/watch?v={req.video_id}"
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = _os.path.join(tmp_dir, f"{req.video_id}.mp4")
+    try:
+        # Pobierz film przez yt-dlp (max 720p, mp4)
+        result = subprocess.run(
+            [
+                _sys.executable, "-m", "yt_dlp",
+                "--extractor-args", "youtube:player_client=mediaconnect",
+                "-f", "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best",
+                "--merge-output-format", "mp4",
+                "-o", tmp_path,
+                yt_url,
+            ],
+            capture_output=True, text=True, timeout=300,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"yt-dlp error: {result.stderr[-500:]}")
+        if not _os.path.exists(tmp_path):
+            # yt-dlp może zapisać z inną nazwą — szukaj w katalogu
+            files = [f for f in _os.listdir(tmp_dir) if f.endswith(".mp4")]
+            if not files:
+                raise RuntimeError("yt-dlp nie zapisał pliku mp4")
+            tmp_path = _os.path.join(tmp_dir, files[0])
+
+        caption = req.caption or f"Kite i surf na maxa! 🏄 Jastarnia & Hurghada\n\n#kitesurfing #funlikehel #fyp #jastarnia #hurghada"
+        token = await get_valid_access_token()
+        from tiktok import upload_video_file
+        publish_id = await upload_video_file(token, tmp_path, caption, req.privacy_level)
+        return {"status": "ok", "publish_id": publish_id, "yt_video_id": req.video_id}
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        import shutil
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.get("/tiktok/upload/status/{publish_id}")
+async def tiktok_upload_status(publish_id: str):
+    """Sprawdza status publikacji wideo na TikTok."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    try:
+        token = await get_valid_access_token()
+        result = await check_upload_status(token, publish_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tiktok/user-info")
+async def tiktok_user_info():
+    """Pobiera informacje o koncie TikTok (scope: user.info.basic)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Moduł TikTok niedostępny")
+    try:
+        from tiktok import get_user_info
+        token = await get_valid_access_token()
+        return await get_user_info(token)
+    except RuntimeError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tiktok/dashboard")
+async def tiktok_dashboard():
+    """Prosty dashboard TikTok — do demo i codziennego użytku."""
+    if not HAS_GOOGLE_MODULES:
+        return HTMLResponse("<h1>TikTok module unavailable</h1>", status_code=503)
+    token_data = get_stored_token()
+    connected = bool(token_data and token_data.get("access_token"))
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLH Social Manager — TikTok</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f7fa;color:#1a1a2e}}
+.top{{background:#1a1a2e;color:#fff;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}}
+.top h1{{font-size:20px;font-weight:700}}.top h1 span{{color:#00c9c9}}
+.top .badge{{background:#00c9c9;color:#1a1a2e;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700}}
+.container{{max-width:900px;margin:32px auto;padding:0 20px}}
+.card{{background:#fff;border-radius:14px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #e8e8e8}}
+.card h2{{font-size:20px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e8e8e8}}
+.status{{display:flex;align-items:center;gap:10px;margin-bottom:16px}}
+.dot{{width:12px;height:12px;border-radius:50%;background:{"#22c55e" if connected else "#ef4444"}}}
+.status span{{font-size:15px;font-weight:600}}
+.btn{{display:inline-block;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;border:none}}
+.btn-primary{{background:#00c9c9;color:#1a1a2e}}.btn-primary:hover{{background:#00b3b3}}
+.btn-outline{{border:2px solid #00c9c9;color:#00c9c9;background:transparent}}.btn-outline:hover{{background:#e8fafa}}
+#user-info{{margin-top:12px;font-size:14px;color:#555}}
+.form-group{{margin-bottom:16px}}
+.form-group label{{display:block;font-size:14px;font-weight:600;margin-bottom:6px}}
+.form-group input,.form-group textarea,.form-group select{{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px}}
+.form-group textarea{{height:80px;resize:vertical}}
+#upload-result{{margin-top:16px;padding:16px;border-radius:8px;display:none}}
+.success{{background:#dcfce7;border:1px solid #22c55e;color:#166534}}
+.error{{background:#fee2e2;border:1px solid #ef4444;color:#991b1b}}
+</style></head>
+<body>
+<div class="top">
+  <h1>FLH <span>Social Manager</span></h1>
+  <span class="badge">TikTok Integration</span>
+</div>
+<div class="container">
+
+  <div class="card">
+    <h2>Account Connection</h2>
+    <div class="status">
+      <div class="dot"></div>
+      <span>{"Connected" if connected else "Not connected"}</span>
+    </div>
+    {"" if connected else '<a href="/tiktok/login" class="btn btn-primary">Connect TikTok Account</a>'}
+    {"<button class='btn btn-outline' onclick='loadUserInfo()'>Load Account Info</button>" if connected else ""}
+    <div id="user-info"></div>
+  </div>
+
+  {"" if not connected else '''
+  <div class="card">
+    <h2>Upload Video to TikTok</h2>
+    <form id="upload-form" onsubmit="uploadVideo(event)">
+      <div class="form-group">
+        <label>Video URL (publicly accessible MP4)</label>
+        <input type="url" id="video-url" placeholder="https://example.com/video.mp4" required>
+      </div>
+      <div class="form-group">
+        <label>Caption</label>
+        <textarea id="caption" placeholder="Your video description and #hashtags" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Privacy</label>
+        <select id="privacy">
+          <option value="PUBLIC_TO_EVERYONE">Public</option>
+          <option value="MUTUAL_FOLLOW_FRIENDS">Friends</option>
+          <option value="SELF_ONLY">Private</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" id="upload-btn">Upload to TikTok</button>
+    </form>
+    <div id="upload-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Check Upload Status</h2>
+    <div class="form-group">
+      <label>Publish ID</label>
+      <input type="text" id="publish-id" placeholder="Enter publish_id from upload response">
+    </div>
+    <button class="btn btn-outline" onclick="checkStatus()">Check Status</button>
+    <div id="status-result" style="margin-top:12px;font-size:14px;color:#555"></div>
+  </div>
+  '''}
+</div>
+
+<script>
+async function loadUserInfo() {{
+  const el = document.getElementById('user-info');
+  el.innerHTML = 'Loading...';
+  try {{
+    const r = await fetch('/tiktok/user-info');
+    const d = await r.json();
+    const u = d.data && d.data.user ? d.data.user : d;
+    el.innerHTML = '<strong>Display Name:</strong> ' + (u.display_name||'N/A')
+      + '<br><strong>Followers:</strong> ' + (u.follower_count||'N/A')
+      + '<br><strong>Videos:</strong> ' + (u.video_count||'N/A')
+      + '<br><strong>Open ID:</strong> ' + (u.open_id||'N/A');
+  }} catch(e) {{ el.innerHTML = 'Error: ' + e.message; }}
+}}
+async function uploadVideo(evt) {{
+  evt.preventDefault();
+  const btn = document.getElementById('upload-btn');
+  const res = document.getElementById('upload-result');
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  res.style.display = 'none';
+  try {{
+    const r = await fetch('/tiktok/upload', {{
+      method: 'POST',
+      headers: {{'Content-Type': 'application/json'}},
+      body: JSON.stringify({{
+        video_url: document.getElementById('video-url').value,
+        caption: document.getElementById('caption').value,
+        privacy_level: document.getElementById('privacy').value
+      }})
+    }});
+    const d = await r.json();
+    if (r.ok) {{
+      res.className = 'success'; res.style.display = 'block';
+      res.innerHTML = 'Upload initiated! Publish ID: <strong>' + d.publish_id + '</strong>';
+      document.getElementById('publish-id').value = d.publish_id;
+    }} else {{
+      res.className = 'error'; res.style.display = 'block';
+      res.textContent = 'Error: ' + (d.detail || JSON.stringify(d));
+    }}
+  }} catch(e) {{
+    res.className = 'error'; res.style.display = 'block';
+    res.textContent = 'Error: ' + e.message;
+  }}
+  btn.disabled = false; btn.textContent = 'Upload to TikTok';
+}}
+async function checkStatus() {{
+  const pid = document.getElementById('publish-id').value;
+  const el = document.getElementById('status-result');
+  if (!pid) {{ el.textContent = 'Enter a Publish ID first.'; return; }}
+  el.textContent = 'Checking...';
+  try {{
+    const r = await fetch('/tiktok/upload/status/' + pid);
+    const d = await r.json();
+    el.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>';
+  }} catch(e) {{ el.textContent = 'Error: ' + e.message; }}
+}}
+</script>
+</body></html>""")
+
+
+@app.get("/tiktok/status")
+async def tiktok_status():
+    """Sprawdza stan autoryzacji TikTok."""
+    if not HAS_GOOGLE_MODULES:
+        return {"status": "error", "message": "Moduł tiktok niedostępny"}
+    data = get_stored_token()
+    if not data:
+        return {"status": "unauthorized", "message": "Otwórz /tiktok/login żeby autoryzować"}
+    import time
+    expires_at = data.get("expires_at", 0)
+    return {
+        "status": "ok",
+        "has_token": True,
+        "expires_in_hours": round((expires_at - time.time()) / 3600, 1),
+        "has_refresh": bool(data.get("refresh_token")),
+    }
+
+
+@app.get("/tiktok/videos")
+async def tiktok_videos(max_count: int = 20, cursor: int | None = None):
+    """Lista opublikowanych filmów na TikTok (scope: video.list)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    try:
+        token = await get_valid_access_token()
+        return await list_videos(token, max_count, cursor)
+    except RuntimeError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/tiktok/refresh-token")
+async def tiktok_refresh_token():
+    """Wymusza odswiezenie tokenu TikTok (uzywa refresh_token)."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    data = get_stored_token()
+    if not data or not data.get("refresh_token"):
+        raise HTTPException(status_code=401, detail="Brak refresh_token. Zaloguj ponownie: /tiktok/login")
+    try:
+        new_data = await refresh_access_token(data["refresh_token"])
+        import time as _time
+        return {
+            "status": "ok",
+            "expires_in_hours": round((new_data.get("expires_at", 0) - _time.time()) / 3600, 1),
+            "scopes": new_data.get("scope", ""),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class TikTokUploadFromIGRequest(BaseModel):
+    ig_url: str = ""
+    ig_media_id: str = ""
+    caption: str = ""
+    account: str = "funlikehel"
+    privacy_level: str = "PUBLIC_TO_EVERYONE"
+
+
+@app.post("/tiktok/upload-from-ig")
+async def tiktok_upload_from_ig(req: TikTokUploadFromIGRequest):
+    """Pobiera wideo z Instagrama (Graph API) i publikuje na TikTok.
+    Body: { ig_url?, ig_media_id?, caption?, account?, privacy_level? }
+    """
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    if not req.ig_url and not req.ig_media_id:
+        raise HTTPException(status_code=400, detail="Podaj ig_url lub ig_media_id")
+
+    import tempfile, shutil
+    from tiktok import upload_video_file
+
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = os.path.join(tmp_dir, "ig_video.mp4")
+    try:
+        video_url, caption_ig, shortcode = await _fetch_ig_media_via_api(
+            req.ig_url, req.ig_media_id, req.account
+        )
+        if not video_url:
+            raise RuntimeError("Post nie zawiera wideo (media_url pusty). Upewnij sie, ze to reel/wideo.")
+
+        async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
+            r = await client.get(video_url)
+            if r.status_code != 200:
+                raise RuntimeError(f"Nie moge pobrac wideo: HTTP {r.status_code}")
+            with open(tmp_path, "wb") as f:
+                f.write(r.content)
+
+        caption = req.caption or caption_ig or "FUN like HEL\n#kitesurfing #funlikehel #fyp"
+        token = await get_valid_access_token()
+        publish_id = await upload_video_file(token, tmp_path, caption, req.privacy_level)
+        return {
+            "status": "ok",
+            "publish_id": publish_id,
+            "caption": caption[:200],
+            "ig_source": req.ig_url or req.ig_media_id,
+        }
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("IG->TikTok upload failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@app.post("/tiktok/upload-from-drive")
+async def tiktok_upload_from_drive():
+    """Wymusza natychmiastowy upload filmow z folderu 'TT do wrzucenia' na Google Drive."""
+    if not HAS_GOOGLE_MODULES:
+        raise HTTPException(status_code=503, detail="Modul TikTok niedostepny")
+    try:
+        results = await process_tiktok_upload_folder()
+        return {"status": "ok", "message": "Upload z Drive zakonczony", "details": results}
+    except Exception as e:
+        logger.exception("TikTok upload from Drive failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
@@ -1168,6 +2697,12 @@ async def _handle_messenger(messaging: dict):
             r.raise_for_status()
 
         logger.info("Messenger odpowiedź wysłana do %s", sender_id)
+
+        # Sync to panel Messages
+        try:
+            from google_mail import _sync_to_panel
+            _sync_to_panel(sender_email=sender_id, sender_name=f"Messenger {sender_id}", subject="Messenger DM", body=text, reply=reply_text, status="ai_handled")
+        except: pass
     except Exception as e:
         logger.error("Błąd Messenger: %s", e)
 
@@ -1261,6 +2796,12 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
         reply = get_reply(text, sender_id=sender_id, channel=f"instagram_dm_{account}")
         await send_dm(sender_id, reply, account=account)
         logger.info("Odpowiedź DM wysłana do %s na @%s", sender_id, account)
+
+        # Sync to panel Messages
+        try:
+            from google_mail import _sync_to_panel
+            _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_id}", subject="Instagram DM", body=text, reply=reply, status="ai_handled")
+        except: pass
     except Exception as e:
         logger.error("Błąd przy obsłudze DM na @%s: %s", account, e)
 
@@ -1486,6 +3027,228 @@ async def wp_install_log(token: str = ""):
     if token != admin_token:
         raise HTTPException(status_code=403, detail="Brak dostępu")
     return {"log": _wp_install_log}
+
+
+# ---------------------------------------------------------------------------
+# Sklep — produkty z listings.db
+# ---------------------------------------------------------------------------
+
+@app.get("/shop/products")
+async def get_shop_products():
+    """Produkty z listings.db do wyswietlenia w FLH Panel (zakładka Sklep)."""
+    import sqlite3
+    db_path = os.path.join(os.path.dirname(__file__), "listings.db")
+    if not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="Baza listings.db nie istnieje")
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, product_id, full_name, category, product_type, size,
+               quantity, retail_price, sale_price, purchase_price,
+               image_file, status
+        FROM listings
+        ORDER BY id
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return {"products": rows}
+
+
+# ---------------------------------------------------------------------------
+# LinkedIn — SurfIQ Company Page
+# ---------------------------------------------------------------------------
+
+@app.get("/linkedin/login")
+async def linkedin_login():
+    """Otwórz ten URL w przeglądarce żeby autoryzować LinkedIn."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    return RedirectResponse(li_get_auth_url())
+
+
+@app.get("/linkedin/callback")
+async def linkedin_callback(code: str):
+    """LinkedIn przekierowuje tutaj po autoryzacji OAuth2."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    token_data = li_exchange_code(code)
+    if "access_token" in token_data:
+        return HTMLResponse(f"""
+        <html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;text-align:center">
+        <h1>LinkedIn Connected!</h1>
+        <p>Token uzyskany pomyślnie. Wygasa za <b>{token_data.get('expires_in', 0) // 86400} dni</b>.</p>
+        <p>Możesz teraz publikować posty: <code>python linkedin_agent.py post</code></p>
+        <a href="/linkedin/dashboard">Dashboard</a>
+        </body></html>""")
+    return HTMLResponse(f"""
+    <html><body style="font-family:sans-serif;max-width:600px;margin:40px auto;text-align:center">
+    <h1>LinkedIn Error</h1>
+    <pre>{json.dumps(token_data, indent=2)}</pre>
+    <a href="/linkedin/login">Spróbuj ponownie</a>
+    </body></html>""", status_code=400)
+
+
+@app.get("/linkedin/status")
+async def linkedin_status():
+    """Status połączenia LinkedIn."""
+    if not HAS_LINKEDIN:
+        return {"status": "unavailable", "message": "Moduł LinkedIn niedostępny"}
+    token = li_get_access_token()
+    if not token:
+        return {"status": "unauthorized", "message": "Otwórz /linkedin/login"}
+    return {"status": "connected", "posts": li_list_posts()}
+
+
+@app.post("/linkedin/post")
+async def linkedin_post_next():
+    """Publikuj następny post z kolejki."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    token = li_get_access_token()
+    if not token:
+        raise HTTPException(status_code=401, detail="Brak tokena LinkedIn. Otwórz /linkedin/login")
+    agent = LinkedInAgent(token)
+    result = li_publish_next(agent)
+    if result is None:
+        return {"message": "Wszystkie posty już opublikowane"}
+    return result
+
+
+@app.get("/linkedin/dashboard")
+async def linkedin_dashboard():
+    """Prosty dashboard LinkedIn — status postów i akcje."""
+    if not HAS_LINKEDIN:
+        raise HTTPException(status_code=503, detail="Moduł LinkedIn niedostępny")
+    token = li_get_access_token()
+    connected = bool(token)
+    posts = li_list_posts() if connected else []
+
+    posts_html = ""
+    for p in posts:
+        status_badge = (
+            '<span style="color:#22c55e;font-weight:bold">PUBLISHED</span>'
+            if p["status"] == "published"
+            else '<span style="color:#f59e0b;font-weight:bold">PENDING</span>'
+        )
+        pub_info = f'<br><small>{p.get("published_at", "")}</small>' if p["status"] == "published" else ""
+        posts_html += f"""
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:8px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>{p["title"]}</strong> {status_badge}
+          </div>
+          <p style="color:#6b7280;font-size:14px">{p["text_preview"]}</p>
+          {pub_info}
+        </div>"""
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>LinkedIn — SurfIQ</title>
+<style>
+  body {{ font-family: -apple-system, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }}
+  .btn {{ display:inline-block; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:600; margin:4px; cursor:pointer; border:none; font-size:14px; }}
+  .btn-primary {{ background:#0a66c2; color:white; }}
+  .btn-outline {{ background:white; color:#0a66c2; border:2px solid #0a66c2; }}
+  h1 {{ color:#0a66c2; }}
+</style></head>
+<body>
+  <h1>LinkedIn — SurfIQ</h1>
+  <div style="display:flex;align-items:center;gap:8px;margin:16px 0">
+    <div style="width:12px;height:12px;border-radius:50%;background:{'#22c55e' if connected else '#ef4444'}"></div>
+    <span>{'Connected' if connected else 'Not connected'}</span>
+  </div>
+  {"" if connected else '<a href="/linkedin/login" class="btn btn-primary">Connect LinkedIn</a>'}
+  {"<button class='btn btn-primary' onclick='publishNext()'>Publish Next Post</button>" if connected else ""}
+  <div id="result" style="margin:16px 0;display:none;padding:12px;border-radius:8px;background:#f0f9ff"></div>
+  <h2>Posts ({len([p for p in posts if p['status'] == 'published'])}/{len(posts)} published)</h2>
+  {posts_html}
+  <script>
+  async function publishNext() {{
+    const el = document.getElementById('result');
+    el.style.display = 'block';
+    el.textContent = 'Publishing...';
+    try {{
+      const r = await fetch('/linkedin/post', {{ method: 'POST' }});
+      const d = await r.json();
+      el.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>';
+      setTimeout(() => location.reload(), 2000);
+    }} catch(e) {{ el.textContent = 'Error: ' + e.message; }}
+  }}
+  </script>
+</body></html>""")
+
+
+# ---------------------------------------------------------------------------
+# SurfIQ Email Notification — SMTP via home.pl (office@surfiq.eu)
+# ---------------------------------------------------------------------------
+
+class SendNotificationRequest(BaseModel):
+    to: str
+    cc: str | None = None
+    subject: str
+    html: str
+
+
+@app.post("/api/send-notification")
+async def send_notification_email(req: SendNotificationRequest):
+    """
+    Send an email via SMTP (office@surfiq.eu → home.pl).
+    Accepts JSON: { to, cc?, subject, html }
+    """
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    # Validate
+    if not req.to or "@" not in req.to:
+        raise HTTPException(400, "Invalid 'to' email address")
+    if not req.subject:
+        raise HTTPException(400, "Missing 'subject'")
+    if not req.html:
+        raise HTTPException(400, "Missing 'html' body")
+
+    # SMTP config — office@surfiq.eu via home.pl
+    smtp_host = os.getenv("SURFIQ_SMTP_HOST", "serwer2620595.home.pl")
+    smtp_port = int(os.getenv("SURFIQ_SMTP_PORT", "587"))
+    smtp_user = os.getenv("SURFIQ_SMTP_USER", "office@surfiq.eu")
+    smtp_pass = os.getenv("SURFIQ_SMTP_PASS", "surfiq2026@")
+    from_name = os.getenv("SURFIQ_FROM_NAME", "SurfIQ")
+    from_addr = os.getenv("SURFIQ_FROM_ADDR", smtp_user)
+
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"{from_name} <{from_addr}>"
+    msg["To"] = req.to
+    if req.cc:
+        msg["Cc"] = req.cc
+    msg["Subject"] = req.subject
+    msg["Reply-To"] = from_addr
+
+    # Attach HTML body (+ plain-text fallback)
+    plain_text = req.subject  # minimal fallback
+    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+    msg.attach(MIMEText(req.html, "html", "utf-8"))
+
+    # Build recipient list
+    recipients = [req.to]
+    if req.cc:
+        recipients.extend([addr.strip() for addr in req.cc.split(",") if addr.strip()])
+
+    try:
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _smtp_send, smtp_host, smtp_port, smtp_user, smtp_pass, msg, recipients)
+        logger.info("Notification email sent: to=%s cc=%s subject=%s", req.to, req.cc, req.subject)
+        return {"ok": True, "to": req.to, "cc": req.cc, "subject": req.subject}
+    except Exception as e:
+        logger.error("Notification email FAILED: to=%s error=%s", req.to, e)
+        raise HTTPException(500, f"SMTP error: {e}")
+
+
+def _smtp_send(host: str, port: int, user: str, password: str, msg, recipients: list[str]):
+    """Blocking SMTP send — runs in executor."""
+    import smtplib
+    with smtplib.SMTP(host, port, timeout=30) as server:
+        server.starttls()
+        server.login(user, password)
+        server.send_message(msg, to_addrs=recipients)
 
 
 # ---------------------------------------------------------------------------
