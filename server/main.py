@@ -45,8 +45,12 @@ try:
     from facebook_groups import process_facebook_groups
     HAS_GOOGLE_MODULES = True
 except Exception as e:
-    logging.warning("Moduły Google/inne niedostępne (brak credentials): %s", e)
+    import traceback as _tb
+    _GOOGLE_IMPORT_ERROR = f"{type(e).__name__}: {e}\n{''.join(_tb.format_tb(e.__traceback__))}"
+    logging.warning("Moduły Google/inne niedostępne: %s", _GOOGLE_IMPORT_ERROR)
     HAS_GOOGLE_MODULES = False
+else:
+    _GOOGLE_IMPORT_ERROR = None
 
 # LinkedIn — opcjonalny
 try:
@@ -195,6 +199,7 @@ async def health():
         "claude_key_prefix": os.environ.get("ANTHROPIC_API_KEY", "")[:15] + "..." if has_claude else "MISSING",
         "gemini_key": has_gemini,
         "openai_key": has_openai,
+        "google_import_error": _GOOGLE_IMPORT_ERROR,
     }
 
 @app.get("/api/debug-imports")
