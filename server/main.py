@@ -1102,6 +1102,15 @@ async def ig_scheduled_posts_loop():
                 if post["scheduled_ts"] > now:
                     continue
 
+                # ZABEZPIECZENIE: nie publikuj postów starszych niż 24h
+                age_hours = (now - post["scheduled_ts"]) / 3600
+                if age_hours > 24:
+                    post["status"] = "expired"
+                    changed = True
+                    logger.warning("IG scheduler: post '%s' wygasł (%.0fh temu) — pomijam",
+                                   post.get("label", "?"), age_hours)
+                    continue
+
                 # Czas publikacji nadszedł
                 label = post.get("label", "?")
                 logger.info("IG scheduler: publikuję post '%s'", label)
