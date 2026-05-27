@@ -197,6 +197,24 @@ async def health():
         "openai_key": has_openai,
     }
 
+@app.get("/api/debug-imports")
+async def debug_imports():
+    """Temporary: diagnose which Google module fails to import."""
+    import sys
+    results = {"python": sys.version}
+    modules = [
+        "google_auth", "google_mail", "youtube", "tiktok",
+        "cleanup_mail", "google_business", "auto_upload",
+        "sms_campaign", "google_contacts", "facebook_groups",
+    ]
+    for mod in modules:
+        try:
+            __import__(mod)
+            results[mod] = "ok"
+        except Exception as e:
+            results[mod] = f"FAIL: {type(e).__name__}: {e}"
+    return results
+
 @app.get("/api/google-business/diagnose")
 async def google_business_diagnose():
     """Diagnostyka Google Business — sprawdza konta, lokalizacje i recenzje bez odpowiedzi."""
@@ -738,6 +756,145 @@ async def push_send(req: PushSendRequest):
         raise HTTPException(status_code=502, detail="Nie udalo sie wyslac powiadomienia")
 
     return {"status": "sent"}
+
+
+# ---------------------------------------------------------------------------
+# Push Notifications — broadcast do staff/admin (FLH Panel)
+# ---------------------------------------------------------------------------
+
+class PushBroadcastRequest(BaseModel):
+    title: str
+    body: str
+    data: dict | None = None
+    roles: list[str] | None = None
+    location: str | None = None
+    api_key: str
+
+
+@app.post("/push/broadcast")
+async def push_broadcast(req: PushBroadcastRequest):
+    """
+    Wysyla push notification do wszystkich urzadzen staff/admin.
+    Domyslnie: admin + staff + instructor.
+    """
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import broadcast_to_staff
+    result = await broadcast_to_staff(
+        title=req.title,
+        body=req.body,
+        data=req.data,
+        roles=req.roles,
+        location=req.location,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushNotifyUserRequest(BaseModel):
+    user_id: str
+    title: str
+    body: str
+    data: dict | None = None
+    api_key: str
+
+
+@app.post("/push/notify-user")
+async def push_notify_user(req: PushNotifyUserRequest):
+    """Wysyla push do wszystkich urzadzen konkretnego usera."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import notify_user
+    result = await notify_user(
+        user_id=req.user_id,
+        title=req.title,
+        body=req.body,
+        data=req.data,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushTriggerBookingRequest(BaseModel):
+    booking_ref: str
+    customer_name: str
+    service_name: str
+    start_date: str
+    location: str = "both"
+    api_key: str
+
+
+@app.post("/push/trigger/new-booking")
+async def push_trigger_new_booking(req: PushTriggerBookingRequest):
+    """Trigger: powiadomienie o nowej rezerwacji do staff."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import trigger_new_booking
+    result = await trigger_new_booking(
+        booking_ref=req.booking_ref,
+        customer_name=req.customer_name,
+        service_name=req.service_name,
+        start_date=req.start_date,
+        location=req.location,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushTriggerMessageRequest(BaseModel):
+    sender_name: str
+    channel: str
+    preview: str
+    message_id: str | None = None
+    api_key: str
+
+
+@app.post("/push/trigger/new-message")
+async def push_trigger_new_message(req: PushTriggerMessageRequest):
+    """Trigger: powiadomienie o nowej wiadomosci w inbox."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import trigger_new_message
+    result = await trigger_new_message(
+        sender_name=req.sender_name,
+        channel=req.channel,
+        preview=req.preview,
+        message_id=req.message_id,
+    )
+
+    return {"status": "ok", **result}
+
+
+class PushTriggerWeatherRequest(BaseModel):
+    location: str
+    wind_speed_kn: float
+    description: str = ""
+    api_key: str
+
+
+@app.post("/push/trigger/weather-alert")
+async def push_trigger_weather_alert(req: PushTriggerWeatherRequest):
+    """Trigger: alert pogodowy (silny wiatr >25kn)."""
+    expected_key = os.environ.get("FLH_API_KEY", "")
+    if not expected_key or req.api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Nieprawidlowy api_key")
+
+    from push_notifications import trigger_weather_alert
+    result = await trigger_weather_alert(
+        location=req.location,
+        wind_speed_kn=req.wind_speed_kn,
+        description=req.description,
+    )
+
+    return {"status": "ok", **result}
 
 
 # ---------------------------------------------------------------------------
@@ -2558,6 +2715,8 @@ async def _handle_messenger(messaging: dict):
             r.raise_for_status()
 
         logger.info("Messenger odpowiedź wysłana do %s", sender_id)
+
+        # Sync to panel Messages
         try:
             from google_mail import _sync_to_panel
             _sync_to_panel(sender_email=sender_id, sender_name=f"Messenger {sender_id}", subject="Messenger DM", body=text, reply=reply_text, status="ai_handled")
@@ -2655,6 +2814,8 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
         reply = get_reply(text, sender_id=sender_id, channel=f"instagram_dm_{account}")
         await send_dm(sender_id, reply, account=account)
         logger.info("Odpowiedź DM wysłana do %s na @%s", sender_id, account)
+
+        # Sync to panel Messages
         try:
             from google_mail import _sync_to_panel
             _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_id}", subject="Instagram DM", body=text, reply=reply, status="ai_handled")
