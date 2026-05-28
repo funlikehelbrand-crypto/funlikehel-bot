@@ -950,6 +950,20 @@ async def morning_equipment_briefing_loop():
             await asyncio.sleep(3600)  # retry za godzinę
 
 
+async def flh_mail_polling_loop():
+    """Poll info@funlikehel.pl co 10 min — sync do panelu Messages."""
+    await asyncio.sleep(90)  # delay start
+    while True:
+        try:
+            from flh_mail_poller import poll_flh_inbox
+            count = poll_flh_inbox()
+            if count:
+                logger.info("[FLH Mail] Synced %d emails", count)
+        except Exception as e:
+            logger.error("[FLH Mail] Loop error: %s", e)
+        await asyncio.sleep(600)  # 10 minut
+
+
 async def daily_cleanup_loop():
     """Codzienny cleanup spamu i bounce'ów — co 24h."""
     while True:
@@ -1222,6 +1236,7 @@ async def startup_event():
         asyncio.create_task(facebook_groups_loop())
         asyncio.create_task(shorts_stories_campaign_loop())
     asyncio.create_task(morning_equipment_briefing_loop())
+    asyncio.create_task(flh_mail_polling_loop())
     if _HAS_FB_LEAD_SCOUT:
         asyncio.create_task(fb_lead_scout_loop())
         logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
