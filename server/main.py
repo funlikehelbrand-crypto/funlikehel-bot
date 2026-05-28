@@ -927,6 +927,29 @@ async def youtube_polling_loop():
         await asyncio.sleep(14400)  # 4 godziny — oszczędność limitu API
 
 
+async def morning_equipment_briefing_loop():
+    """Poranny briefing sprzętowy — o 7:00 push do instruktorów."""
+    from datetime import datetime, timedelta
+    while True:
+        try:
+            now = datetime.now()
+            # Calculate seconds until next 7:00
+            target = now.replace(hour=7, minute=0, second=0, microsecond=0)
+            if now >= target:
+                target += timedelta(days=1)
+            wait_seconds = (target - now).total_seconds()
+            logger.info("Morning briefing: czekam %.0f sek do 7:00", wait_seconds)
+            await asyncio.sleep(wait_seconds)
+
+            logger.info("Poranny briefing sprzętowy — generuję...")
+            from push_notifications import trigger_morning_equipment_briefing
+            result = await trigger_morning_equipment_briefing("hel")
+            logger.info("Morning briefing result: %s", result)
+        except Exception as e:
+            logger.error("Błąd morning briefing: %s", e)
+            await asyncio.sleep(3600)  # retry za godzinę
+
+
 async def daily_cleanup_loop():
     """Codzienny cleanup spamu i bounce'ów — co 24h."""
     while True:
@@ -1198,6 +1221,7 @@ async def startup_event():
         asyncio.create_task(tiktok_auto_upload_loop())
         asyncio.create_task(facebook_groups_loop())
         asyncio.create_task(shorts_stories_campaign_loop())
+    asyncio.create_task(morning_equipment_briefing_loop())
     if _HAS_FB_LEAD_SCOUT:
         asyncio.create_task(fb_lead_scout_loop())
         logger.info("FB Lead Scout loop uruchomiony — skanowanie co 6h.")
