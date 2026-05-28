@@ -2751,6 +2751,18 @@ async def _handle_messenger(messaging: dict):
 
     logger.info("Messenger od %s: %s", sender_id, text)
 
+    # Always sync to panel (even if no auto-reply)
+    try:
+        from google_mail import _sync_to_panel
+        _sync_to_panel(sender_email=sender_id, sender_name=f"Messenger {sender_id}", subject="Messenger DM", body=text, reply=None, status="new")
+    except: pass
+
+    # Check if Alicja should auto-reply
+    from alicja_gate import should_auto_reply
+    if not should_auto_reply("messenger"):
+        logger.info("Messenger — auto-reply OFF, czeka na reczna odpowiedz")
+        return
+
     try:
         reply_text = get_reply(text, sender_id=sender_id, channel="messenger")
 
@@ -2862,6 +2874,18 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
     _mark_seen(mid, f"ig_dm_{account}")
 
     logger.info("DM od %s na @%s: %s", sender_id, account, text)
+
+    # Always sync to panel
+    try:
+        from google_mail import _sync_to_panel
+        _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_id} ({account})", subject=f"Instagram DM (@{account})", body=text, reply=None, status="new")
+    except: pass
+
+    # Check Alicja gate
+    from alicja_gate import should_auto_reply
+    if not should_auto_reply("instagram_dm"):
+        logger.info("IG DM — auto-reply OFF, czeka na reczna odpowiedz")
+        return
 
     try:
         reply = get_reply(text, sender_id=sender_id, channel=f"instagram_dm_{account}")
