@@ -182,6 +182,11 @@ def process_reviews():
                         reply_to_review(review_name, reply_text)
                         logger.info("Odpowiedź na recenzję wysłana dla %s.", reviewer)
                         total += 1
+                        # Sync to panel Messages
+                        try:
+                            from google_mail import _sync_to_panel
+                            _sync_to_panel(sender_email=reviewer, sender_name=f"Google {rating}★ {reviewer}", subject=f"Recenzja Google ({rating}★)", body=comment, reply=reply_text, status="ai_handled")
+                        except: pass
                     except httpx.HTTPStatusError as e:
                         logger.error("Błąd odpowiedzi na recenzję %s: %s %s",
                                      review_name, e.response.status_code, e.response.text[:200])

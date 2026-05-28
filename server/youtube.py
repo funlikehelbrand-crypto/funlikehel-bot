@@ -144,5 +144,10 @@ def process_youtube_comments(video_id: str = None):
             reply = get_reply(prompt, sender_id=comment["author"], channel="youtube")
             reply_to_comment(comment["thread_id"], reply)
             logger.info("Odpowiedź wysłana na YouTube.")
+            # Sync to panel Messages
+            try:
+                from google_mail import _sync_to_panel
+                _sync_to_panel(sender_email=comment["author"], sender_name=f"YT: {comment['author']}", subject="YouTube komentarz", body=comment["text"], reply=reply, status="ai_handled")
+            except: pass
         except Exception as e:
             logger.error("Błąd przy komentarzu YouTube: %s", e)

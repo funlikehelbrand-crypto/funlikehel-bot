@@ -2871,7 +2871,7 @@ async def _handle_dm(messaging: dict, account: str = "funlikehel"):
         # Sync to panel Messages
         try:
             from google_mail import _sync_to_panel
-            _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_id}", subject="Instagram DM", body=text, reply=reply, status="ai_handled")
+            _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_id} ({account})", subject=f"Instagram DM (@{account})", body=text, reply=reply, status="ai_handled")
         except: pass
     except Exception as e:
         logger.error("Błąd przy obsłudze DM na @%s: %s", account, e)
@@ -2946,6 +2946,11 @@ async def _handle_comment(value: dict, account: str = "funlikehel"):
             reply = get_reply(text, sender_id=sender_id, channel=f"instagram_comment_{account}")
         await reply_to_comment(comment_id, reply, account=account)
         logger.info("Odpowiedź na komentarz @%s wysłana do @%s", account, sender_name)
+        # Sync to panel Messages
+        try:
+            from google_mail import _sync_to_panel
+            _sync_to_panel(sender_email=sender_id, sender_name=f"IG @{sender_name} ({account})", subject=f"Komentarz IG (@{account})", body=text, reply=reply, status="ai_handled")
+        except: pass
     except Exception as e:
         logger.error("Błąd przy obsłudze komentarza na @%s: %s", account, e)
 
